@@ -34,6 +34,17 @@ document.addEventListener('alpine:init', () => {
   Alpine.store('app', CONFIG);
 
   // ---------------- Thông báo nhỏ ----------------
+  // Chế độ sáng/tối: thuộc tính data-theme đặt sớm bởi script trong <head> (layouts/base.njk)
+  Alpine.store('theme', {
+    dark: document.documentElement.getAttribute('data-theme') === 'dark',
+    toggle() {
+      this.dark = !this.dark;
+      document.documentElement.toggleAttribute('data-theme', false);
+      if (this.dark) document.documentElement.setAttribute('data-theme', 'dark');
+      try { localStorage.setItem('ln_theme', this.dark ? 'dark' : 'light'); } catch { /* chế độ riêng tư */ }
+    },
+  });
+
   Alpine.store('toast', {
     items: [],
     show(message, link = null, ms = 3500) {
@@ -240,6 +251,33 @@ document.addEventListener('alpine:init', () => {
         if (h >= lo && h <= (hi || lo)) return { i, size: row.size, note: row.note };
       }
       return null;
+    },
+  }));
+
+  // Tra cứu tình trạng đơn bằng mã + số điện thoại
+  Alpine.data('trackForm', (preset = '') => ({
+    code: preset, phone: '', loading: false, error: '', result: null, statusNote: '',
+    steps: [{ key: 'new', label: 'Đã nhận' }, { key: 'contacted', label: 'Đã liên hệ' }, { key: 'confirmed', label: 'Đã xác nhận' }, { key: 'completed', label: 'Hoàn thành' }],
+    get stepIndex() { return this.steps.findIndex((s) => s.key === this.result?.status); },
+    vnd: (n) => new Intl.NumberFormat('vi-VN').format(n) + 'đ',
+    fmtDate(v) {
+      const d = new Date(String(v).replace(' ', 'T') + 'Z');
+      return Number.isNaN(d.getTime()) ? '' : d.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', dateStyle: 'short', timeStyle: 'short' });
+    },
+    async submit(form) {
+      this.error = '';
+      this.result = null;
+      this.loading = true;
+      try {
+        const body = { code: this.code, phone: this.phone, _ft: form.querySelector('[name="_ft"]').value, website: form.querySelector('[name="website"]').value };
+        const res = await api('/api/track', { method: 'POST', body: JSON.stringify(body) });
+        this.result = res.inquiry;
+        this.statusNote = res.status_note;
+      } catch (err) {
+        this.error = err.message;
+      } finally {
+        this.loading = false;
+      }
     },
   }));
 

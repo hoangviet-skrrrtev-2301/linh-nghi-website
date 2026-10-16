@@ -122,6 +122,7 @@ export function customerConfirmation(inq) {
     subject: `${s.site.name} đã nhận ${TYPE_LABEL[inq.type].toLowerCase()} ${inq.code}`,
     html: layout(`Xin chào ${inq.name},`, `<p style="font-size:14px;line-height:1.6">${escapeHtml(success)}</p>
       ${rows(detailPairs(inq).filter(([k]) => !['Thời gian'].includes(k)))}${itemsTable(inq.items, inq.total)}
+      <p style="font-size:14px;line-height:1.6;margin-top:20px">Tra cứu tình trạng tại <a href="${escapeHtml(config.baseUrl)}/tra-cuu-don?ma=${encodeURIComponent(inq.code)}">${escapeHtml(config.baseUrl)}/tra-cuu-don</a> (nhập mã <b>${escapeHtml(inq.code)}</b> và số điện thoại đã đặt).</p>
       <p style="font-size:14px;line-height:1.6;margin-top:20px">Cần hỗ trợ ngay? Gọi/Zalo: <b>${escapeHtml(s.site.phone)}</b></p>`),
   };
 }

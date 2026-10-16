@@ -4,7 +4,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <script nonce="{{ nonce }}">document.documentElement.classList.add('js')</script>
+  <script nonce="{{ nonce }}">document.documentElement.classList.add('js');
+  (function () {
+    var mode = {{ s.theme.dark_mode | dump | safe }}, t = 'light';
+    if (mode !== 'off') {
+      try { t = localStorage.getItem('ln_theme') || (mode === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); } catch (e) {}
+    }
+    if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+  })();</script>
   <title>{{ seo.title }}</title>
   <meta name="description" content="{{ seo.description }}">
   {% if seo.keywords %}<meta name="keywords" content="{{ seo.keywords }}">{% endif %}

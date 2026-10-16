@@ -176,6 +176,13 @@ router.get('/thiet-ke-rieng', requireFeature('custom_request'), (req, res) => {
   });
 });
 
+// ---------------- Tra cứu đơn ----------------
+router.get('/tra-cuu-don', (req, res) => {
+  const f = res.locals.s.forms;
+  res.locals.seo = buildSeo(req, { title: f.track_title, description: f.track_intro, noindex: true });
+  res.view('pages/track.njk', { preset: typeof req.query.ma === 'string' ? req.query.ma.slice(0, 30) : '' });
+});
+
 // ---------------- Liên hệ / Về shop ----------------
 router.get('/lien-he', (req, res) => {
   const c = res.locals.s.contact;

@@ -57,6 +57,7 @@
   <h2 class="mt-6 text-3xl font-medium">Gửi thành công!</h2>
   <p class="mt-3 max-w-md text-muted" x-text="message"></p>
   <p class="mt-2 text-sm">Mã yêu cầu: <b class="font-mono" x-text="code"></b></p>
+  <p class="mt-1 text-xs text-muted" x-show="code">Hãy lưu lại mã này để tra cứu tình trạng tại trang <a :href="'/tra-cuu-don?ma=' + encodeURIComponent(code)" class="underline">Tra cứu đơn</a>.</p>
   <div class="mt-8 flex flex-wrap justify-center gap-3">
     <a href="/san-pham" class="btn btn-outline">Tiếp tục xem sản phẩm</a>
     {% if s.site.zalo %}<a href="https://zalo.me/{{ s.site.zalo | phoneHref }}" target="_blank" rel="noopener" class="btn btn-primary">{{ icon('chat', 'w-4 h-4') }} Nhắn Zalo cho shop</a>{% endif %}

@@ -4,6 +4,8 @@ Ghi lại các thay đổi đáng chú ý, mới nhất ở trên cùng.
 
 ## Chưa phát hành
 
+- Khách tra cứu tình trạng đơn tại `/tra-cuu-don` bằng mã đơn + số điện thoại (đơn hàng, custom, liên hệ): thanh tiến trình, sản phẩm, tổng tiền, lời nhắn theo trạng thái (sửa ở Admin › Biểu mẫu & đặt hàng). Giới hạn 12 lần / 10 phút, không lộ địa chỉ, email, ghi chú nội bộ. Link tra cứu có ở hộp "Gửi thành công", email xác nhận và chân trang
+- Giao diện khách có chế độ tối (dark mode): nút mặt trăng/mặt trời ở header, nhớ lựa chọn của khách (localStorage `ln_theme`), mặc định theo thiết bị; không bị nháy sáng khi tải trang. Bảng màu tối và tùy chọn bật/tắt nằm ở Admin › Giao diện (nhóm `theme`, các trường `dark_*`). Logo tự đổi sang bản trắng. Khối nền chủ đạo lớn dùng lớp `.panel-primary`
 - Admin › Sản phẩm: thêm nhanh loại ngọc / màu sắc / kiểu dáng / mệnh mới ngay trong form (lưu vào Danh mục, tự có trong bộ lọc)
 - Thêm mạng xã hội Threads (cài đặt Thông tin shop, chân trang, JSON-LD)
 - Trình soạn thảo (blog, mô tả sản phẩm): sửa lỗi nút chèn ảnh (Quill bị bọc Proxy của Alpine nên getSelection lỗi), cho chọn nhiều ảnh một lần, nhãn tiêu đề tiếng Việt (H2/H3/H4), nút toàn màn hình (Esc để thoát)

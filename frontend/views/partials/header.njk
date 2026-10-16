@@ -1,6 +1,6 @@
 {% from "partials/icons.njk" import icon %}
 {% if features.announcement %}
-<div class="bg-primary text-on-primary text-center text-[12.5px] tracking-wide py-2 px-4">{{ features.announcement }}</div>
+<div class="panel-primary text-center text-[12.5px] tracking-wide py-2 px-4">{{ features.announcement }}</div>
 {% endif %}
 
 <header x-data="siteHeader" @scroll.window.passive="onScroll"
@@ -11,7 +11,8 @@
 
     <a href="/" class="flex shrink-0 items-center gap-3" aria-label="{{ s.site.name }} - Trang chủ">
       {% if s.site.logo %}
-        <img src="{{ s.site.logo.sm }}" alt="{{ s.site.name }}" class="h-[68px] w-auto" width="54" height="68">
+        <img src="{{ s.site.logo.sm }}" alt="{{ s.site.name }}" class="h-[68px] w-auto {{ 'logo-light-only' if s.site.logo_light }}" width="54" height="68">
+        {% if s.site.logo_light %}<img src="{{ s.site.logo_light.sm }}" alt="" aria-hidden="true" class="logo-dark-only h-[68px] w-auto" width="54" height="68">{% endif %}
       {% else %}
         <span class="font-heading text-2xl font-semibold tracking-tight text-primary">{{ s.site.name }}</span>
       {% endif %}
@@ -33,6 +34,11 @@
 
     <div class="ml-auto flex items-center gap-1 lg:ml-0">
       <button class="icon-btn" @click="searchOpen = true; $nextTick(() => $refs.q.focus())" aria-label="Tìm kiếm">{{ icon('search') }}</button>
+      {% if s.theme.dark_mode != 'off' %}
+      <button class="icon-btn" @click="$store.theme.toggle()" :aria-label="$store.theme.dark ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'" :title="$store.theme.dark ? 'Giao diện sáng' : 'Giao diện tối'">
+        <span x-show="!$store.theme.dark">{{ icon('moon') }}</span><span x-cloak x-show="$store.theme.dark">{{ icon('sun') }}</span>
+      </button>
+      {% endif %}
       {% if features.checkout %}
       <a href="/gio-hang" class="icon-btn relative" aria-label="Giỏ hàng">
         {{ icon('bag') }}

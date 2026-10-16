@@ -38,7 +38,7 @@
             <span class="price-old" x-show="p.on_sale" x-text="$store.cart.vnd(p.price)"></span>
           </div>
           <div class="mt-3 flex flex-wrap gap-1.5">
-            <span x-show="p.is_bestseller" class="badge bg-ink text-white">★ Best Seller</span>
+            <span x-show="p.is_bestseller" class="badge bg-ink text-bg">★ Best Seller</span>
             <span x-show="p.show_new" class="badge bg-primary text-on-primary">Mới</span>
             <span class="badge" :class="{'bg-emerald-50 text-emerald-700': p.stock_status==='in_stock', 'bg-amber-50 text-amber-700': p.stock_status==='made_to_order', 'bg-ink/5 text-muted': p.stock_status==='sold_out'}" x-text="p.stock_label"></span>
           </div>
@@ -144,7 +144,7 @@
 {# ============ THÔNG BÁO NHỎ (toast) ============ #}
 <div x-data class="pointer-events-none fixed inset-x-0 bottom-4 z-[90] flex flex-col items-center gap-2 px-4" aria-live="polite">
   <template x-for="t in $store.toast.items" :key="t.id">
-    <div x-transition class="pointer-events-auto flex items-center gap-3 rounded-full bg-ink px-5 py-3 text-sm text-white shadow-xl">
+    <div x-transition class="pointer-events-auto flex items-center gap-3 rounded-full bg-ink px-5 py-3 text-sm text-bg shadow-xl">
       <span x-text="t.message"></span>
       <template x-if="t.link"><a :href="t.link.url" class="font-semibold text-accent underline-offset-2 hover:underline" x-text="t.link.label"></a></template>
     </div>

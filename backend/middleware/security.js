@@ -93,5 +93,6 @@ const limiter = (opts) => rateLimit({
 
 export const loginLimiter = limiter({ windowMs: 15 * 60 * 1000, limit: 10, message: 'Đăng nhập sai quá nhiều lần, vui lòng thử lại sau 15 phút' });
 export const formLimiter = limiter({ windowMs: 10 * 60 * 1000, limit: 6, message: 'Bạn gửi quá nhiều lần, vui lòng thử lại sau ít phút' });
+export const trackLimiter = limiter({ windowMs: 10 * 60 * 1000, limit: 12, message: 'Bạn tra cứu quá nhiều lần, vui lòng thử lại sau ít phút' });
 export const apiLimiter = limiter({ windowMs: 60 * 1000, limit: 120, message: 'Quá nhiều yêu cầu, vui lòng chậm lại' });
 export const adminLimiter = limiter({ windowMs: 60 * 1000, limit: 300, message: 'Quá nhiều yêu cầu' });

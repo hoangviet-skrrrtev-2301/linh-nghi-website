@@ -1,0 +1,90 @@
+{% extends "layouts/base.njk" %}
+{% from "partials/icons.njk" import icon %}
+{% from "partials/form-fields.njk" import antiSpam %}
+
+{% block content %}
+{% set f = s.forms %}
+<section class="border-b border-line bg-surface">
+  <div class="container-x py-12 text-center md:py-16">
+    <span class="eyebrow">Đơn hàng</span>
+    <h1 class="mt-3 text-4xl font-medium md:text-5xl">{{ f.track_title }}</h1>
+    <p class="mx-auto mt-3 max-w-xl text-muted">{{ f.track_intro }}</p>
+  </div>
+</section>
+
+<section class="container-x max-w-2xl py-12" x-data="trackForm({{ preset | dump }})">
+  <div class="card p-6 md:p-8">
+    <form @submit.prevent="submit($el)" novalidate class="relative">
+      <div class="grid gap-5 sm:grid-cols-2">
+        <div>
+          <label for="t-code" class="label">Mã đơn <span class="text-red-500">*</span></label>
+          <input id="t-code" name="code" class="input font-mono uppercase" placeholder="VD: DH261016-A1B2C3" required autocomplete="off" x-model="code" @input="error = ''">
+        </div>
+        <div>
+          <label for="t-phone" class="label">Số điện thoại đặt hàng <span class="text-red-500">*</span></label>
+          <input id="t-phone" name="phone" type="tel" class="input" placeholder="09xx xxx xxx" required autocomplete="tel" x-model="phone" @input="error = ''">
+        </div>
+      </div>
+      {{ antiSpam(formToken) }}
+      <p class="mt-4 text-sm text-red-600" x-show="error" x-text="error" x-cloak role="alert"></p>
+      <button type="submit" class="btn btn-primary mt-6 w-full sm:w-auto" :disabled="loading">
+        <span x-show="loading" class="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" x-cloak></span>
+        Tra cứu
+      </button>
+    </form>
+  </div>
+
+  <div x-show="result" x-cloak x-transition class="card mt-6 p-6 md:p-8">
+    <template x-if="result">
+      <div>
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p class="text-xs uppercase tracking-[0.14em] text-muted" x-text="result.type_label"></p>
+            <p class="mt-1 font-mono text-lg font-semibold" x-text="result.code"></p>
+          </div>
+          <span class="badge" :class="result.status === 'cancelled' ? 'bg-red-50 text-red-700' : (result.status === 'completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-primary/10 text-primary')" x-text="result.status_label"></span>
+        </div>
+
+        {# Thanh tiến trình #}
+        <ol class="mt-7 grid grid-cols-4 gap-2 text-center text-xs" x-show="result.status !== 'cancelled'">
+          <template x-for="(st, i) in steps" :key="st.key">
+            <li>
+              <span class="mx-auto flex h-8 w-8 items-center justify-center rounded-full text-[13px] font-semibold"
+                :class="i <= stepIndex ? 'bg-primary text-on-primary' : 'bg-ink/10 text-muted'" x-text="i < stepIndex ? '✓' : i + 1"></span>
+              <span class="mt-2 block" :class="i <= stepIndex ? 'font-medium text-ink' : 'text-muted'" x-text="st.label"></span>
+            </li>
+          </template>
+        </ol>
+
+        <p class="mt-6 rounded-md bg-primary/5 p-4 text-sm leading-relaxed" x-show="statusNote" x-text="statusNote"></p>
+
+        <dl class="mt-6 grid gap-3 text-sm sm:grid-cols-2">
+          <div><dt class="text-muted">Ngày gửi</dt><dd class="font-medium" x-text="fmtDate(result.created_at)"></dd></div>
+          <div><dt class="text-muted">Cập nhật gần nhất</dt><dd class="font-medium" x-text="fmtDate(result.updated_at)"></dd></div>
+        </dl>
+
+        <template x-if="result.items.length">
+          <div class="mt-6">
+            <h2 class="font-body text-sm font-semibold">Sản phẩm</h2>
+            <ul class="mt-2 divide-y divide-line text-sm">
+              <template x-for="it in result.items" :key="it.name + it.size">
+                <li class="flex items-start justify-between gap-4 py-2.5">
+                  <span><span x-text="it.name"></span><span class="text-muted" x-show="it.size" x-text="' · ni ' + it.size"></span><span class="text-muted" x-text="' × ' + it.qty"></span></span>
+                  <span class="shrink-0" x-show="it.price != null" x-text="vnd(it.price * it.qty)"></span>
+                </li>
+              </template>
+            </ul>
+            <p class="mt-3 flex justify-between border-t border-line pt-3 text-sm font-semibold" x-show="result.total != null"><span>Tổng cộng</span><span x-text="vnd(result.total)"></span></p>
+          </div>
+        </template>
+        <p class="mt-6 text-sm text-muted" x-show="result.product">Sản phẩm quan tâm: <span x-text="result.product"></span></p>
+
+        <div class="mt-7 flex flex-wrap gap-3">
+          {% if s.site.zalo %}<a href="https://zalo.me/{{ s.site.zalo | phoneHref }}" target="_blank" rel="noopener" class="btn btn-primary btn-sm">{{ icon('chat', 'w-4 h-4') }} Nhắn Zalo cho shop</a>{% endif %}
+          <a href="tel:{{ s.site.phone | phoneHref }}" class="btn btn-outline btn-sm">{{ icon('phone', 'w-4 h-4') }} {{ s.site.phone }}</a>
+        </div>
+      </div>
+    </template>
+  </div>
+</section>
+{% endblock %}

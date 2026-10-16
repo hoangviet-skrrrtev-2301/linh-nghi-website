@@ -54,7 +54,7 @@
     <div class="mt-5 flex items-baseline gap-3">
       {% if p.final_price != null %}
         <span class="price text-3xl">{{ p.final_price | vnd }}</span>
-        {% if p.on_sale %}<span class="price-old text-base">{{ p.price | vnd }}</span><span class="badge bg-accent text-white">-{{ ((1 - p.sale_price / p.price) * 100) | round }}%</span>{% endif %}
+        {% if p.on_sale %}<span class="price-old text-base">{{ p.price | vnd }}</span><span class="badge bg-accent text-on-accent">-{{ ((1 - p.sale_price / p.price) * 100) | round }}%</span>{% endif %}
       {% else %}
         <span class="price text-2xl">Giá liên hệ</span>
       {% endif %}
@@ -62,7 +62,7 @@
     {% endif %}
 
     <div class="mt-4 flex flex-wrap gap-2">
-      {% if p.is_bestseller %}<span class="badge bg-ink text-white">★ Best Seller</span>{% endif %}
+      {% if p.is_bestseller %}<span class="badge bg-ink text-bg">★ Best Seller</span>{% endif %}
       {% if p.show_new %}<span class="badge bg-primary text-on-primary">Mới</span>{% endif %}
       <span class="badge {{ 'bg-emerald-50 text-emerald-700' if p.stock_status == 'in_stock' else ('bg-amber-50 text-amber-700' if p.stock_status == 'made_to_order' else 'bg-ink/5 text-muted') }}">{{ p.stock_label }}</span>
       {% if p.certificates.length %}<span class="badge bg-primary/10 text-primary">{{ icon('shield', 'w-3 h-3 mr-1') }} Có kiểm định</span>{% endif %}

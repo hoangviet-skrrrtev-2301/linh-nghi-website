@@ -63,6 +63,12 @@ router.get('/theme.css', (req, res) => {
   --ff-heading:'${t.font_heading}',Georgia,serif;--ff-body:'${t.font_body}',system-ui,sans-serif;
   --r-sm:${rs};--r-md:${rm};--r-lg:${rl};
 }
+${t.dark_mode === 'off' ? '' : `:root[data-theme="dark"]{
+  color-scheme:dark;
+  --c-primary:${t.dark_color_primary};--c-on-primary:${t.dark_color_primary_contrast};--c-accent:${t.dark_color_accent};
+  --c-bg:${t.dark_color_bg};--c-surface:${t.dark_color_surface};--c-text:${t.dark_color_text};--c-muted:${t.dark_color_muted};
+  --c-border:${t.dark_color_border};--c-footer:${t.dark_color_footer_bg};
+}`}
 ${custom}`;
   const etag = `"${crypto.createHash('sha1').update(css).digest('base64url')}"`;
   res.set({ 'Content-Type': 'text/css; charset=utf-8', 'Cache-Control': 'no-cache', ETag: etag });

@@ -15,6 +15,7 @@
   --color-primary: var(--c-primary);
   --color-on-primary: var(--c-on-primary);
   --color-accent: var(--c-accent);
+  --color-on-accent: var(--c-on-accent);
   --color-bg: var(--c-bg);
   --color-surface: var(--c-surface);
   --color-ink: var(--c-text);
@@ -30,12 +31,22 @@
 
 /* Giá trị dự phòng khi /theme.css chưa tải */
 :root {
-  --c-primary: #2e6b94; --c-on-primary: #fff; --c-accent: #a98a50; --c-bg: #fbfcfa; --c-surface: #fff;
+  --c-primary: #2e6b94; --c-on-primary: #fff; --c-accent: #a98a50; --c-on-accent: #fff; --c-bg: #fbfcfa; --c-surface: #fff;
   --c-text: #1d2b36; --c-muted: #62737e; --c-border: #dfe7ea; --c-footer: #1e3a4f;
   --ff-heading: Georgia, serif; --ff-body: system-ui, sans-serif;
   --r-sm: 6px; --r-md: 12px; --r-lg: 20px;
   --header-h: 84px;
 }
+
+/* Chế độ tối: màu chính lấy từ /theme.css (nhóm "Chế độ tối" trong Admin > Giao diện) */
+:root[data-theme="dark"] { --c-on-accent: #10202b; }
+.logo-dark-only { display: none; }
+:root[data-theme="dark"] .logo-light-only { display: none; }
+:root[data-theme="dark"] .logo-dark-only { display: block; }
+:root[data-theme="dark"] select.input { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239db0bc' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
+:root[data-theme="dark"] .hero-img + div { box-shadow: inset 0 0 80px rgba(0,0,0,.35) !important; }
+:root[data-theme="dark"] img:not([src$=".svg"]) { filter: brightness(.94); }
+:root[data-theme="dark"] .logo-dark-only, :root[data-theme="dark"] .no-dim { filter: none !important; }
 
 @layer base {
   html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
@@ -73,7 +84,10 @@
            disabled:cursor-not-allowed disabled:opacity-60;
   }
   .btn-primary { @apply bg-primary text-on-primary hover:brightness-110 hover:shadow-lg hover:shadow-primary/20 active:scale-[.98]; }
-  .btn-accent { @apply bg-accent text-white hover:brightness-105 hover:shadow-lg hover:shadow-accent/25 active:scale-[.98]; }
+  /* Khối lớn nền màu chủ đạo: ở chế độ tối chuyển sang xanh đậm cho dịu mắt, chữ sáng */
+  .panel-primary { @apply bg-primary text-on-primary; }
+  :root[data-theme="dark"] .panel-primary { background-color: color-mix(in srgb, var(--c-primary) 26%, var(--c-bg)); color: var(--c-text); }
+  .btn-accent { @apply bg-accent text-on-accent hover:brightness-105 hover:shadow-lg hover:shadow-accent/25 active:scale-[.98]; }
   .btn-outline { @apply border border-ink/15 bg-transparent text-ink hover:border-primary hover:text-primary; }
   .btn-ghost { @apply px-3 text-ink hover:bg-ink/5; }
   .btn-light { @apply bg-white/95 text-ink backdrop-blur hover:bg-white; }

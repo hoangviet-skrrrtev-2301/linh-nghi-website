@@ -87,6 +87,30 @@ function present(row) {
   };
 }
 
+// Khách tra cứu theo mã + số điện thoại. Chỉ trả các trường công khai (không có địa chỉ, email, ghi chú nội bộ).
+// Mã sai hoặc số điện thoại sai đều trả null để không lộ mã nào tồn tại.
+export function lookupInquiry(code, phone) {
+  const c = String(code || '').trim().toUpperCase().replace(/\s+/g, '');
+  const p = normalizePhone(String(phone || ''));
+  if (!/^[A-Z]{2}\d{6}-[0-9A-F]{6}$/.test(c) || p.length < 9) return null;
+  const row = db.prepare('SELECT * FROM inquiries WHERE code = ? AND phone = ?').get(c, p);
+  if (!row) return null;
+  const inq = present(row);
+  const showPrice = getPublicSettings().features.show_prices;
+  return {
+    code: inq.code,
+    type: inq.type,
+    type_label: inq.type_label,
+    status: inq.status,
+    status_label: inq.status_label,
+    created_at: inq.created_at,
+    updated_at: inq.updated_at,
+    items: inq.items.map((i) => ({ name: i.name, size: i.size, qty: i.qty, price: showPrice ? i.price : null })),
+    total: showPrice ? inq.total : null,
+    product: inq.details?.product || '',
+  };
+}
+
 export async function createInquiry(type, input, meta = {}) {
   const features = getRaw('features');
   if (type === 'order' && !features.checkout) throw new HttpError(403, 'Chức năng đặt hàng đang tạm tắt');

@@ -1,9 +1,9 @@
 // API công khai: dữ liệu popup sản phẩm, giỏ hàng, gửi đơn / yêu cầu.
 import { Router } from 'express';
 import { getProduct, productsByIds } from '../services/catalog.js';
-import { createInquiry } from '../services/inquiries.js';
+import { createInquiry, lookupInquiry } from '../services/inquiries.js';
 import { getPublicSettings } from '../services/settings.js';
-import { publicFormGuard, formLimiter, apiLimiter } from '../middleware/security.js';
+import { publicFormGuard, formLimiter, trackLimiter, apiLimiter } from '../middleware/security.js';
 import { HttpError } from '../lib/utils.js';
 
 const router = Router();
@@ -77,5 +77,17 @@ for (const type of ['order', 'custom', 'contact']) {
     }
   });
 }
+
+// Khách tra cứu tình trạng đơn bằng mã + số điện thoại
+router.post('/track', trackLimiter, publicFormGuard, (req, res, next) => {
+  try {
+    const result = lookupInquiry(req.body?.code, req.body?.phone);
+    if (!result) throw new HttpError(404, 'Không tìm thấy yêu cầu. Vui lòng kiểm tra lại mã và số điện thoại đã dùng khi đặt.');
+    const f = getPublicSettings().forms;
+    res.json({ ok: true, inquiry: result, status_note: f[`track_msg_${result.status}`] || '' });
+  } catch (err) {
+    next(err);
+  }
+});
 
 export default router;
