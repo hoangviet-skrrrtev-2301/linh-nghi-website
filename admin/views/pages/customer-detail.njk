@@ -12,16 +12,25 @@
         <div><label class="label">Email</label><input class="input" x-model="c.email"></div>
         <div><label class="label">Địa chỉ</label><textarea class="input" rows="2" x-model="c.address"></textarea></div>
         <div><label class="label">Ni tay / số đo</label><input class="input" x-model="c.wrist_size"></div>
+        <div><label class="label">Nguồn khách</label><input class="input" list="source-list" x-model="c.source" placeholder="Zalo, Facebook, Cửa hàng...">
+          <datalist id="source-list"><option>Zalo</option><option>Facebook</option><option>Instagram</option><option>TikTok</option><option>Shopee</option><option>Cửa hàng</option><option>Giới thiệu</option></datalist></div>
         <div><label class="label">Nhãn</label><input class="input" x-model="c.tags" placeholder="VIP, khách sỉ... cách nhau bằng dấu phẩy"></div>
         <div><label class="label">Ghi chú</label><textarea class="input" rows="4" x-model="c.note"></textarea></div>
         <div class="flex gap-2"><button class="btn btn-primary" :disabled="saving">Lưu</button>
           {% if currentUser.role == 'owner' %}<button type="button" class="btn btn-ghost ml-auto text-red-600" @click="remove()">Xóa khách</button>{% endif %}</div>
       </form>
       <div class="card overflow-hidden self-start">
-        <div class="card-head"><h3 class="card-title">Lịch sử đơn & yêu cầu</h3></div>
+        <div class="card-head flex-wrap">
+          <h3 class="card-title">Lịch sử đơn & yêu cầu</h3>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" class="btn btn-primary btn-sm" :disabled="saving" @click="newInquiry('order')">{{ icon('plus', 'w-3.5 h-3.5') }} Tạo đơn hàng</button>
+            <button type="button" class="btn btn-secondary btn-sm" :disabled="saving" @click="newInquiry('custom')">{{ icon('sparkle', 'w-3.5 h-3.5') }} Ghi nhận yêu cầu custom</button>
+          </div>
+        </div>
         <table class="table">
           <thead><tr><th>Mã</th><th>Loại</th><th>Nội dung</th><th>Trạng thái</th><th>Thời gian</th></tr></thead>
           <tbody>
+            <tr x-show="!c.inquiries.length"><td colspan="5" class="py-10 text-center text-slate-500">Chưa có đơn hay yêu cầu nào. Dùng nút phía trên để tạo cho khách này.</td></tr>
             <template x-for="i in c.inquiries" :key="i.id">
               <tr class="cursor-pointer" @click="location.href = '{{ A }}/inquiries/' + i.id">
                 <td class="font-mono text-xs" x-text="i.code"></td><td x-text="i.type_label"></td>

@@ -47,6 +47,10 @@
   <div class="border-t border-white/10">
     <div class="container-x flex flex-col items-center justify-between gap-2 py-5 text-xs text-white/50 md:flex-row">
       <span>{{ s.site.copyright | year }}</span>
+      {% if s.site.bct_image %}
+      {% set bct %}<img src="{{ s.site.bct_image.md }}" alt="{{ s.site.bct_image.alt or 'Đã thông báo Bộ Công Thương' }}" class="no-dim h-12 w-auto" loading="lazy">{% endset %}
+      {% if s.site.bct_url %}<a href="{{ s.site.bct_url }}" target="_blank" rel="noopener nofollow" class="shrink-0">{{ bct | safe }}</a>{% else %}<span class="shrink-0">{{ bct | safe }}</span>{% endif %}
+      {% endif %}
       <span>{{ s.site.slogan }}</span>
     </div>
   </div>

@@ -5,11 +5,14 @@
 {% block content %}
 <div x-data="inquiryDetail({{ params.id | dump }})">
   <template x-if="d">
-    <div class="grid gap-6 lg:grid-cols-[1fr_340px]">
+    <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
       <div class="space-y-6">
         <div class="card">
           <div class="card-head">
-            <div><p class="text-xs text-slate-500" x-text="d.type_label"></p><h2 class="font-mono text-lg font-semibold" x-text="d.code"></h2></div>
+            <div>
+              <p class="text-xs text-slate-500"><span x-text="d.type_label"></span><span x-show="d.channel === 'admin'"> · Shop tạo</span></p>
+              <h2 class="font-mono text-lg font-semibold" x-text="d.code"></h2>
+            </div>
             <span class="badge text-sm" :class="Admin.STATUS_COLOR[d.status]" x-text="d.status_label"></span>
           </div>
           <dl class="card-body grid gap-x-8 gap-y-4 sm:grid-cols-2">
@@ -21,21 +24,70 @@
             <div x-show="d.address" class="sm:col-span-2"><dt class="text-xs text-slate-500">Địa chỉ</dt><dd x-text="d.address"></dd></div>
             <template x-for="r in detailRows"><div><dt class="text-xs text-slate-500" x-text="r[0]"></dt><dd class="font-medium" x-text="r[1]"></dd></div></template>
             <div x-show="d.message" class="sm:col-span-2"><dt class="text-xs text-slate-500">Lời nhắn / mô tả</dt><dd class="whitespace-pre-line rounded-lg bg-slate-50 p-3" x-text="d.message"></dd></div>
+            <div x-show="d.parent" class="sm:col-span-2"><dt class="text-xs text-slate-500">Lên đơn từ yêu cầu</dt>
+              <dd><a :href="'{{ A }}/inquiries/' + d.parent?.id" class="font-mono text-brand-600 hover:underline" x-text="d.parent?.code"></a></dd></div>
+            <div x-show="d.children.length" class="sm:col-span-2"><dt class="text-xs text-slate-500">Đơn đã lên từ yêu cầu này</dt>
+              <dd class="flex flex-wrap gap-2"><template x-for="c in d.children" :key="c.id">
+                <a :href="'{{ A }}/inquiries/' + c.id" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-2.5 py-1 hover:bg-slate-50"><span class="font-mono text-xs" x-text="c.code"></span><span class="badge" :class="Admin.STATUS_COLOR[c.status]" x-text="c.status_label"></span></a>
+              </template></dd></div>
           </dl>
         </div>
 
-        <div class="card overflow-hidden" x-show="d.items.length">
-          <div class="card-head"><h3 class="card-title">Sản phẩm đặt</h3></div>
-          <table class="table">
-            <thead><tr><th>Sản phẩm</th><th>Ni</th><th>SL</th><th class="text-right">Đơn giá</th><th class="text-right">Thành tiền</th></tr></thead>
-            <tbody>
-              <template x-for="it in d.items">
-                <tr><td><a :href="'/san-pham/' + it.slug" target="_blank" class="font-medium hover:text-brand-600" x-text="it.name"></a><p class="text-xs text-slate-500" x-text="it.sku"></p></td>
-                  <td x-text="it.size || '—'"></td><td x-text="it.qty"></td><td class="text-right" x-text="$fmt.vnd(it.price)"></td><td class="text-right font-medium" x-text="it.price != null ? $fmt.vnd(it.price * it.qty) : 'Liên hệ'"></td></tr>
-              </template>
-              <tr><td colspan="4" class="text-right font-semibold">Tạm tính</td><td class="text-right text-base font-semibold text-brand-700" x-text="d.total != null ? $fmt.vnd(d.total) : 'Liên hệ'"></td></tr>
-            </tbody>
-          </table>
+        {# ---- Sản phẩm & giá: shop chỉnh được sau khi liên hệ khách ---- #}
+        <div class="card">
+          <div class="card-head">
+            <h3 class="card-title" x-text="d.type === 'order' ? 'Sản phẩm & giá' : 'Báo giá cho khách'"></h3>
+            <span class="text-xs text-slate-500">Giá chỉnh được sau khi thỏa thuận với khách</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="table min-w-[700px]">
+              <thead><tr><th class="min-w-[220px]">Sản phẩm</th><th class="w-24">Ni</th><th class="w-20">SL</th><th class="w-40">Đơn giá (₫)</th><th class="w-32 text-right">Thành tiền</th><th class="w-10"></th></tr></thead>
+              <tbody>
+                <template x-for="(it, i) in edit.items" :key="i">
+                  <tr>
+                    <td><input class="input" x-model="it.name" placeholder="Tên sản phẩm / mô tả" @input="dirty = true">
+                      <p class="mt-1 text-xs text-slate-500" x-show="it.sku" x-text="'Mã: ' + it.sku"></p></td>
+                    <td><input class="input" x-model="it.size" @input="dirty = true"></td>
+                    <td><input type="number" min="1" class="input" x-model.number="it.qty" @input="dirty = true"></td>
+                    <td><input type="number" min="0" step="1000" class="input" x-model="it.price" placeholder="Chưa có giá" @input="dirty = true"></td>
+                    <td class="text-right font-medium" x-text="it.price === '' || it.price == null ? '—' : $fmt.vnd(it.price * it.qty)"></td>
+                    <td><button type="button" class="btn btn-ghost btn-sm text-red-600" @click="edit.items.splice(i, 1); dirty = true" aria-label="Xóa dòng">{{ icon('trash', 'w-4 h-4') }}</button></td>
+                  </tr>
+                </template>
+                <tr x-show="!edit.items.length"><td colspan="6" class="py-8 text-center text-slate-500">Chưa có sản phẩm. Thêm từ kho hoặc tự nhập dòng mới.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="space-y-4 border-t border-slate-100 p-5">
+            <div class="flex flex-wrap items-start gap-3">
+              <div class="relative w-full max-w-sm">
+                <input type="search" class="input" placeholder="Tìm sản phẩm trong kho để thêm..." x-model="pick.q" @input.debounce.300ms="searchProducts()" @focus="pick.open = true" @keydown.escape="pick.open = false">
+                <div x-cloak x-show="pick.open && pick.results.length" @click.outside="pick.open = false" class="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
+                  <template x-for="p in pick.results" :key="p.id">
+                    <button type="button" class="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-50" @click="addProduct(p)">
+                      <span class="truncate" x-text="p.name"></span><span class="shrink-0 text-xs text-slate-500" x-text="p.final_price != null ? $fmt.vnd(p.final_price) : 'Liên hệ'"></span>
+                    </button>
+                  </template>
+                </div>
+              </div>
+              <button type="button" class="btn btn-secondary" @click="addLine()">{{ icon('plus', 'w-4 h-4') }} Thêm dòng tự nhập</button>
+            </div>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div><label class="label">Giảm giá / phụ phí (₫)</label>
+                <input type="number" step="1000" class="input" x-model.number="edit.adjustment" @input="dirty = true" placeholder="VD: -500000 (giảm) hoặc 30000 (phí ship)">
+                <p class="help">Số âm là giảm giá, số dương là phụ phí hoặc phí vận chuyển.</p></div>
+              <div><label class="label">Lý do điều chỉnh</label><input class="input" x-model="edit.adjustment_note" @input="dirty = true" maxlength="300" placeholder="VD: Giảm cho khách quen, phí ship nội thành"></div>
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <p class="text-sm text-slate-600">Tạm tính <b x-text="calc.sub != null ? $fmt.vnd(calc.sub) : '—'"></b>
+                <span x-show="edit.adjustment"> · điều chỉnh <b x-text="$fmt.vnd(edit.adjustment)"></b></span></p>
+              <p class="text-lg font-semibold text-brand-700">Tổng cộng: <span x-text="calc.total != null ? $fmt.vnd(calc.total) : 'Liên hệ (còn dòng chưa có giá)'"></span></p>
+            </div>
+            <div class="flex items-center gap-3">
+              <button type="button" class="btn btn-primary" :disabled="saving || !dirty" @click="saveItems()">Lưu sản phẩm & giá</button>
+              <span class="text-xs text-amber-600" x-show="dirty">Có thay đổi chưa lưu</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -48,6 +100,10 @@
             {% endfor %}
           </div>
         </div>
+        <div class="card card-body space-y-2" x-show="d.type !== 'order'">
+          <button class="btn btn-primary w-full" :disabled="saving" @click="convert()">{{ icon('bag', 'w-4 h-4') }} Lên đơn hàng từ yêu cầu này</button>
+          <p class="help">Tạo đơn hàng mới (có mã riêng) cho khách, để chốt giá và theo dõi giống đơn đặt qua website. Khách tra cứu được bằng mã đơn mới.</p>
+        </div>
         <div class="card card-body">
           <label class="label">Ghi chú nội bộ</label>
           <textarea class="input" rows="4" x-model="d.admin_note" placeholder="Đã gọi lúc..., khách hẹn..."></textarea>
@@ -55,9 +111,13 @@
         </div>
         <div class="card card-body space-y-2 text-sm text-slate-600">
           <p>Nhận lúc: <b x-text="$fmt.date(d.created_at)"></b></p>
-          <p>Email thông báo: <b x-text="{ sent: 'Đã gửi', failed: 'Gửi lỗi', not_configured: 'Chưa cấu hình email', pending: 'Đang gửi' }[d.mail_status]"></b></p>
-          <button class="btn btn-secondary btn-sm" @click="resend()">{{ icon('mail', 'w-3.5 h-3.5') }} Gửi lại email thông báo</button>
-          <p class="break-all text-xs text-slate-400" x-text="'IP: ' + d.ip"></p>
+          <template x-if="d.mail_status !== 'none'">
+            <div class="space-y-2">
+              <p>Email thông báo: <b x-text="{ sent: 'Đã gửi', failed: 'Gửi lỗi', not_configured: 'Chưa cấu hình email', pending: 'Đang gửi' }[d.mail_status]"></b></p>
+              <button class="btn btn-secondary btn-sm" @click="resend()">{{ icon('mail', 'w-3.5 h-3.5') }} Gửi lại email thông báo</button>
+            </div>
+          </template>
+          <p class="break-all text-xs text-slate-400" x-show="d.ip" x-text="'IP: ' + d.ip"></p>
         </div>
         {% if currentUser.role == 'owner' %}<button class="btn btn-ghost w-full text-red-600" @click="remove()">{{ icon('trash', 'w-4 h-4') }} Xóa yêu cầu</button>{% endif %}
       </aside>

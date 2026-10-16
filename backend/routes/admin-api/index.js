@@ -57,6 +57,27 @@ router.get('/dashboard', h(() => ({
 })));
 
 // ---------------- Thư viện ảnh ----------------
+router.get('/media/folders', h(() => ({ items: media.listFolders() })));
+router.post('/media/folders', h((req) => {
+  const name = media.createFolder(req.body?.name);
+  audit(req, 'create', 'media_folder', name);
+  return { name, items: media.listFolders() };
+}));
+router.put('/media/folders', h((req) => {
+  const name = media.renameFolder(String(req.body?.from || ''), req.body?.to);
+  audit(req, 'update', 'media_folder', name, `từ "${req.body?.from}"`);
+  return { name, items: media.listFolders() };
+}));
+router.delete('/media/folders', h((req) => {
+  const moved = media.deleteFolder(String(req.query.name || ''));
+  audit(req, 'delete', 'media_folder', req.query.name, `${moved} ảnh chuyển về thư mục mặc định`);
+  return { moved, items: media.listFolders() };
+}));
+router.post('/media/move', h((req) => {
+  const r = media.moveMedia(req.body?.ids, req.body?.folder);
+  audit(req, 'update', 'media', r.folder, `chuyển ${r.moved} ảnh`);
+  return { ...r, items: media.listFolders() };
+}));
 router.get('/media', h((req) => media.listMedia({ folder: req.query.folder, q: req.query.q, page: toInt(req.query.page, 1) })));
 
 router.post('/media', upload.array('files', 20), h(async (req) => {
@@ -64,7 +85,7 @@ router.post('/media', upload.array('files', 20), h(async (req) => {
   const out = [];
   for (const f of req.files) {
     out.push(await media.saveImage(f.buffer, {
-      originalName: f.originalname, folder: String(req.body.folder || 'general').slice(0, 40), userId: req.user.id,
+      originalName: f.originalname, folder: req.body.folder, userId: req.user.id,
     }));
   }
   audit(req, 'upload', 'media', out.map((m) => m.id).join(','));
@@ -183,10 +204,20 @@ router.get('/inquiries/:id', h((req) => {
   if (!inq) throw new HttpError(404, 'Không tìm thấy');
   return inq;
 }));
+router.post('/inquiries', h((req) => {
+  const inq = inquiries.createAdminInquiry(req.body?.type || 'order', req.body || {}, req.user.id);
+  audit(req, 'create', 'inquiry', inq.code, `admin tạo ${inq.type}`);
+  return inq;
+}));
 router.patch('/inquiries/:id', h((req) => {
   const inq = inquiries.updateInquiry(id(req), req.body);
-  audit(req, 'update', 'inquiry', inq.code, `status=${inq.status}`);
+  audit(req, 'update', 'inquiry', inq.code, `status=${inq.status}${req.body?.items !== undefined ? ' sửa dòng hàng/giá' : ''}${req.body?.adjustment !== undefined ? ' điều chỉnh giá' : ''}`);
   return inq;
+}));
+router.post('/inquiries/:id/convert', h((req) => {
+  const order = inquiries.convertToOrder(id(req), req.user.id);
+  audit(req, 'create', 'inquiry', order.code, `lên đơn từ yêu cầu #${req.params.id}`);
+  return order;
 }));
 router.post('/inquiries/:id/resend', h(async (req) => {
   await inquiries.resendNotification(id(req));
@@ -202,9 +233,16 @@ router.delete('/inquiries/:id', requireOwner, h((req) => {
 router.get('/customers/export.csv', requireOwner, (req, res) => {
   audit(req, 'export', 'customers');
   res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="khach-hang-${new Date().toISOString().slice(0, 10)}.csv"` });
-  res.send(inquiries.customersCsv());
+  res.send(inquiries.customersCsv({ q: req.query.q, months: req.query.months, by: req.query.by, source: req.query.source }));
 });
-router.get('/customers', h((req) => inquiries.listCustomers({ q: req.query.q, page: toInt(req.query.page, 1) })));
+router.get('/customers', h((req) => inquiries.listCustomers({
+  q: req.query.q, months: req.query.months, by: req.query.by, source: req.query.source, page: toInt(req.query.page, 1),
+})));
+router.post('/customers', h((req) => {
+  const c = inquiries.createCustomer(req.body || {});
+  audit(req, 'create', 'customer', c.id, c.name);
+  return c;
+}));
 router.get('/customers/:id', h((req) => {
   const c = inquiries.getCustomer(id(req));
   if (!c) throw new HttpError(404, 'Không tìm thấy khách hàng');

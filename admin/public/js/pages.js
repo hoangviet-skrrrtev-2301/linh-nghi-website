@@ -255,20 +255,70 @@ document.addEventListener('alpine:init', () => {
 
   // ---------------- Thư viện ảnh ----------------
   Alpine.data('mediaPage', () => ({
-    ...listPage('/media'),
-    uploading: 0, selected: null,
-    async upload(files) {
+    ...listPage('/media', { folder: '' }),
+    uploading: 0, selected: null, folders: [], checked: [], moveTo: '', creating: false, newName: '', dropTarget: null,
+    async init() { await this.loadFolders(); this.load(); },
+    get totalAll() { return this.folders.reduce((n, f) => n + f.count, 0); },
+    get uploadFolder() { return this.filters.folder || 'general'; },
+    label: (name) => (name === 'general' ? 'Chung (mặc định)' : name),
+    async loadFolders() { try { this.folders = (await api('/media/folders')).items; } catch (e) { toast().error(e); } },
+    setFolder(name) { this.filters.folder = name; this.checked = []; this.selected = null; this.search(); },
+    toggleCheck(id) {
+      const i = this.checked.indexOf(id);
+      if (i >= 0) this.checked.splice(i, 1); else this.checked.push(id);
+    },
+    async createFolder() {
+      try {
+        const r = await api('/media/folders', { method: 'POST', body: { name: this.newName } });
+        this.folders = r.items; this.creating = false; this.newName = '';
+        this.setFolder(r.name);
+        toast().show(`Đã tạo thư mục “${r.name}”`);
+      } catch (e) { toast().error(e); }
+    },
+    async renameFolder() {
+      const to = window.prompt('Tên mới cho thư mục:', this.filters.folder);
+      if (!to || to.trim() === this.filters.folder) return;
+      try {
+        const r = await api('/media/folders', { method: 'PUT', body: { from: this.filters.folder, to } });
+        this.folders = r.items; this.filters.folder = r.name; this.search();
+        toast().show('Đã đổi tên thư mục');
+      } catch (e) { toast().error(e); }
+    },
+    async deleteFolder() {
+      if (!(await confirmBox({ title: `Xóa thư mục “${this.filters.folder}”?`, message: 'Ảnh trong thư mục không bị xóa, sẽ được chuyển về thư mục "Chung".', okLabel: 'Xóa thư mục' }))) return;
+      try {
+        const r = await api(`/media/folders?${qs({ name: this.filters.folder })}`, { method: 'DELETE' });
+        this.folders = r.items; this.setFolder('');
+        toast().show(r.moved ? `Đã xóa thư mục, ${r.moved} ảnh chuyển về “Chung”` : 'Đã xóa thư mục');
+      } catch (e) { toast().error(e); }
+    },
+    async move(ids, folder) {
+      const r = await api('/media/move', { method: 'POST', body: { ids, folder } });
+      this.folders = r.items;
+      toast().show(`Đã chuyển ${r.moved} ảnh vào “${this.label(r.folder)}”`);
+      return r;
+    },
+    async moveChecked() {
+      try { await this.move(this.checked, this.moveTo); this.checked = []; this.moveTo = ''; this.selected = null; this.load(); } catch (e) { toast().error(e); }
+    },
+    async moveOne(folder) {
+      try { await this.move([this.selected.id], folder); this.selected = null; this.load(); } catch (e) { toast().error(e); }
+    },
+    async upload(files, folder) {
       const list = [...files].filter((f) => f.type.startsWith('image/'));
       if (!list.length) return;
+      const target = folder || this.uploadFolder;
       this.uploading = list.length;
       try {
         for (let i = 0; i < list.length; i += 5) {
           const fd = new FormData();
+          fd.append('folder', target); // phải đứng trước file để server đọc được
           list.slice(i, i + 5).forEach((f) => fd.append('files', f));
           await api('/media', { method: 'POST', form: fd });
         }
-        toast().show(`Đã tải lên ${list.length} ảnh`);
+        toast().show(`Đã tải ${list.length} ảnh vào “${this.label(target)}”`);
         this.page = 1;
+        await this.loadFolders();
         this.load();
       } catch (e) { toast().error(e); }
       this.uploading = 0;
@@ -282,6 +332,7 @@ document.addEventListener('alpine:init', () => {
       await api(`/media/${m.id}`, { method: 'DELETE' });
       this.selected = null;
       toast().show('Đã xóa ảnh');
+      this.loadFolders();
       this.load();
     },
   }));
@@ -292,15 +343,66 @@ document.addEventListener('alpine:init', () => {
   }));
 
   Alpine.data('inquiryDetail', (id) => ({
-    d: null, saving: false,
-    async init() { try { this.d = await api(`/inquiries/${id}`); } catch (e) { toast().error(e); } },
+    d: null, saving: false, dirty: false,
+    edit: { items: [], adjustment: 0, adjustment_note: '' },
+    pick: { q: '', open: false, results: [] },
+    async init() { try { this.setData(await api(`/inquiries/${id}`)); } catch (e) { toast().error(e); } },
+    // Nạp dữ liệu từ server. Phần dòng hàng đang sửa dở không bị ghi đè khi chỉ đổi trạng thái / ghi chú.
+    setData(d, resetEdit = true) {
+      this.d = d;
+      if (resetEdit) {
+        this.edit = {
+          items: d.items.map((i) => ({ ...i, price: i.price ?? '' })),
+          adjustment: d.adjustment || 0,
+          adjustment_note: d.adjustment_note || '',
+        };
+        this.dirty = false;
+      }
+    },
+    get calc() {
+      const its = this.edit.items;
+      const priced = its.length && its.every((i) => i.price !== '' && i.price != null);
+      const sub = priced ? its.reduce((s, i) => s + Number(i.price) * (Number(i.qty) || 1), 0) : null;
+      return { sub, total: sub == null ? null : sub + (Number(this.edit.adjustment) || 0) };
+    },
+    addLine() { this.edit.items.push({ id: null, name: '', sku: '', slug: '', size: '', qty: 1, price: '' }); this.dirty = true; },
+    async searchProducts() {
+      if (!this.pick.q.trim()) { this.pick.results = []; return; }
+      try { this.pick.results = (await api(`/products?${qs({ q: this.pick.q, per_page: 8 })}`)).items; this.pick.open = true; } catch (e) { toast().error(e); }
+    },
+    addProduct(p) {
+      this.edit.items.push({ id: p.id, name: p.name, sku: p.sku || '', slug: p.slug, size: '', qty: 1, price: p.final_price ?? '' });
+      this.pick = { q: '', open: false, results: [] };
+      this.dirty = true;
+    },
+    async saveItems() {
+      this.saving = true;
+      try {
+        const body = {
+          items: this.edit.items.map((i) => ({ ...i, price: i.price === '' ? null : Number(i.price) })),
+          adjustment: Number(this.edit.adjustment) || 0,
+          adjustment_note: this.edit.adjustment_note,
+        };
+        this.setData(await api(`/inquiries/${id}`, { method: 'PATCH', body }));
+        toast().show('Đã lưu sản phẩm & giá');
+      } catch (e) { toast().error(e); }
+      this.saving = false;
+    },
+    async convert() {
+      if (!(await confirmBox({ title: 'Lên đơn hàng từ yêu cầu này?', message: 'Hệ thống tạo một đơn hàng mới cho khách này. Yêu cầu hiện tại vẫn được giữ.', okLabel: 'Lên đơn', danger: false }))) return;
+      this.saving = true;
+      try {
+        const order = await api(`/inquiries/${id}/convert`, { method: 'POST' });
+        window.location.href = `${A}/inquiries/${order.id}`;
+      } catch (e) { toast().error(e); this.saving = false; }
+    },
     async update(patch) {
       this.saving = true;
-      try { this.d = await api(`/inquiries/${id}`, { method: 'PATCH', body: patch }); toast().show('Đã cập nhật'); } catch (e) { toast().error(e); }
+      try { this.setData(await api(`/inquiries/${id}`, { method: 'PATCH', body: patch }), false); toast().show('Đã cập nhật'); } catch (e) { toast().error(e); }
       this.saving = false;
     },
     async resend() {
-      try { this.d = await api(`/inquiries/${id}/resend`, { method: 'POST' }); toast().show(this.d.mail_status === 'sent' ? 'Đã gửi lại email' : 'Gửi email chưa thành công, kiểm tra cấu hình SMTP', this.d.mail_status === 'sent' ? 'success' : 'error'); } catch (e) { toast().error(e); }
+      try { this.setData(await api(`/inquiries/${id}/resend`, { method: 'POST' }), false); toast().show(this.d.mail_status === 'sent' ? 'Đã gửi lại email' : 'Gửi email chưa thành công, kiểm tra cấu hình SMTP', this.d.mail_status === 'sent' ? 'success' : 'error'); } catch (e) { toast().error(e); }
     },
     async remove() {
       if (!(await confirmBox({ title: 'Xóa yêu cầu này?', message: 'Dữ liệu sẽ bị xóa vĩnh viễn.' }))) return;
@@ -314,7 +416,60 @@ document.addEventListener('alpine:init', () => {
   }));
 
   // ---------------- Khách hàng ----------------
-  Alpine.data('customersList', () => ({ ...listPage('/customers') }));
+  Alpine.data('customersList', () => ({
+    ...listPage('/customers', { months: '', by: 'active' }),
+    summary: { customers: 0, inquiries: 0, spent: 0 },
+    selected: [], adding: false, saving: false, errors: {}, formError: '', dupId: null,
+    form: { name: '', phone: '', email: '', address: '', wrist_size: '', note: '', tags: '', source: '' },
+    // 12 tháng gần nhất theo giờ Việt Nam, mới nhất trước
+    get monthOptions() {
+      const now = new Date(Date.now() + 7 * 36e5);
+      return Array.from({ length: 12 }, (_, i) => {
+        const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+        const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+        return { key, label: `Tháng ${d.getUTCMonth() + 1}/${d.getUTCFullYear()}` };
+      });
+    },
+    get exportUrl() { return `${A}/api/customers/export.csv?${qs({ q: this.filters.q, months: this.filters.months, by: this.filters.by })}`; },
+    async load() {
+      this.loading = true;
+      try {
+        const r = await api(`/customers?${qs({ ...this.filters, page: this.page })}`);
+        this.items = r.items; this.total = r.total; this.pages = r.pages; this.summary = r.summary;
+      } catch (e) { toast().error(e); }
+      this.loading = false;
+    },
+    applyMonths() { this.filters.months = this.selected.join(','); this.search(); },
+    toggleMonth(key) {
+      const i = this.selected.indexOf(key);
+      if (i >= 0) this.selected.splice(i, 1); else this.selected.push(key);
+      this.applyMonths();
+    },
+    // n tháng gần nhất; skipCurrent = chỉ lấy tháng trước (không gồm tháng này)
+    quick(n, skipCurrent = false) {
+      const keys = this.monthOptions.map((m) => m.key);
+      this.selected = skipCurrent ? [keys[1]] : keys.slice(0, n);
+      this.applyMonths();
+    },
+    openNew() { this.adding = true; this.errors = {}; this.formError = ''; this.dupId = null; this.$nextTick(() => this.$el.querySelector('form input')?.focus()); },
+    async create(thenOrder) {
+      this.saving = true; this.errors = {}; this.formError = ''; this.dupId = null;
+      try {
+        const c = await api('/customers', { method: 'POST', body: this.form });
+        if (thenOrder) {
+          const o = await api('/inquiries', { method: 'POST', body: { customer_id: c.id, type: 'order' } });
+          window.location.href = `${A}/inquiries/${o.id}`;
+        } else {
+          window.location.href = `${A}/customers/${c.id}`;
+        }
+      } catch (e) {
+        this.errors = e.data?.errors || {};
+        this.dupId = e.data?.errors?.existing_id || null;
+        this.formError = e.message;
+        this.saving = false;
+      }
+    },
+  }));
 
   Alpine.data('customerDetail', (id) => ({
     c: null, saving: false,
@@ -323,6 +478,14 @@ document.addEventListener('alpine:init', () => {
       this.saving = true;
       try { this.c = await api(`/customers/${id}`, { method: 'PUT', body: this.c }); toast().show('Đã lưu thông tin khách'); } catch (e) { toast().error(e); }
       this.saving = false;
+    },
+    // Tạo đơn / yêu cầu mới cho khách này rồi mở trang chi tiết để điền sản phẩm và giá
+    async newInquiry(type) {
+      this.saving = true;
+      try {
+        const o = await api('/inquiries', { method: 'POST', body: { customer_id: Number(id), type } });
+        window.location.href = `${A}/inquiries/${o.id}`;
+      } catch (e) { toast().error(e); this.saving = false; }
     },
     async remove() {
       if (!(await confirmBox({ title: 'Xóa khách hàng?', message: 'Các đơn/yêu cầu cũ vẫn được giữ nhưng không còn liên kết với khách này.' }))) return;

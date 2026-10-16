@@ -28,7 +28,7 @@
               <td class="max-w-xs"><p class="line-clamp-2 text-slate-600" x-text="i.type === 'order' ? i.items.map(x => x.qty + '× ' + x.name + (x.size ? ' (ni ' + x.size + ')' : '')).join(', ') : i.message"></p></td>
               {% if query.type == 'order' %}<td class="whitespace-nowrap" x-text="$fmt.vnd(i.total)"></td>{% endif %}
               <td><span class="badge" :class="Admin.STATUS_COLOR[i.status]" x-text="i.status_label"></span></td>
-              <td><span class="text-xs" :class="{ 'text-emerald-600': i.mail_status === 'sent', 'text-red-600': i.mail_status === 'failed', 'text-slate-400': !['sent','failed'].includes(i.mail_status) }" x-text="{ sent: 'Đã gửi', failed: 'Lỗi', not_configured: 'Chưa cấu hình', pending: 'Đang gửi' }[i.mail_status]"></span></td>
+              <td><span class="text-xs" :class="{ 'text-emerald-600': i.mail_status === 'sent', 'text-red-600': i.mail_status === 'failed', 'text-slate-400': !['sent','failed'].includes(i.mail_status) }" x-text="{ sent: 'Đã gửi', failed: 'Lỗi', not_configured: 'Chưa cấu hình', pending: 'Đang gửi', none: '—' }[i.mail_status]"></span></td>
               <td class="whitespace-nowrap text-slate-500" x-text="$fmt.date(i.created_at)"></td>
             </tr>
           </template>

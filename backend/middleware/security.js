@@ -24,7 +24,7 @@ export const securityHeaders = helmet({
       fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
       imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
       connectSrc: ["'self'", 'https://*.google-analytics.com', 'https://*.analytics.google.com', 'https://www.googletagmanager.com', 'https://www.facebook.com'],
-      frameSrc: ['https://www.google.com', 'https://maps.google.com', 'https://www.youtube.com', 'https://www.youtube-nocookie.com'],
+      frameSrc: ['https://www.google.com', 'https://maps.google.com', 'https://www.youtube.com', 'https://www.youtube-nocookie.com', 'https://www.tiktok.com'],
       formAction: ["'self'"],
       frameAncestors: ["'self'"],
       objectSrc: ["'none'"],

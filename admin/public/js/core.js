@@ -58,6 +58,17 @@
     Alpine.magic('fmt', () => fmt);
     Alpine.magic('meta', () => META);
 
+    // ---------------- Chế độ sáng / tối (data-theme đặt sớm trong <head> của layout.njk) ----------------
+    Alpine.store('theme', {
+      dark: document.documentElement.getAttribute('data-theme') === 'dark',
+      toggle() {
+        this.dark = !this.dark;
+        document.documentElement.removeAttribute('data-theme');
+        if (this.dark) document.documentElement.setAttribute('data-theme', 'dark');
+        try { localStorage.setItem('ln_admin_theme', this.dark ? 'dark' : 'light'); } catch (e) { /* chế độ riêng tư */ }
+      },
+    });
+
     // ---------------- Thông báo ----------------
     Alpine.store('toast', {
       items: [],
@@ -81,15 +92,19 @@
 
     // ---------------- Chọn ảnh từ thư viện / upload ----------------
     Alpine.store('picker', {
-      open: false, multiple: false, items: [], selected: [], q: '', page: 1, total: 0, loading: false, uploading: 0, cb: null,
+      open: false, multiple: false, items: [], selected: [], q: '', folder: '', folders: [], page: 1, total: 0, loading: false, uploading: 0, cb: null,
       show({ multiple = false, onSelect }) {
         Object.assign(this, { open: true, multiple, selected: [], cb: onSelect, q: '', page: 1 });
+        this.loadFolders();
         this.load();
+      },
+      async loadFolders() {
+        try { this.folders = (await api('/media/folders')).items; } catch (e) { /* không chặn việc chọn ảnh */ }
       },
       async load() {
         this.loading = true;
         try {
-          const r = await api(`/media?page=${this.page}&q=${encodeURIComponent(this.q)}`);
+          const r = await api(`/media?page=${this.page}&q=${encodeURIComponent(this.q)}&folder=${encodeURIComponent(this.folder)}`);
           this.items = r.items;
           this.total = r.total;
         } catch (e) { Alpine.store('toast').error(e); }
@@ -109,12 +124,14 @@
           // Upload từng nhóm 5 ảnh để tránh quá tải
           for (let i = 0; i < list.length; i += 5) {
             const fd = new FormData();
+            fd.append('folder', this.folder || 'general'); // phải đứng trước file để server đọc được
             list.slice(i, i + 5).forEach((f) => fd.append('files', f));
             const r = await api('/media', { method: 'POST', form: fd });
             this.items = [...r.items, ...this.items];
             r.items.forEach((m) => { if (this.multiple || i === 0) this.toggle(m); });
           }
           Alpine.store('toast').show(`Đã tải lên ${list.length} ảnh`);
+          this.loadFolders();
         } catch (e) { Alpine.store('toast').error(e); }
         this.uploading = 0;
       },

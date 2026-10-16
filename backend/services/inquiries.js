@@ -106,6 +106,8 @@ export function lookupInquiry(code, phone) {
     created_at: inq.created_at,
     updated_at: inq.updated_at,
     items: inq.items.map((i) => ({ name: i.name, size: i.size, qty: i.qty, price: showPrice ? i.price : null })),
+    adjustment: showPrice ? inq.adjustment : 0,
+    adjustment_note: showPrice ? inq.adjustment_note : '',
     total: showPrice ? inq.total : null,
     product: inq.details?.product || '',
   };
@@ -203,7 +205,47 @@ export function resendNotification(id) {
 }
 
 export function getInquiry(id) {
-  return present(db.prepare('SELECT * FROM inquiries WHERE id = ?').get(id));
+  const inq = present(db.prepare('SELECT * FROM inquiries WHERE id = ?').get(id));
+  if (!inq) return null;
+  // Liên kết giữa yêu cầu gốc (VD: custom) và đơn đã lên từ nó
+  inq.parent = inq.parent_id
+    ? db.prepare('SELECT id, code, type, status FROM inquiries WHERE id = ?').get(inq.parent_id) || null
+    : null;
+  inq.children = db.prepare('SELECT id, code, type, status, total FROM inquiries WHERE parent_id = ? ORDER BY id').all(inq.id)
+    .map((r) => ({ ...r, type_label: INQUIRY_TYPES[r.type], status_label: INQUIRY_STATUS[r.status] }));
+  return inq;
+}
+
+// ---------------- Dòng hàng & tổng tiền (admin chỉnh được giá sau khi liên hệ khách) ----------------
+const slugRe = /[^a-z0-9-]/g;
+
+export function cleanItems(items) {
+  if (!Array.isArray(items)) return [];
+  return items.slice(0, 50).map((i) => {
+    const name = cleanText(i?.name, 200);
+    if (!name) return null;
+    const price = i?.price === '' || i?.price == null ? null : Math.round(Number(i.price));
+    return {
+      id: toInt(i.id),
+      name,
+      sku: cleanText(i.sku, 60),
+      slug: String(i.slug || '').toLowerCase().replace(slugRe, '').slice(0, 200),
+      size: cleanText(i.size, 20),
+      qty: Math.min(999, Math.max(1, toInt(i.qty, 1) || 1)),
+      price: Number.isFinite(price) && price >= 0 ? price : null,
+    };
+  }).filter(Boolean);
+}
+
+// Tổng = tổng các dòng + điều chỉnh. Còn dòng chưa có giá hoặc chưa có dòng nào thì để trống (hiển thị "Liên hệ")
+export function computeTotal(items, adjustment = 0) {
+  if (!items.length || items.some((i) => i.price == null)) return null;
+  return items.reduce((s, i) => s + i.price * i.qty, 0) + (Number(adjustment) || 0);
+}
+
+function cleanAdjustment(v) {
+  const n = Math.round(Number(v));
+  return Number.isFinite(n) ? Math.max(-1e10, Math.min(1e10, n)) : 0;
 }
 
 export function listInquiries({ type, status, q, page = 1, perPage = 30, customerId, from, to } = {}) {
@@ -225,15 +267,63 @@ export function listInquiries({ type, status, q, page = 1, perPage = 30, custome
   return { items: rows.map(present), total, page, pages: Math.max(1, Math.ceil(total / perPage)) };
 }
 
-export function updateInquiry(id, { status, admin_note }) {
+export function updateInquiry(id, { status, admin_note, items, adjustment, adjustment_note }) {
   const cur = getInquiry(id);
   if (!cur) throw new HttpError(404, 'Không tìm thấy');
-  db.prepare(`UPDATE inquiries SET status = ?, admin_note = ?, updated_at = datetime('now') WHERE id = ?`).run(
+  // Chỉ khi admin gửi lên danh sách dòng hàng / điều chỉnh mới tính lại tổng tiền
+  const repriced = items !== undefined || adjustment !== undefined;
+  const nextItems = items !== undefined ? cleanItems(items) : cur.items;
+  const nextAdj = adjustment !== undefined ? cleanAdjustment(adjustment) : cur.adjustment;
+  db.prepare(`UPDATE inquiries SET status = ?, admin_note = ?, items = ?, adjustment = ?, adjustment_note = ?, total = ?,
+    updated_at = datetime('now') WHERE id = ?`).run(
     INQUIRY_STATUS[status] ? status : cur.status,
     admin_note !== undefined ? cleanText(admin_note, 5000) : cur.admin_note,
+    JSON.stringify(nextItems),
+    nextAdj,
+    adjustment_note !== undefined ? cleanText(adjustment_note, 300) : cur.adjustment_note,
+    repriced ? computeTotal(nextItems, nextAdj) : cur.total,
     id,
   );
   return getInquiry(id);
+}
+
+// Shop tự lên đơn / ghi nhận yêu cầu cho khách (khách nhắn qua Zalo, Facebook, đến cửa hàng...)
+export function createAdminInquiry(type, input, userId = null) {
+  if (!INQUIRY_TYPES[type]) throw new HttpError(400, 'Loại không hợp lệ');
+  const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(toInt(input.customer_id));
+  if (!customer) throw new HttpError(422, 'Vui lòng chọn khách hàng');
+  let parentId = null;
+  if (input.parent_id) {
+    parentId = db.prepare('SELECT id FROM inquiries WHERE id = ?').pluck().get(toInt(input.parent_id)) ?? null;
+  }
+  const items = cleanItems(input.items);
+  const adjustment = cleanAdjustment(input.adjustment);
+  const details = input.details && typeof input.details === 'object' ? input.details : {};
+  const id = db.prepare(`INSERT INTO inquiries (code, type, customer_id, name, phone, email, address, contact_via, items, total, details, message,
+      status, parent_id, adjustment, adjustment_note, channel, created_by, mail_status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'admin', ?, 'none')`).run(
+    inquiryCode(type), type, customer.id, customer.name, customer.phone, customer.email, customer.address, '',
+    JSON.stringify(items), computeTotal(items, adjustment), JSON.stringify(details), cleanText(input.message, 3000),
+    INQUIRY_STATUS[input.status] ? input.status : (parentId ? 'contacted' : 'new'),
+    parentId, adjustment, cleanText(input.adjustment_note, 300), userId,
+  ).lastInsertRowid;
+  return getInquiry(id);
+}
+
+// Lên đơn hàng từ một yêu cầu (thường là custom) sau khi đã liên hệ khách. Khách tra cứu cả hai bằng mã riêng.
+export function convertToOrder(id, userId = null) {
+  const src = getInquiry(id);
+  if (!src) throw new HttpError(404, 'Không tìm thấy');
+  if (src.type === 'order') throw new HttpError(400, 'Đây đã là đơn hàng');
+  if (!src.customer_id) throw new HttpError(422, 'Yêu cầu này chưa gắn với khách hàng nào');
+  const d = src.details || {};
+  const label = src.type === 'custom'
+    ? `Vòng thiết kế riêng${d.jade_type ? ` - ${d.jade_type}` : ''}${d.color ? ` ${d.color}` : ''}`
+    : (d.product || 'Sản phẩm');
+  return createAdminInquiry('order', {
+    customer_id: src.customer_id, parent_id: src.id, message: src.message, details: d,
+    items: [{ name: label, size: d.size || '', qty: 1, price: null }],
+  }, userId);
 }
 
 export function deleteInquiry(id) {
@@ -250,16 +340,68 @@ export function inquiryStats() {
 }
 
 // ---------------- Khách hàng ----------------
-export function listCustomers({ q, page = 1, perPage = 30 } = {}) {
-  const where = q ? 'WHERE c.name LIKE ? OR c.phone LIKE ? OR c.email LIKE ? OR c.tags LIKE ?' : '';
-  const params = q ? Array(4).fill(`%${q}%`) : [];
-  const total = db.prepare(`SELECT COUNT(*) FROM customers c ${where}`).pluck().get(...params);
-  const items = db.prepare(`SELECT c.*, COUNT(i.id) AS inquiry_count, MAX(i.created_at) AS last_inquiry_at,
+// Tháng tính theo giờ Việt Nam (UTC+7). months: "2026-09,2026-10" hoặc mảng.
+// by = created: khách được tạo trong các tháng đó | active: khách có phát sinh đơn/yêu cầu trong các tháng đó
+// (khi lọc "active" thì số yêu cầu và số tiền đã mua chỉ tính trong các tháng đã chọn)
+export function parseMonths(months) {
+  const list = Array.isArray(months) ? months : String(months || '').split(',');
+  return [...new Set(list.map((m) => String(m).trim()).filter((m) => /^\d{4}-(0[1-9]|1[0-2])$/.test(m)))].slice(0, 36);
+}
+
+function customerQuery({ q, months, by = 'active', source } = {}) {
+  const ms = parseMonths(months);
+  const mark = ms.map(() => '?').join(',');
+  const monthOf = (col) => `strftime('%Y-%m', ${col}, '+7 hours')`;
+  const joinParams = [];
+  const where = [];
+  const params = [];
+  let join = 'LEFT JOIN inquiries i ON i.customer_id = c.id';
+  let having = '';
+  if (ms.length && by === 'created') {
+    where.push(`${monthOf('c.created_at')} IN (${mark})`);
+    params.push(...ms);
+  } else if (ms.length) {
+    join += ` AND ${monthOf('i.created_at')} IN (${mark})`;
+    joinParams.push(...ms);
+    having = 'HAVING COUNT(i.id) > 0';
+  }
+  if (q) {
+    where.push('(c.name LIKE ? OR c.phone LIKE ? OR c.email LIKE ? OR c.tags LIKE ? OR c.source LIKE ?)');
+    params.push(...Array(5).fill(`%${q}%`));
+  }
+  if (source) { where.push('c.source LIKE ?'); params.push(`%${source}%`); }
+  const sql = `WITH f AS (
+    SELECT c.*, COUNT(i.id) AS inquiry_count, MAX(i.created_at) AS last_inquiry_at,
       COALESCE(SUM(CASE WHEN i.type = 'order' AND i.status = 'completed' THEN i.total END), 0) AS total_spent
-    FROM customers c LEFT JOIN inquiries i ON i.customer_id = c.id ${where}
-    GROUP BY c.id ORDER BY COALESCE(MAX(i.created_at), c.created_at) DESC LIMIT ? OFFSET ?`)
+    FROM customers c ${join} ${where.length ? `WHERE ${where.join(' AND ')}` : ''} GROUP BY c.id ${having})`;
+  return { sql, params: [...joinParams, ...params] };
+}
+
+export function listCustomers({ q, page = 1, perPage = 30, months, by, source } = {}) {
+  const { sql, params } = customerQuery({ q, months, by, source });
+  const summary = db.prepare(`${sql} SELECT COUNT(*) AS customers, COALESCE(SUM(inquiry_count), 0) AS inquiries,
+    COALESCE(SUM(total_spent), 0) AS spent FROM f`).get(...params);
+  const items = db.prepare(`${sql} SELECT * FROM f ORDER BY COALESCE(last_inquiry_at, created_at) DESC LIMIT ? OFFSET ?`)
     .all(...params, perPage, (Math.max(1, page) - 1) * perPage);
-  return { items, total, page, pages: Math.max(1, Math.ceil(total / perPage)) };
+  return { items, total: summary.customers, summary, page, pages: Math.max(1, Math.ceil(summary.customers / perPage)) };
+}
+
+// Admin thêm khách (khách nhắn Zalo/Facebook, đến cửa hàng...). Số điện thoại là khóa duy nhất.
+export function createCustomer(data) {
+  const name = cleanText(data.name, 120);
+  if (name.length < 2) throw new HttpError(422, 'Vui lòng nhập họ tên', { name: 'Vui lòng nhập họ tên' });
+  const rawPhone = String(data.phone || '').trim();
+  if (!phoneRe.test(rawPhone)) throw new HttpError(422, 'Số điện thoại không hợp lệ', { phone: 'Số điện thoại không hợp lệ' });
+  const phone = normalizePhone(rawPhone);
+  const dup = db.prepare('SELECT id, name FROM customers WHERE phone = ?').get(phone);
+  if (dup) throw new HttpError(409, `Số điện thoại này đã có khách “${dup.name}”`, { existing_id: dup.id });
+  const email = cleanText(data.email, 160);
+  if (email && !z.string().email().safeParse(email).success) throw new HttpError(422, 'Email không hợp lệ', { email: 'Email không hợp lệ' });
+  const id = db.prepare(`INSERT INTO customers (name, phone, email, address, wrist_size, note, tags, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(
+    name, phone, email, cleanText(data.address, 400), cleanText(data.wrist_size, 60), cleanText(data.note, 5000),
+    cleanText(data.tags, 300), cleanText(data.source, 100),
+  ).lastInsertRowid;
+  return getCustomer(id);
 }
 
 export function getCustomer(id) {
@@ -270,10 +412,10 @@ export function getCustomer(id) {
 }
 
 export function updateCustomer(id, data) {
-  const res = db.prepare(`UPDATE customers SET name = ?, email = ?, address = ?, wrist_size = ?, note = ?, tags = ?,
+  const res = db.prepare(`UPDATE customers SET name = ?, email = ?, address = ?, wrist_size = ?, note = ?, tags = ?, source = ?,
     updated_at = datetime('now') WHERE id = ?`).run(
     cleanText(data.name, 120), cleanText(data.email, 160), cleanText(data.address, 400),
-    cleanText(data.wrist_size, 60), cleanText(data.note, 5000), cleanText(data.tags, 300), toInt(id),
+    cleanText(data.wrist_size, 60), cleanText(data.note, 5000), cleanText(data.tags, 300), cleanText(data.source, 100), toInt(id),
   );
   if (!res.changes) throw new HttpError(404, 'Không tìm thấy khách hàng');
   return getCustomer(id);
@@ -283,12 +425,12 @@ export function deleteCustomer(id) {
   db.prepare('DELETE FROM customers WHERE id = ?').run(id);
 }
 
-export function customersCsv() {
-  const rows = listCustomers({ perPage: 100000 }).items;
-  const head = ['Họ tên', 'Điện thoại', 'Email', 'Địa chỉ', 'Ni tay', 'Nhãn', 'Ghi chú', 'Số yêu cầu', 'Đã mua (VND)', 'Ngày tạo'];
+export function customersCsv(filters = {}) {
+  const rows = listCustomers({ ...filters, perPage: 100000 }).items;
+  const head = ['Họ tên', 'Điện thoại', 'Email', 'Địa chỉ', 'Ni tay', 'Nhãn', 'Nguồn', 'Ghi chú', 'Số yêu cầu', 'Đã mua (VND)', 'Ngày tạo'];
   const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
   // Chặn công thức Excel độc hại (CSV injection)
   const safe = (v) => (/^[=+\-@]/.test(String(v ?? '')) ? `'${v}` : v);
-  const lines = rows.map((r) => [r.name, r.phone, r.email, r.address, r.wrist_size, r.tags, r.note, r.inquiry_count, r.total_spent, r.created_at].map((v) => esc(safe(v))).join(','));
+  const lines = rows.map((r) => [r.name, r.phone, r.email, r.address, r.wrist_size, r.tags, r.source, r.note, r.inquiry_count, r.total_spent, r.created_at].map((v) => esc(safe(v))).join(','));
   return '﻿' + [head.map(esc).join(','), ...lines].join('\r\n');
 }

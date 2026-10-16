@@ -23,7 +23,7 @@
         {% for item in nav %}
         {% set active = (item.url == '/' and currentPath == '/') or (item.url != '/' and currentPath.startsWith(item.url)) %}
         <li>
-          <a href="{{ item.url }}" class="relative px-3 py-2 text-[14px] tracking-wide transition hover:text-primary {{ 'text-primary font-medium' if active else 'text-ink/80' }}">
+          <a href="{{ item.url }}" class="relative whitespace-nowrap px-2.5 py-2 text-[14px] tracking-wide transition xl:px-3 hover:text-primary {{ 'text-primary font-medium' if active else 'text-ink/80' }}">
             {{ item.label }}
             {% if active %}<span class="absolute inset-x-3 -bottom-0.5 h-px bg-accent"></span>{% endif %}
           </a>
@@ -46,7 +46,7 @@
           class="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1 text-[10px] font-semibold text-white"></span>
       </a>
       {% endif %}
-      <a href="tel:{{ s.site.phone | phoneHref }}" class="btn btn-primary btn-sm ml-2 hidden md:inline-flex">{{ icon('phone', 'w-4 h-4') }} {{ s.site.phone }}</a>
+      <a href="tel:{{ s.site.phone | phoneHref }}" class="btn btn-primary btn-sm ml-2 hidden xl:inline-flex">{{ icon('phone', 'w-4 h-4') }} {{ s.site.phone }}</a>
     </div>
   </div>
 

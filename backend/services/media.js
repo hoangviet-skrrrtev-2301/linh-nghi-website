@@ -6,13 +6,22 @@ import sharp from 'sharp';
 import { db } from '../lib/db.js';
 import { config } from '../config/index.js';
 import { HttpError, safeJson } from '../lib/utils.js';
+import { cleanText } from '../lib/sanitize.js';
 
 const SIZES = { sm: 480, md: 960, lg: 1800 };
 const MAX_PIXELS = 50_000_000;
 
 sharp.cache(false);
 
-export async function saveImage(buffer, { originalName = '', folder = 'general', alt = '', userId = null } = {}) {
+export const DEFAULT_FOLDER = 'general';
+
+// Tên thư mục: gọn, không có ký tự đường dẫn. Rỗng = thư mục mặc định.
+export function normalizeFolder(name) {
+  const n = cleanText(name, 80).replace(/[\\/<>"]/g, '').replace(/\s+/g, ' ').trim().slice(0, 40);
+  return n || DEFAULT_FOLDER;
+}
+
+export async function saveImage(buffer, { originalName = '', folder = DEFAULT_FOLDER, alt = '', userId = null } = {}) {
   let meta;
   try {
     meta = await sharp(buffer, { limitInputPixels: MAX_PIXELS }).metadata();
@@ -47,7 +56,7 @@ export async function saveImage(buffer, { originalName = '', folder = 'general',
   const size = fs.statSync(path.join(config.paths.uploads, variants.lg)).size;
   const info = db.prepare(`INSERT INTO media (original_name, alt, width, height, size_bytes, variants, folder, created_by)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(
-    String(originalName).slice(0, 200), String(alt).slice(0, 300), width, height, size, JSON.stringify(variants), folder, userId,
+    String(originalName).slice(0, 200), String(alt).slice(0, 300), width, height, size, JSON.stringify(variants), normalizeFolder(folder), userId,
   );
   return getMedia(info.lastInsertRowid);
 }
@@ -94,6 +103,56 @@ export function listMedia({ folder, page = 1, perPage = 40, q } = {}) {
   const rows = db.prepare(`SELECT * FROM media ${sqlWhere} ORDER BY id DESC LIMIT ? OFFSET ?`)
     .all(...params, perPage, (page - 1) * perPage);
   return { items: rows.map(present), total, page, perPage };
+}
+
+// ---------------- Thư mục ----------------
+// Danh sách thư mục kèm số ảnh: gồm thư mục có ảnh và thư mục trống đã tạo
+export function listFolders() {
+  const counts = db.prepare('SELECT folder AS name, COUNT(*) AS count FROM media GROUP BY folder').all();
+  const map = new Map(counts.map((r) => [r.name.toLowerCase(), r]));
+  for (const r of db.prepare('SELECT name FROM media_folders').all()) {
+    if (!map.has(r.name.toLowerCase())) map.set(r.name.toLowerCase(), { name: r.name, count: 0 });
+  }
+  if (!map.has(DEFAULT_FOLDER)) map.set(DEFAULT_FOLDER, { name: DEFAULT_FOLDER, count: 0 });
+  const list = [...map.values()].sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+  // Thư mục mặc định luôn đứng đầu
+  return [...list.filter((f) => f.name === DEFAULT_FOLDER), ...list.filter((f) => f.name !== DEFAULT_FOLDER)];
+}
+
+export function createFolder(name) {
+  if (!cleanText(name, 80)) throw new HttpError(422, 'Vui lòng nhập tên thư mục');
+  const clean = normalizeFolder(name);
+  if (listFolders().some((f) => f.name.toLowerCase() === clean.toLowerCase())) throw new HttpError(409, `Thư mục “${clean}” đã có`);
+  db.prepare('INSERT INTO media_folders (name) VALUES (?)').run(clean);
+  return clean;
+}
+
+// Đổi tên (hoặc gộp vào thư mục đã có): chuyển toàn bộ ảnh sang tên mới
+export function renameFolder(from, to) {
+  if (from === DEFAULT_FOLDER) throw new HttpError(400, 'Không đổi tên được thư mục mặc định');
+  if (!cleanText(to, 80)) throw new HttpError(422, 'Vui lòng nhập tên thư mục');
+  const next = normalizeFolder(to);
+  db.prepare('UPDATE media SET folder = ? WHERE folder = ?').run(next, from);
+  db.prepare('DELETE FROM media_folders WHERE name = ?').run(from);
+  db.prepare('INSERT OR IGNORE INTO media_folders (name) VALUES (?)').run(next);
+  return next;
+}
+
+// Xóa thư mục: ảnh bên trong được chuyển về thư mục mặc định (không xóa ảnh)
+export function deleteFolder(name) {
+  if (name === DEFAULT_FOLDER) throw new HttpError(400, 'Không xóa được thư mục mặc định');
+  const moved = db.prepare('UPDATE media SET folder = ? WHERE folder = ?').run(DEFAULT_FOLDER, name).changes;
+  db.prepare('DELETE FROM media_folders WHERE name = ?').run(name);
+  return moved;
+}
+
+export function moveMedia(ids, folder) {
+  const list = [...new Set((Array.isArray(ids) ? ids : []).map(Number).filter((n) => Number.isInteger(n) && n > 0))].slice(0, 500);
+  if (!list.length) throw new HttpError(422, 'Chưa chọn ảnh');
+  const target = normalizeFolder(folder);
+  db.prepare(`UPDATE media SET folder = ? WHERE id IN (${list.map(() => '?').join(',')})`).run(target, ...list);
+  db.prepare('INSERT OR IGNORE INTO media_folders (name) VALUES (?)').run(target);
+  return { moved: list.length, folder: target };
 }
 
 export function updateMediaAlt(id, alt) {

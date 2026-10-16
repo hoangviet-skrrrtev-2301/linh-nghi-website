@@ -5,6 +5,7 @@
 {% block content %}
 <section class="container-x py-10 md:py-14" x-data="inquiryForm('order')">
   <h1 class="text-4xl font-medium md:text-5xl" x-show="!success">{{ s.forms.order_title }}</h1>
+  <p class="mt-2 text-sm text-muted" x-show="!success">Đã đặt hàng trước đó? <a href="/tra-cuu-don" class="text-primary underline underline-offset-4">{{ s.forms.track_title }}</a></p>
 
   {{ successBox(s) }}
 

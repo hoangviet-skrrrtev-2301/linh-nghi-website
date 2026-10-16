@@ -58,10 +58,15 @@ router.use((req, res, next) => {
   next();
 });
 
-// Link YouTube (watch, youtu.be, shorts) -> link nhúng không cookie. Link khác bị bỏ qua.
-function youtubeEmbed(url) {
-  const m = String(url || '').match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/);
-  return m ? `https://www.youtube-nocookie.com/embed/${m[1]}` : '';
+// Link video -> link nhúng. Hỗ trợ YouTube (watch, youtu.be, shorts; nhúng không cookie) và TikTok
+// (dạng đầy đủ tiktok.com/@tên/video/số; link rút gọn vm.tiktok.com không đổi được ra mã video). Link khác bị bỏ qua.
+function videoEmbed(url) {
+  const u = String(url || '');
+  const yt = u.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/);
+  if (yt) return { src: `https://www.youtube-nocookie.com/embed/${yt[1]}`, vertical: false };
+  const tt = u.match(/tiktok\.com\/(?:@[\w.-]+\/video|embed(?:\/v2)?)\/(\d{8,25})/);
+  if (tt) return { src: `https://www.tiktok.com/embed/v2/${tt[1]}`, vertical: true };
+  return null;
 }
 
 const requireFeature =(key) => (req, res, next) => (getRaw('features')[key] ? next() : next(new HttpError(404, 'Trang không tồn tại')));
@@ -130,7 +135,7 @@ router.get('/gallery', requireFeature('gallery'), (req, res) => {
 router.get('/huong-dan-size', requireFeature('size_guide'), (req, res) => {
   const g = res.locals.s.size_guide;
   res.locals.seo = buildSeo(req, { page: 'size_guide', title: g.title, description: g.intro, image: g.image?.lg });
-  res.view('pages/size-guide.njk', { videoEmbed: youtubeEmbed(g.video_url) });
+  res.view('pages/size-guide.njk', { video: videoEmbed(g.video_url) });
 });
 
 // ---------------- Blog ----------------

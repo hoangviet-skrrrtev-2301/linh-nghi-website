@@ -4,21 +4,74 @@
 {% block heading %}Khách hàng{% endblock %}
 {% block content %}
 <div x-data="customersList">
-  <div class="mb-5 flex flex-wrap items-center gap-3">
+  <div class="mb-4 flex flex-wrap items-center gap-3">
     <div class="relative w-full max-w-xs"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{{ icon('search', 'w-4 h-4') }}</span>
-      <input type="search" class="input pl-9" placeholder="Tên, SĐT, email, nhãn..." x-model="filters.q" @input.debounce.400ms="search()"></div>
-    <p class="text-xs text-slate-500">Khách hàng tự động được tạo khi gửi đơn/yêu cầu (gộp theo số điện thoại).</p>
-    {% if currentUser.role == 'owner' %}<a href="{{ A }}/api/customers/export.csv" class="btn btn-secondary ml-auto">{{ icon('download', 'w-4 h-4') }} Xuất Excel (CSV)</a>{% endif %}
+      <input type="search" class="input pl-9" placeholder="Tên, SĐT, email, nhãn, nguồn..." x-model="filters.q" @input.debounce.400ms="search()"></div>
+    <div class="ml-auto flex flex-wrap gap-2">
+      <button type="button" class="btn btn-primary" @click="openNew()">{{ icon('plus', 'w-4 h-4') }} Thêm khách</button>
+      {% if currentUser.role == 'owner' %}<a :href="exportUrl" class="btn btn-secondary">{{ icon('download', 'w-4 h-4') }} Xuất Excel (CSV)</a>{% endif %}
+    </div>
   </div>
+
+  {# ---- Lọc theo tháng ---- #}
+  <div class="card card-body mb-4 space-y-3">
+    <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+      <p class="text-sm font-medium text-slate-700">Lọc theo tháng</p>
+      <div class="inline-flex rounded-lg border border-slate-300 p-0.5 text-xs">
+        <button type="button" class="rounded-md px-2.5 py-1" :class="filters.by === 'active' ? 'bg-brand-600 text-white' : 'text-slate-600'" @click="filters.by = 'active'; search()">Có phát sinh đơn/yêu cầu</button>
+        <button type="button" class="rounded-md px-2.5 py-1" :class="filters.by === 'created' ? 'bg-brand-600 text-white' : 'text-slate-600'" @click="filters.by = 'created'; search()">Khách mới tạo</button>
+      </div>
+      <div class="ml-auto flex flex-wrap gap-1.5 text-xs">
+        <button type="button" class="btn btn-secondary btn-sm" @click="quick(1)">Tháng này</button>
+        <button type="button" class="btn btn-secondary btn-sm" @click="quick(2, true)">Tháng trước</button>
+        <button type="button" class="btn btn-secondary btn-sm" @click="quick(3)">3 tháng gần nhất</button>
+        <button type="button" class="btn btn-secondary btn-sm" @click="quick(6)">6 tháng gần nhất</button>
+        <button type="button" class="btn btn-ghost btn-sm" x-show="selected.length" @click="selected = []; applyMonths()">Bỏ lọc</button>
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-1.5">
+      <template x-for="m in monthOptions" :key="m.key">
+        <button type="button" class="rounded-full border px-3 py-1 text-xs transition" :class="selected.includes(m.key) ? 'border-brand-600 bg-brand-600 text-white' : 'border-slate-300 text-slate-600 hover:border-slate-400'" @click="toggleMonth(m.key)" x-text="m.label"></button>
+      </template>
+    </div>
+    <p class="text-xs text-slate-500" x-show="selected.length" x-cloak>
+      <b x-text="summary.customers"></b> khách · <b x-text="summary.inquiries"></b> đơn/yêu cầu<span x-show="filters.by === 'active'"> trong các tháng đã chọn</span> · đã mua (đơn hoàn thành) <b x-text="$fmt.vnd(summary.spent)"></b>
+    </p>
+  </div>
+
+  {# ---- Form thêm khách ---- #}
+  <form x-cloak x-show="adding" x-transition @submit.prevent="create(false)" class="card card-body mb-4 space-y-4">
+    <div class="flex items-center justify-between"><h3 class="card-title">Thêm khách hàng</h3><button type="button" class="btn btn-ghost btn-sm" @click="adding = false">{{ icon('close', 'w-4 h-4') }}</button></div>
+    <p class="help !mt-0">Dùng cho khách liên hệ qua Zalo, Facebook, đến cửa hàng... Số điện thoại là mã định danh: trùng số sẽ không tạo mới.</p>
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div><label class="label">Họ tên *</label><input class="input" x-model="form.name" required :class="errors.name && 'border-red-400'"><p class="text-xs text-red-600" x-text="errors.name"></p></div>
+      <div><label class="label">Số điện thoại *</label><input class="input" type="tel" x-model="form.phone" required :class="errors.phone && 'border-red-400'"><p class="text-xs text-red-600" x-text="errors.phone"></p></div>
+      <div><label class="label">Email</label><input class="input" type="email" x-model="form.email" :class="errors.email && 'border-red-400'"><p class="text-xs text-red-600" x-text="errors.email"></p></div>
+      <div><label class="label">Nguồn khách</label><input class="input" list="source-list" x-model="form.source" placeholder="Zalo, Facebook, Cửa hàng...">
+        <datalist id="source-list"><option>Zalo</option><option>Facebook</option><option>Instagram</option><option>TikTok</option><option>Shopee</option><option>Cửa hàng</option><option>Giới thiệu</option></datalist></div>
+      <div><label class="label">Ni tay / số đo</label><input class="input" x-model="form.wrist_size"></div>
+      <div><label class="label">Nhãn</label><input class="input" x-model="form.tags" placeholder="VIP, khách sỉ... cách nhau bằng dấu phẩy"></div>
+      <div class="sm:col-span-2 lg:col-span-3"><label class="label">Địa chỉ</label><input class="input" x-model="form.address"></div>
+      <div class="sm:col-span-2 lg:col-span-3"><label class="label">Ghi chú</label><textarea class="input" rows="2" x-model="form.note" placeholder="Sở thích, mệnh, dịp tặng, lần liên hệ đầu..."></textarea></div>
+    </div>
+    <p class="text-sm text-red-600" x-show="formError" x-text="formError"></p>
+    <div class="flex flex-wrap gap-2">
+      <button class="btn btn-primary" :disabled="saving">Lưu khách</button>
+      <button type="button" class="btn btn-secondary" :disabled="saving" @click="create(true)">Lưu & tạo đơn hàng</button>
+      <a x-show="dupId" :href="'{{ A }}/customers/' + dupId" class="btn btn-ghost text-brand-600">Mở khách đã có</a>
+    </div>
+  </form>
+
   <div class="card overflow-hidden">
     <div class="overflow-x-auto">
       <table class="table">
-        <thead><tr><th>Khách hàng</th><th>Liên hệ</th><th>Ni tay</th><th>Nhãn</th><th>Số yêu cầu</th><th>Đã mua</th><th>Gần nhất</th></tr></thead>
+        <thead><tr><th>Khách hàng</th><th>Liên hệ</th><th>Nguồn</th><th>Ni tay</th><th>Nhãn</th><th>Số yêu cầu</th><th>Đã mua</th><th>Gần nhất</th></tr></thead>
         <tbody>
           <template x-for="c in items" :key="c.id">
             <tr class="cursor-pointer" @click="location.href = '{{ A }}/customers/' + c.id">
               <td class="font-medium" x-text="c.name"></td>
               <td><p x-text="c.phone"></p><p class="text-xs text-slate-500" x-text="c.email"></p></td>
+              <td x-text="c.source || '—'"></td>
               <td x-text="c.wrist_size || '—'"></td>
               <td><template x-for="t in c.tags.split(',').map(s => s.trim()).filter(Boolean)"><span class="badge mr-1 bg-slate-100 text-slate-600" x-text="t"></span></template></td>
               <td x-text="c.inquiry_count"></td>
@@ -26,11 +79,12 @@
               <td class="text-slate-500" x-text="$fmt.date(c.last_inquiry_at || c.created_at, false)"></td>
             </tr>
           </template>
-          <tr x-show="!loading && !items.length"><td colspan="7" class="py-14 text-center text-slate-500">Chưa có khách hàng.</td></tr>
+          <tr x-show="!loading && !items.length"><td colspan="8" class="py-14 text-center text-slate-500">Không có khách hàng phù hợp.</td></tr>
         </tbody>
       </table>
     </div>
     {% include "partials/pager.njk" %}
   </div>
+  <p class="mt-3 text-xs text-slate-500">Khách cũng được tự tạo khi gửi đơn/yêu cầu qua website (gộp theo số điện thoại).</p>
 </div>
 {% endblock %}

@@ -3,7 +3,7 @@
 <div x-data class="fixed bottom-4 right-4 z-[100] flex w-80 flex-col gap-2" aria-live="polite">
   <template x-for="t in $store.toast.items" :key="t.id">
     <div x-transition class="flex items-start gap-3 rounded-xl px-4 py-3 text-sm shadow-lg"
-      :class="t.type === 'error' ? 'bg-red-600 text-white' : 'bg-slate-900 text-white'">
+      :class="t.type === 'error' ? 'toast-err bg-red-600 text-white' : 'toast-ok bg-slate-900 text-white'">
       <span x-text="t.message" class="flex-1"></span>
     </div>
   </template>
@@ -40,7 +40,11 @@
       </label>
       <span class="text-xs text-slate-500" x-show="!$store.picker.uploading">hoặc kéo thả ảnh vào đây · JPG, PNG, WebP, AVIF · ảnh tự động nén</span>
       <span class="text-xs text-brand-600" x-show="$store.picker.uploading" x-text="'Đang tải ' + $store.picker.uploading + ' ảnh...'"></span>
-      <input type="search" placeholder="Tìm theo tên ảnh..." class="input ml-auto !w-56" x-model.debounce.400ms="$store.picker.q" @input.debounce.400ms="$store.picker.page = 1; $store.picker.load()">
+      <select class="input ml-auto !w-auto" x-model="$store.picker.folder" @change="$store.picker.page = 1; $store.picker.load()" title="Duyệt theo thư mục. Ảnh tải lên sẽ vào thư mục đang chọn (mặc định: Chung)">
+        <option value="">Tất cả thư mục</option>
+        <template x-for="f in $store.picker.folders" :key="f.name"><option :value="f.name" x-text="(f.name === 'general' ? 'Chung (mặc định)' : f.name) + ' (' + f.count + ')'"></option></template>
+      </select>
+      <input type="search" placeholder="Tìm theo tên ảnh..." class="input !w-56" x-model.debounce.400ms="$store.picker.q" @input.debounce.400ms="$store.picker.page = 1; $store.picker.load()">
     </div>
     <div class="flex-1 overflow-y-auto p-5">
       <div class="grid grid-cols-3 gap-3 sm:grid-cols-5 lg:grid-cols-7">

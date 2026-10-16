@@ -4,6 +4,18 @@ Ghi lại các thay đổi đáng chú ý, mới nhất ở trên cùng.
 
 ## Chưa phát hành
 
+- Thư viện ảnh theo thư mục: tạo / đổi tên / xóa thư mục (xóa thì ảnh về "Chung"), tải ảnh vào thư mục đang chọn hoặc kéo thả vào thư mục, duyệt theo thư mục, chọn nhiều ảnh để chuyển thư mục, đổi thư mục từng ảnh. Hộp chọn ảnh (khi gắn ảnh cho sản phẩm, blog...) cũng duyệt và tải lên theo thư mục
+- Chân trang: ô ảnh "Đã thông báo Bộ Công Thương" kèm link (Admin › Thông tin shop)
+- Trang Chọn size: video hướng dẫn nhận link TikTok (dạng đầy đủ /@tên/video/số) hoặc YouTube; TikTok hiển thị khung dọc
+- Sửa: thông báo (toast) admin ở chế độ tối; menu website không xuống dòng ở màn hình ~1100px (nút số điện thoại chỉ hiện từ màn hình rộng)
+- Database: migration `004_media_folders.sql`
+- Admin: thêm khách hàng thủ công (khách liên hệ qua Zalo, Facebook, cửa hàng...) với trường "Nguồn khách"; tạo đơn hàng hoặc ghi nhận yêu cầu custom ngay từ trang khách
+- Admin: sửa dòng hàng, đơn giá, số lượng, thêm sản phẩm từ kho hoặc dòng tự nhập, giảm giá / phụ phí kèm lý do; tổng tiền tự tính lại. Khách thấy khoản điều chỉnh ở trang tra cứu
+- Admin: nút "Lên đơn hàng từ yêu cầu này" (custom, liên hệ) tạo đơn mới có mã riêng, liên kết hai chiều với yêu cầu gốc
+- Admin › Khách hàng: lọc theo một hoặc nhiều tháng (theo giờ Việt Nam), hai chế độ "có phát sinh đơn/yêu cầu" và "khách mới tạo", nút nhanh (tháng này, tháng trước, 3/6 tháng), tổng kết số khách / đơn / tiền đã mua; xuất CSV theo bộ lọc
+- Admin: chế độ tối (nút ở thanh trên, nhớ lựa chọn, mặc định theo thiết bị)
+- Trang giỏ hàng có link "Tra cứu đơn hàng"
+- Database: migration `003_customers_orders_admin.sql` (customers.source; inquiries.parent_id, adjustment, adjustment_note, channel, created_by)
 - Khách tra cứu tình trạng đơn tại `/tra-cuu-don` bằng mã đơn + số điện thoại (đơn hàng, custom, liên hệ): thanh tiến trình, sản phẩm, tổng tiền, lời nhắn theo trạng thái (sửa ở Admin › Biểu mẫu & đặt hàng). Giới hạn 12 lần / 10 phút, không lộ địa chỉ, email, ghi chú nội bộ. Link tra cứu có ở hộp "Gửi thành công", email xác nhận và chân trang
 - Giao diện khách có chế độ tối (dark mode): nút mặt trăng/mặt trời ở header, nhớ lựa chọn của khách (localStorage `ln_theme`), mặc định theo thiết bị; không bị nháy sáng khi tải trang. Bảng màu tối và tùy chọn bật/tắt nằm ở Admin › Giao diện (nhóm `theme`, các trường `dark_*`). Logo tự đổi sang bản trắng. Khối nền chủ đạo lớn dùng lớp `.panel-primary`
 - Admin › Sản phẩm: thêm nhanh loại ngọc / màu sắc / kiểu dáng / mệnh mới ngay trong form (lưu vào Danh mục, tự có trong bộ lọc)

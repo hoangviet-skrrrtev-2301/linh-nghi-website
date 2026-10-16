@@ -6,24 +6,67 @@
 <div x-data="mediaPage" @dragover.prevent @drop.prevent="upload($event.dataTransfer.files)">
   <div class="mb-5 flex flex-wrap items-center gap-3">
     <input type="search" class="input max-w-xs" placeholder="Tìm theo tên / mô tả ảnh..." x-model="filters.q" @input.debounce.400ms="search()">
-    <span class="text-xs text-slate-500" x-show="!uploading">Kéo thả ảnh vào trang này để tải lên. Ảnh được tự động xoay đúng chiều, xóa thông tin vị trí (EXIF) và nén WebP.</span>
+    <span class="text-xs text-slate-500" x-show="!uploading">Kéo thả ảnh vào trang để tải lên thư mục <b x-text="label(uploadFolder)"></b>. Ảnh tự xoay đúng chiều, xóa thông tin vị trí (EXIF) và nén WebP.</span>
     <span class="text-xs text-brand-600" x-show="uploading" x-text="'Đang tải ' + uploading + ' ảnh...'"></span>
     <label class="btn btn-primary ml-auto cursor-pointer">{{ icon('upload', 'w-4 h-4') }} Tải ảnh lên<input type="file" accept="image/*" multiple class="hidden" @change="upload($event.target.files); $event.target.value = ''"></label>
   </div>
 
-  <div class="grid gap-6 lg:grid-cols-[1fr_300px]">
+  <div class="grid gap-6 lg:grid-cols-[210px_minmax(0,1fr)_300px]">
+    {# ---- Thư mục ---- #}
+    <aside class="card h-fit p-2 lg:sticky lg:top-24">
+      <p class="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Thư mục</p>
+      <button type="button" class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm" :class="filters.folder === '' ? 'bg-brand-50 font-medium text-brand-700' : 'hover:bg-slate-50'" @click="setFolder('')">
+        <span>Tất cả ảnh</span><span class="text-xs text-slate-400" x-text="totalAll"></span></button>
+      <template x-for="f in folders" :key="f.name">
+        <button type="button" class="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm" :class="[filters.folder === f.name ? 'bg-brand-50 font-medium text-brand-700' : 'hover:bg-slate-50', dropTarget === f.name && 'ring-2 ring-brand-500']" @click="setFolder(f.name)"
+          @dragover.prevent="dropTarget = f.name" @dragleave="dropTarget = null" @drop.prevent.stop="dropTarget = null; upload($event.dataTransfer.files, f.name)">
+          <span class="flex min-w-0 items-center gap-2">{{ icon('folder', 'w-4 h-4 shrink-0') }}<span class="truncate" x-text="label(f.name)"></span></span>
+          <span class="text-xs text-slate-400" x-text="f.count"></span>
+        </button>
+      </template>
+
+      <div class="mt-2 border-t border-slate-100 p-2">
+        <form x-show="creating" x-cloak @submit.prevent="createFolder()" class="flex gap-1.5">
+          <input class="input !py-1.5" placeholder="Tên thư mục" x-model="newName" x-ref="newFolder" maxlength="40" @keydown.escape="creating = false">
+          <button class="btn btn-primary btn-sm">Tạo</button>
+        </form>
+        <button type="button" class="btn btn-secondary btn-sm w-full" x-show="!creating" @click="creating = true; $nextTick(() => $refs.newFolder.focus())">{{ icon('plus', 'w-3.5 h-3.5') }} Thư mục mới</button>
+        <div class="mt-2 flex gap-1.5" x-show="filters.folder && filters.folder !== 'general'" x-cloak>
+          <button type="button" class="btn btn-ghost btn-sm flex-1" @click="renameFolder()">Đổi tên</button>
+          <button type="button" class="btn btn-ghost btn-sm flex-1 text-red-600" @click="deleteFolder()">Xóa</button>
+        </div>
+      </div>
+    </aside>
+
+    {# ---- Lưới ảnh ---- #}
     <div class="card overflow-hidden">
-      <div class="grid grid-cols-3 gap-3 p-4 sm:grid-cols-4 xl:grid-cols-6">
+      <div x-show="checked.length" x-cloak class="flex flex-wrap items-center gap-2 border-b border-slate-100 bg-brand-50 px-4 py-2.5 text-sm">
+        <b x-text="'Đã chọn ' + checked.length + ' ảnh'"></b>
+        <select class="input !w-auto !py-1.5" x-model="moveTo">
+          <option value="">Chuyển vào thư mục...</option>
+          <template x-for="f in folders" :key="f.name"><option :value="f.name" x-text="label(f.name)"></option></template>
+        </select>
+        <button type="button" class="btn btn-primary btn-sm" :disabled="!moveTo" @click="moveChecked()">Chuyển</button>
+        <button type="button" class="btn btn-ghost btn-sm ml-auto" @click="checked = []">Bỏ chọn</button>
+      </div>
+      <div class="grid grid-cols-3 gap-3 p-4 sm:grid-cols-4 xl:grid-cols-5">
         <template x-for="m in items" :key="m.id">
-          <button type="button" @click="selected = m" class="aspect-square overflow-hidden rounded-lg border-2 bg-slate-100" :class="selected?.id === m.id ? 'border-brand-600' : 'border-transparent hover:border-slate-300'">
-            <img :src="m.sm" :alt="m.alt" class="h-full w-full object-cover" loading="lazy">
-          </button>
+          <div class="group relative aspect-square">
+            <button type="button" @click="selected = m" class="h-full w-full overflow-hidden rounded-lg border-2 bg-slate-100" :class="selected?.id === m.id ? 'border-brand-600' : 'border-transparent hover:border-slate-300'">
+              <img :src="m.sm" :alt="m.alt" class="h-full w-full object-cover" loading="lazy">
+            </button>
+            <label class="absolute left-1.5 top-1.5 flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-white/90 shadow" :class="checked.includes(m.id) ? '' : 'opacity-0 group-hover:opacity-100'" @click.stop>
+              <input type="checkbox" class="h-4 w-4 accent-[#256a52]" :checked="checked.includes(m.id)" @change="toggleCheck(m.id)">
+            </label>
+            <span x-show="!filters.folder" class="pointer-events-none absolute bottom-1.5 left-1.5 max-w-[85%] truncate rounded bg-black/55 px-1.5 py-0.5 text-[10px] text-white" x-text="label(m.folder)"></span>
+          </div>
         </template>
       </div>
-      <p x-show="!loading && !items.length" class="py-16 text-center text-slate-500">Chưa có ảnh nào.</p>
+      <p x-show="!loading && !items.length" class="py-16 text-center text-slate-500">Thư mục này chưa có ảnh. Kéo thả hoặc bấm “Tải ảnh lên”.</p>
       {% include "partials/pager.njk" %}
     </div>
 
+    {# ---- Chi tiết ảnh ---- #}
     <aside class="card h-fit lg:sticky lg:top-24">
       <template x-if="selected">
         <div>
@@ -31,6 +74,10 @@
           <div class="card-body space-y-3 text-sm">
             <p class="break-all font-medium" x-text="selected.original_name || ('Ảnh #' + selected.id)"></p>
             <p class="text-xs text-slate-500" x-text="selected.width + '×' + selected.height + 'px · ' + $fmt.bytes(selected.size_bytes) + ' · ' + $fmt.date(selected.created_at)"></p>
+            <div><label class="label">Thư mục</label>
+              <select class="input" :value="selected.folder" @change="moveOne($event.target.value)">
+                <template x-for="f in folders" :key="f.name"><option :value="f.name" :selected="f.name === selected.folder" x-text="label(f.name)"></option></template>
+              </select></div>
             <div><label class="label">Mô tả ảnh (alt, tốt cho SEO)</label><textarea class="input" rows="2" x-model="selected.alt"></textarea>
               <button class="btn btn-secondary btn-sm mt-2" @click="saveAlt()">Lưu mô tả</button></div>
             <div class="flex flex-wrap gap-2 border-t border-slate-100 pt-3">

@@ -26,11 +26,11 @@
       {% endfor %}
     </div>
 
-    {% if videoEmbed %}
-    <div class="reveal mx-auto mt-14 max-w-4xl">
+    {% if video %}
+    <div class="reveal mx-auto mt-14 {{ 'max-w-[340px]' if video.vertical else 'max-w-4xl' }}">
       <h2 class="mb-5 text-center text-2xl font-medium md:text-3xl">{{ g.video_title }}</h2>
-      <div class="aspect-video overflow-hidden rounded-lg border border-line bg-ink/5 shadow-lg">
-        <iframe src="{{ videoEmbed }}" title="{{ g.video_title }}" class="h-full w-full" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      <div class="{{ 'h-[740px]' if video.vertical else 'aspect-video' }} overflow-hidden rounded-lg border border-line bg-ink/5 shadow-lg">
+        <iframe src="{{ video.src }}" title="{{ g.video_title }}" class="h-full w-full" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
       </div>
     </div>
     {% endif %}
