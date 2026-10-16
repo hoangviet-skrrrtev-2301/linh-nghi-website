@@ -30,7 +30,7 @@ export function buildSeo(req, { page, title, description, image, type = 'website
     email: s.site.email,
     address: s.site.address,
     slogan: s.site.slogan,
-    sameAs: [s.site.facebook, s.site.instagram, s.site.tiktok, s.site.youtube, s.site.shopee].filter(Boolean),
+    sameAs: [s.site.facebook, s.site.instagram, s.site.threads, s.site.tiktok, s.site.youtube, s.site.shopee].filter(Boolean),
   };
 
   return {

@@ -69,7 +69,7 @@ document.addEventListener('alpine:init', () => {
   });
 
   Alpine.data('productEdit', (id) => ({
-    id: id ? Number(id) : null, form: null, terms: {}, saving: false, slugTouched: !!id, tab: 'info',
+    id: id ? Number(id) : null, form: null, terms: {}, saving: false, slugTouched: !!id, tab: 'info', adding: null, newName: '', addingBusy: false,
     async init() {
       try {
         this.terms = await api('/terms');
@@ -95,6 +95,29 @@ document.addEventListener('alpine:init', () => {
     toggleElement(tid) {
       const i = this.form.element_ids.indexOf(tid);
       if (i >= 0) this.form.element_ids.splice(i, 1); else this.form.element_ids.push(tid);
+    },
+    // Thêm nhanh một lựa chọn danh mục (loại ngọc, màu, kiểu dáng, mệnh) ngay trong form sản phẩm
+    startAdd(type) {
+      this.adding = type; this.newName = '';
+      this.$nextTick(() => this.$refs['add_' + type]?.focus());
+    },
+    async confirmAdd(type, field) {
+      const name = this.newName.trim();
+      if (!name) { toast().show('Vui lòng nhập tên', 'error'); return; }
+      const exist = (this.terms[type] || []).find((t) => t.name.toLowerCase() === name.toLowerCase());
+      let tid = exist?.id;
+      if (!tid) {
+        this.addingBusy = true;
+        try {
+          tid = (await api('/terms', { method: 'POST', body: { type, name, sort_order: (this.terms[type] || []).length } })).id;
+          this.terms = await api('/terms');
+          toast().show(`Đã thêm “${name}”`);
+        } catch (e) { toast().error(e); this.addingBusy = false; return; }
+        this.addingBusy = false;
+      }
+      if (field) this.form[field] = tid;
+      else if (!this.form.element_ids.includes(tid)) this.form.element_ids.push(tid);
+      this.adding = null; this.newName = '';
     },
     addCert() { this.form.certificates.push({ issuer: '', code: '', issued_date: '', note: '', media_id: null, image: null }); },
     addSpec() { this.form.specs.push({ label: '', value: '' }); },

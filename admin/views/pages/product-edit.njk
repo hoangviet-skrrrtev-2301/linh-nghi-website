@@ -43,7 +43,14 @@
             <div><label class="label">{{ f[2] }}</label>
               <select class="input" x-model.number="form.{{ f[0] }}"><option value="">— Chọn —</option>
                 <template x-for="t in terms.{{ f[1] }} || []" :key="t.id"><option :value="t.id" x-text="t.name" :selected="t.id == form.{{ f[0] }}"></option></template>
-              </select></div>
+              </select>
+              <button type="button" class="mt-1.5 text-xs text-brand-600 hover:underline" @click="startAdd('{{ f[1] }}')" x-show="adding !== '{{ f[1] }}'">+ Không có trong danh sách? Tự thêm {{ f[2] | lower }} mới</button>
+              <div class="mt-1.5 flex gap-1.5" x-show="adding === '{{ f[1] }}'" x-cloak>
+                <input class="input !py-1.5" placeholder="Nhập {{ f[2] | lower }} mới" x-model="newName" x-ref="add_{{ f[1] }}" @keydown.enter.prevent="confirmAdd('{{ f[1] }}', '{{ f[0] }}')" @keydown.escape="adding = null">
+                <button type="button" class="btn btn-primary btn-sm" :disabled="addingBusy" @click="confirmAdd('{{ f[1] }}', '{{ f[0] }}')">Thêm</button>
+                <button type="button" class="btn btn-ghost btn-sm" @click="adding = null">Hủy</button>
+              </div>
+            </div>
             {% endfor %}
           </div>
           <div><label class="label">Ý nghĩa phong thủy</label><textarea class="input" rows="3" maxlength="3000" x-model="form.fengshui" placeholder="VD: Ngọc xanh tượng trưng cho sức khỏe, bình an; hợp người mệnh Mộc, Hỏa..."></textarea></div>
@@ -52,8 +59,14 @@
               <template x-for="t in terms.element || []" :key="t.id">
                 <button type="button" @click="toggleElement(t.id)" class="rounded-full border px-3 py-1.5 text-sm transition" :class="form.element_ids.includes(t.id) ? 'border-brand-600 bg-brand-600 text-white' : 'border-slate-300 hover:border-slate-400'" x-text="t.name"></button>
               </template>
+              <button type="button" class="rounded-full border border-dashed border-slate-300 px-3 py-1.5 text-sm text-brand-600 hover:border-brand-500" @click="startAdd('element')" x-show="adding !== 'element'">+ Thêm mệnh khác</button>
             </div>
-            <p class="help">Thêm/sửa các lựa chọn tại <a href="{{ A }}/terms" class="text-brand-600 underline">Danh mục & bộ lọc</a>.</p>
+            <div class="mt-2 flex max-w-sm gap-1.5" x-show="adding === 'element'" x-cloak>
+              <input class="input !py-1.5" placeholder="Nhập tên mệnh / lựa chọn mới" x-model="newName" x-ref="add_element" @keydown.enter.prevent="confirmAdd('element')" @keydown.escape="adding = null">
+              <button type="button" class="btn btn-primary btn-sm" :disabled="addingBusy" @click="confirmAdd('element')">Thêm</button>
+              <button type="button" class="btn btn-ghost btn-sm" @click="adding = null">Hủy</button>
+            </div>
+            <p class="help">Mục tự thêm sẽ xuất hiện luôn trong bộ lọc ngoài website. Sửa/xóa các lựa chọn tại <a href="{{ A }}/terms" class="text-brand-600 underline">Danh mục & bộ lọc</a>.</p>
           </div>
           <div class="grid gap-4 sm:grid-cols-2">
             <div><label class="label">Ni có sẵn (mm)</label><input class="input" x-model="form.sizesText" placeholder="Ví dụ: 52, 54, 56"><p class="help">Cách nhau bằng dấu phẩy. Để trống với vòng hạt / vòng điều chỉnh được.</p></div>

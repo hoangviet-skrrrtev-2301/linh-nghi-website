@@ -28,6 +28,16 @@ npm run migrate | backup | restore -- <thư-mục>
 - Không xóa `.npmrc` (`ignore-scripts=true`): nhờ nó `npm install` dùng bản build sẵn của better-sqlite3/sharp, không cần Python/C++. Không thêm lại `allowScripts` vào package.json.
 - Trên Windows: không sửa file JS/template có chuỗi `${...}` bằng PowerShell (bị nuốt biến); dùng công cụ Edit.
 
+## An toàn: sao lưu trước mỗi thay đổi
+
+Trước khi bắt đầu **mỗi** thay đổi (sửa code, template, schema, migration, dữ liệu mẫu, hay thao tác ghi vào database/uploads):
+
+1. **Dữ liệu:** chạy `npm run backup` (database + ảnh, lưu ở `database/backups/`, không đưa lên git). Bắt buộc trước migration, seed, thay đổi hàng loạt, xóa dữ liệu hoặc ảnh, và mọi script ghi trực tiếp vào database.
+2. **Code:** chạy `git status`. Nếu còn thay đổi chưa commit từ lần trước thì báo chủ dự án và đề nghị commit trước khi làm tiếp. Chỉ commit khi chủ dự án đồng ý.
+3. Ghi rõ trong câu trả lời đã sao lưu ở đâu, và cách quay lại (`npm run restore -- <thư-mục>` cho dữ liệu, `git` cho code).
+4. Không chạy lệnh phá hủy (xóa file, `git reset --hard`, xóa `app.sqlite`, `restore` đè dữ liệu) khi chưa có bản sao lưu và chưa được chủ dự án đồng ý.
+5. Dữ liệu thử do kiểm thử tạo ra thì dọn lại sau khi xong; không dọn dữ liệu thật của chủ shop.
+
 ## Kiểm tra sau khi sửa
 
 - `node --check` các file JS đã sửa; `npm run build:css` không lỗi

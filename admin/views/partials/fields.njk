@@ -32,7 +32,7 @@
 {% endmacro %}
 
 {% macro richText(model) %}
-<div x-data="richText" x-modelable="value" x-model="{{ model }}">
+<div x-data="richText" x-modelable="value" x-model="{{ model }}" :class="full && 'rt-full'">
   <div x-ref="editor"></div>
 </div>
 {% endmacro %}

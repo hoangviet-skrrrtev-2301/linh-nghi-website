@@ -160,45 +160,72 @@
     }));
 
     // Trình soạn thảo văn bản (Quill). Dùng: x-data="richText" x-modelable="value" x-model="form.content"
-    Alpine.data('richText', () => ({
-      value: '',
-      quill: null,
-      init() {
-        if (!window.Quill) return;
-        this.quill = new window.Quill(this.$refs.editor, {
-          theme: 'snow',
-          placeholder: 'Nhập nội dung...',
-          modules: {
-            toolbar: {
-              container: [[{ header: [2, 3, 4, false] }], ['bold', 'italic', 'underline', 'strike'], [{ list: 'ordered' }, { list: 'bullet' }],
-                ['blockquote', 'link', 'image'], [{ align: [] }], ['clean']],
-              handlers: {
-                // Chèn ảnh từ thư viện thay vì nhúng base64
-                image: () => Alpine.store('picker').show({
-                  onSelect: (m) => {
-                    if (!m) return;
-                    const range = this.quill.getSelection(true);
-                    this.quill.insertEmbed(range.index, 'image', m.md || m.lg, 'user');
+    Alpine.data('richText', () => {
+      // Quill giữ ngoài dữ liệu của Alpine: nếu để trong đối tượng phản ứng (Proxy) thì getSelection/setSelection của Quill bị lỗi
+      let quill = null;
+      return {
+        value: '',
+        full: false,
+        lastRange: null,
+        init() {
+          if (!window.Quill) return;
+          const FULL_ICON = '<svg viewBox="0 0 18 18"><path class="ql-stroke" fill="none" d="M2.5 6.5v-4h4M11.5 2.5h4v4M15.5 11.5v4h-4M6.5 15.5h-4v-4"/></svg>';
+          quill = new window.Quill(this.$refs.editor, {
+            theme: 'snow',
+            placeholder: 'Nhập nội dung...',
+            modules: {
+              toolbar: {
+                container: [[{ header: [2, 3, 4, false] }], ['bold', 'italic', 'underline', 'strike'], [{ list: 'ordered' }, { list: 'bullet' }],
+                  ['blockquote', 'link', 'image'], [{ align: [] }], ['clean'], ['fullscreen']],
+                handlers: {
+                  // Chèn ảnh từ thư viện thay vì nhúng base64.
+                  // Phải ghi nhớ vị trí con trỏ trước khi mở hộp chọn ảnh, vì lúc đó editor mất focus.
+                  image: () => {
+                    const range = quill.getSelection() || this.lastRange || { index: Math.max(0, quill.getLength() - 1) };
+                    Alpine.store('picker').show({
+                      multiple: true,
+                      onSelect: (list) => {
+                        let at = range.index;
+                        for (const m of list || []) {
+                          quill.insertEmbed(at, 'image', m.md || m.lg, 'user');
+                          at += 1;
+                        }
+                        quill.setSelection(at, 0, 'silent');
+                      },
+                    });
                   },
-                }),
+                  fullscreen: () => { this.full = !this.full; },
+                },
               },
             },
-          },
-        });
-        const set = (html) => {
-          if ((html || '') === this.current()) return;
-          // setContents không đụng tới vùng chọn, an toàn khi editor đang ẩn trong tab
-          this.quill.setContents(this.quill.clipboard.convert({ html: html || '' }), 'silent');
-        };
-        set(this.value);
-        this.$watch('value', set);
-        this.quill.on('text-change', () => { this.value = this.current(); });
-      },
-      current() {
-        const html = this.quill.root.innerHTML;
-        return html === '<p><br></p>' ? '' : html;
-      },
-    }));
+          });
+          quill.on('selection-change', (r) => { if (r) this.lastRange = r; });
+          const fsBtn = this.$el.querySelector('.ql-fullscreen');
+          if (fsBtn) { fsBtn.innerHTML = FULL_ICON; fsBtn.title = 'Toàn màn hình (Esc để thoát)'; }
+          this.$watch('full', (v) => {
+            document.body.classList.toggle('overflow-hidden', v);
+            if (fsBtn) fsBtn.classList.toggle('ql-active', v);
+            quill.focus();
+          });
+          window.addEventListener('keydown', (e) => {
+            // Không thoát khi đang mở hộp chọn ảnh (Esc lúc đó chỉ đóng hộp ảnh)
+            if (e.key === 'Escape' && this.full && !Alpine.store('picker').open) this.full = false;
+          });
+          const set = (html) => {
+            if ((html || '') === this.current()) return;
+            // setContents không đụng tới vùng chọn, an toàn khi editor đang ẩn trong tab
+            quill.setContents(quill.clipboard.convert({ html: html || '' }), 'silent');
+          };
+          set(this.value);
+          this.$watch('value', set);
+          quill.on('text-change', () => { this.value = this.current(); });
+        },
+        current() {
+          const html = quill.root.innerHTML;
+          return html === '<p><br></p>' ? '' : html;
+        },
+      };
+    });
 
     // Công tắc bật/tắt. Dùng: <button x-data="toggle" x-modelable="on" x-model="form.x">
     Alpine.data('toggle', () => ({

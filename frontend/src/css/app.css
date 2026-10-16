@@ -30,11 +30,11 @@
 
 /* Giá trị dự phòng khi /theme.css chưa tải */
 :root {
-  --c-primary: #2f5d50; --c-on-primary: #fff; --c-accent: #b08d57; --c-bg: #faf8f4; --c-surface: #fff;
-  --c-text: #1f2a26; --c-muted: #6b7570; --c-border: #e7e2d8; --c-footer: #1d3a32;
+  --c-primary: #2e6b94; --c-on-primary: #fff; --c-accent: #a98a50; --c-bg: #fbfcfa; --c-surface: #fff;
+  --c-text: #1d2b36; --c-muted: #62737e; --c-border: #dfe7ea; --c-footer: #1e3a4f;
   --ff-heading: Georgia, serif; --ff-body: system-ui, sans-serif;
   --r-sm: 6px; --r-md: 12px; --r-lg: 20px;
-  --header-h: 72px;
+  --header-h: 84px;
 }
 
 @layer base {

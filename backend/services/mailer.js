@@ -47,7 +47,7 @@ const TYPE_LABEL = { order: 'Đơn đặt hàng', custom: 'Yêu cầu thiết k�
 function layout(title, body) {
   const s = getPublicSettings();
   const t = s.theme;
-  return `<!doctype html><html><body style="margin:0;background:#f4f2ee;font-family:Arial,Helvetica,sans-serif;color:#222">
+  return `<!doctype html><html><body style="margin:0;background:#eef2f4;font-family:Arial,Helvetica,sans-serif;color:#222">
   <table width="100%" cellpadding="0" cellspacing="0" style="padding:24px 0"><tr><td align="center">
   <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fff;border-radius:8px;overflow:hidden">
     <tr><td style="background:${t.color_primary};color:${t.color_primary_contrast};padding:20px 28px;font-size:20px;font-weight:bold">${escapeHtml(s.site.name)}</td></tr>
@@ -55,7 +55,7 @@ function layout(title, body) {
       <h2 style="margin:0 0 16px;font-size:18px">${escapeHtml(title)}</h2>
       ${body}
     </td></tr>
-    <tr><td style="padding:16px 28px;background:#faf8f4;font-size:12px;color:#777">
+    <tr><td style="padding:16px 28px;background:#f6f9fa;font-size:12px;color:#777">
       ${escapeHtml(s.site.name)} · ${escapeHtml(s.site.phone)} · ${escapeHtml(s.site.email)}<br>${escapeHtml(config.baseUrl)}
     </td></tr>
   </table></td></tr></table></body></html>`;
@@ -76,7 +76,7 @@ function itemsTable(items, total) {
     <td style="border-bottom:1px solid #eee;text-align:right">${i.price != null ? formatVnd(i.price * i.qty) : 'Liên hệ'}</td></tr>`).join('');
   return `<h3 style="font-size:15px;margin:24px 0 8px">Sản phẩm</h3>
   <table width="100%" cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-size:14px">
-    <tr style="background:#f6f4ef"><th align="left">Sản phẩm</th><th>SL</th><th align="right">Thành tiền</th></tr>${body}
+    <tr style="background:#eef3f5"><th align="left">Sản phẩm</th><th>SL</th><th align="right">Thành tiền</th></tr>${body}
     <tr><td colspan="2" style="text-align:right;font-weight:bold">Tạm tính</td><td style="text-align:right;font-weight:bold">${total != null ? formatVnd(total) : 'Liên hệ'}</td></tr>
   </table>`;
 }
@@ -111,7 +111,7 @@ export function shopNotification(inq) {
   return {
     subject: `[${label}] ${inq.code} – ${inq.name} – ${inq.phone}`,
     html: layout(`${label} mới`, `${rows(detailPairs(inq))}${itemsTable(inq.items, inq.total)}
-      <p style="margin-top:24px"><a href="${escapeHtml(link)}" style="background:#2f5d50;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none">Mở trong trang quản trị</a></p>`),
+      <p style="margin-top:24px"><a href="${escapeHtml(link)}" style="background:${getPublicSettings().theme.color_primary};color:${getPublicSettings().theme.color_primary_contrast};padding:10px 18px;border-radius:6px;text-decoration:none">Mở trong trang quản trị</a></p>`),
   };
 }
 

@@ -2,6 +2,14 @@
 
 Ghi lại các thay đổi đáng chú ý, mới nhất ở trên cùng.
 
+## Chưa phát hành
+
+- Admin › Sản phẩm: thêm nhanh loại ngọc / màu sắc / kiểu dáng / mệnh mới ngay trong form (lưu vào Danh mục, tự có trong bộ lọc)
+- Thêm mạng xã hội Threads (cài đặt Thông tin shop, chân trang, JSON-LD)
+- Trình soạn thảo (blog, mô tả sản phẩm): sửa lỗi nút chèn ảnh (Quill bị bọc Proxy của Alpine nên getSelection lỗi), cho chọn nhiều ảnh một lần, nhãn tiêu đề tiếng Việt (H2/H3/H4), nút toàn màn hình (Esc để thoát)
+- Logo thương hiệu Linh Nghi (bản nền trong suốt + bản trắng cho chân trang + favicon), nạp qua Thư viện ảnh › thư mục "brand"
+- Đổi theme mặc định sang tông xanh ngọc nhạt – vàng đồng theo logo (nhóm `theme` trong settings-schema.js, biến CSS dự phòng trong app.css); header cao 84px, logo 68px; nút email dùng màu chủ đạo của theme
+
 ## 1.1.0 – 16/10/2026
 
 Bổ sung theo bản kế hoạch chi tiết của chủ dự án:

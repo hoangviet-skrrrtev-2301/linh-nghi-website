@@ -27,7 +27,7 @@ _Cập nhật lần cuối: 16/10/2026_
 | Chứng chỉ | Theo từng sản phẩm (ảnh + nơi cấp + mã số + ngày cấp) **và** khối mẫu giấy kiểm định ở trang chủ | |
 | Bộ lọc | Loại ngọc, giá (khoảng giá cấu hình được), ni tay, màu, kiểu dáng, mệnh | Danh mục quản lý trong admin |
 | Tên miền | Chưa có | Hướng dẫn mua và trỏ tên miền có trong HUONG_DAN_UPLOAD.md |
-| Giao diện | **Theme tạm** (kem, xanh ngọc, nhấn đồng) | ⏳ Chủ dự án sẽ gửi mẫu tham khảo + tông màu chủ đạo |
+| Giao diện | **Theme theo logo** (nền trắng ngà, xanh dương #2e6b94, nhấn vàng đồng #a98a50) | ⏳ Chưa chốt bố cục, chờ mẫu tham khảo |
 | Nguyên tắc | **Không fix cứng thông tin**: mọi nội dung đều có trường sửa trong admin | Trường cài đặt khai báo trong `backend/config/settings-schema.js` |
 
 Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ dự án cung cấp):

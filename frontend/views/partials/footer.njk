@@ -3,14 +3,14 @@
   <div class="container-x grid gap-10 py-16 md:grid-cols-2 lg:grid-cols-12">
     <div class="lg:col-span-4">
       {% if s.site.logo_light %}
-        <img src="{{ s.site.logo_light.sm }}" alt="{{ s.site.name }}" class="h-12 w-auto" loading="lazy">
+        <img src="{{ s.site.logo_light.sm }}" alt="{{ s.site.name }}" class="h-24 w-auto" loading="lazy">
       {% else %}
         <div class="font-heading text-3xl text-white">{{ s.site.name }}</div>
       {% endif %}
       {% if s.site.slogan %}<p class="mt-2 font-heading text-lg italic text-accent">{{ s.site.slogan }}</p>{% endif %}
       <p class="mt-4 max-w-sm text-sm leading-relaxed text-white/65">{{ s.site.footer_text }}</p>
       <div class="mt-6 flex gap-2">
-        {% for key in ['facebook', 'instagram', 'tiktok', 'youtube'] %}
+        {% for key in ['facebook', 'instagram', 'threads', 'tiktok', 'youtube'] %}
           {% if s.site[key] %}
           <a href="{{ s.site[key] }}" target="_blank" rel="noopener" aria-label="{{ key }}" class="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 transition hover:border-accent hover:text-accent">{{ icon(key, 'w-[18px] h-[18px]') }}</a>
           {% endif %}
