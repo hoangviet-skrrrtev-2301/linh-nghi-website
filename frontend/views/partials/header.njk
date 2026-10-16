@@ -1,0 +1,89 @@
+{% from "partials/icons.njk" import icon %}
+{% if features.announcement %}
+<div class="bg-primary text-on-primary text-center text-[12.5px] tracking-wide py-2 px-4">{{ features.announcement }}</div>
+{% endif %}
+
+<header x-data="siteHeader" @scroll.window.passive="onScroll"
+  :class="scrolled ? 'bg-surface/90 shadow-[0_1px_0_var(--c-border)] backdrop-blur-md' : 'bg-bg'"
+  class="sticky top-0 z-50 transition-colors duration-300">
+  <div class="container-x flex h-[var(--header-h)] items-center gap-4">
+    <button class="icon-btn -ml-2 lg:hidden" @click="menuOpen = true" aria-label="Mở menu">{{ icon('menu', 'w-6 h-6') }}</button>
+
+    <a href="/" class="flex shrink-0 items-center gap-3" aria-label="{{ s.site.name }} - Trang chủ">
+      {% if s.site.logo %}
+        <img src="{{ s.site.logo.sm }}" alt="{{ s.site.name }}" class="h-10 w-auto md:h-11" width="160" height="44">
+      {% else %}
+        <span class="font-heading text-2xl font-semibold tracking-tight text-primary">{{ s.site.name }}</span>
+      {% endif %}
+    </a>
+
+    <nav class="mx-auto hidden lg:block" aria-label="Menu chính">
+      <ul class="flex items-center gap-1">
+        {% for item in nav %}
+        {% set active = (item.url == '/' and currentPath == '/') or (item.url != '/' and currentPath.startsWith(item.url)) %}
+        <li>
+          <a href="{{ item.url }}" class="relative px-3 py-2 text-[14px] tracking-wide transition hover:text-primary {{ 'text-primary font-medium' if active else 'text-ink/80' }}">
+            {{ item.label }}
+            {% if active %}<span class="absolute inset-x-3 -bottom-0.5 h-px bg-accent"></span>{% endif %}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </nav>
+
+    <div class="ml-auto flex items-center gap-1 lg:ml-0">
+      <button class="icon-btn" @click="searchOpen = true; $nextTick(() => $refs.q.focus())" aria-label="Tìm kiếm">{{ icon('search') }}</button>
+      {% if features.checkout %}
+      <a href="/gio-hang" class="icon-btn relative" aria-label="Giỏ hàng">
+        {{ icon('bag') }}
+        <span x-cloak x-show="$store.cart.count > 0" x-text="$store.cart.count"
+          class="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1 text-[10px] font-semibold text-white"></span>
+      </a>
+      {% endif %}
+      <a href="tel:{{ s.site.phone | phoneHref }}" class="btn btn-primary btn-sm ml-2 hidden md:inline-flex">{{ icon('phone', 'w-4 h-4') }} {{ s.site.phone }}</a>
+    </div>
+  </div>
+
+  {# Ô tìm kiếm #}
+  <div x-cloak x-show="searchOpen" x-transition.opacity class="fixed inset-0 z-[70] bg-ink/40 backdrop-blur-sm" @click.self="searchOpen = false" @keydown.escape.window="searchOpen = false">
+    <div x-show="searchOpen" x-transition:enter="transition duration-300" x-transition:enter-start="-translate-y-6 opacity-0" class="bg-surface shadow-xl">
+      <form action="/san-pham" method="get" class="container-x flex items-center gap-3 py-5" role="search">
+        {{ icon('search', 'w-5 h-5 text-muted') }}
+        <input x-ref="q" type="search" name="q" placeholder="Tìm vòng ngọc, loại ngọc, mã sản phẩm..." class="flex-1 bg-transparent py-2 text-lg outline-none" aria-label="Từ khóa tìm kiếm">
+        <button type="submit" class="btn btn-primary btn-sm">Tìm</button>
+        <button type="button" class="icon-btn" @click="searchOpen = false" aria-label="Đóng">{{ icon('close') }}</button>
+      </form>
+      {% if jadeTypes.length %}
+      <div class="container-x flex flex-wrap items-center gap-2 pb-5 text-sm">
+        <span class="text-muted">Gợi ý:</span>
+        {% for t in jadeTypes %}<a href="/san-pham?loai={{ t.slug }}" class="chip">{{ t.name }}</a>{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# Menu di động #}
+  <div x-cloak x-show="menuOpen" class="fixed inset-0 z-[70] lg:hidden" @keydown.escape.window="menuOpen = false">
+    <div x-show="menuOpen" x-transition.opacity class="absolute inset-0 bg-ink/40" @click="menuOpen = false"></div>
+    <aside x-show="menuOpen" x-trap.noscroll="menuOpen"
+      x-transition:enter="transition duration-300 ease-out" x-transition:enter-start="-translate-x-full"
+      x-transition:leave="transition duration-200 ease-in" x-transition:leave-end="-translate-x-full"
+      class="absolute inset-y-0 left-0 flex w-[84%] max-w-sm flex-col bg-surface shadow-2xl">
+      <div class="flex items-center justify-between border-b border-line px-5 py-4">
+        <span class="font-heading text-xl text-primary">{{ s.site.name }}</span>
+        <button class="icon-btn" @click="menuOpen = false" aria-label="Đóng menu">{{ icon('close') }}</button>
+      </div>
+      <nav class="flex-1 overflow-y-auto px-3 py-4" aria-label="Menu di động">
+        {% for item in nav %}
+        <a href="{{ item.url }}" class="flex items-center justify-between rounded-md px-3 py-3 text-[15px] hover:bg-ink/5 {{ 'text-primary font-medium' if currentPath == item.url else '' }}">
+          {{ item.label }} {{ icon('chevron-right', 'w-4 h-4 text-muted') }}
+        </a>
+        {% endfor %}
+      </nav>
+      <div class="space-y-2 border-t border-line p-5 text-sm">
+        <a href="tel:{{ s.site.phone | phoneHref }}" class="btn btn-primary w-full">{{ icon('phone', 'w-4 h-4') }} {{ s.site.phone }}</a>
+        {% if s.site.zalo %}<a href="https://zalo.me/{{ s.site.zalo | phoneHref }}" target="_blank" rel="noopener" class="btn btn-outline w-full">{{ icon('chat', 'w-4 h-4') }} Nhắn Zalo</a>{% endif %}
+      </div>
+    </aside>
+  </div>
+</header>

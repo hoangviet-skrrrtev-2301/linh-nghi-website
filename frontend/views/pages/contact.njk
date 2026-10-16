@@ -1,0 +1,64 @@
+{% extends "layouts/base.njk" %}
+{% from "partials/icons.njk" import icon %}
+{% from "partials/form-fields.njk" import field, antiSpam, submitArea %}
+
+{% block content %}
+{% set c = s.contact %}
+<section class="border-b border-line bg-surface">
+  <div class="container-x py-12 text-center md:py-16">
+    <span class="eyebrow">Liên hệ</span>
+    <h1 class="mt-3 text-4xl font-medium md:text-5xl">{{ c.title }}</h1>
+    <p class="mx-auto mt-3 max-w-xl text-muted">{{ c.intro }}</p>
+  </div>
+</section>
+
+<section class="container-x py-12">
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    {% set cards = [
+      ['phone', 'Điện thoại', s.site.phone, 'tel:' + (s.site.phone | phoneHref)],
+      ['chat', 'Zalo', s.site.zalo, 'https://zalo.me/' + (s.site.zalo | phoneHref)],
+      ['mail', 'Email', s.site.email, 'mailto:' + s.site.email],
+      ['clock', 'Giờ làm việc', s.site.working_hours, '']
+    ] %}
+    {% for cd in cards %}{% if cd[2] %}
+    <a {% if cd[3] %}href="{{ cd[3] }}"{% endif %} {{ 'target=_blank rel=noopener' if cd[0] == 'chat' }} class="reveal card group flex items-start gap-4 p-6 transition {{ 'hover:border-primary' if cd[3] }}">
+      <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-on-primary">{{ icon(cd[0]) }}</span>
+      <div class="min-w-0"><p class="text-xs uppercase tracking-[0.14em] text-muted">{{ cd[1] }}</p><p class="mt-1 break-words font-medium">{{ cd[2] }}</p></div>
+    </a>
+    {% endif %}{% endfor %}
+  </div>
+
+  <div class="mt-10 grid gap-8 lg:grid-cols-2">
+    <div class="space-y-6">
+      {% if s.site.address %}
+      <div class="card flex gap-4 p-6">{{ icon('map', 'w-5 h-5 shrink-0 text-primary mt-0.5') }}<div><p class="font-medium">Địa chỉ</p><p class="mt-1 text-muted">{{ s.site.address | nl2br }}</p></div></div>
+      {% endif %}
+      {% if s.site.map_embed_url %}
+      <div class="overflow-hidden rounded-lg border border-line">
+        <iframe src="{{ s.site.map_embed_url }}" title="Bản đồ đường đến shop" class="h-[380px] w-full" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+      </div>
+      {% endif %}
+    </div>
+
+    {% if c.show_form %}
+    <div class="card p-6 md:p-8" x-data="inquiryForm('contact')">
+      <div x-show="success" x-cloak class="py-10 text-center">
+        <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary text-on-primary">{{ icon('check', 'w-7 h-7') }}</span>
+        <p class="mt-5 text-xl font-medium" x-text="message"></p>
+      </div>
+      <form x-show="!success" @submit.prevent="submit($el)" novalidate class="relative">
+        <h2 class="text-2xl font-medium">Gửi lời nhắn</h2>
+        <div class="mt-6 grid gap-5 sm:grid-cols-2">
+          {{ field('name', 'Họ và tên', 'text', true, '', 'name') }}
+          {{ field('phone', 'Số điện thoại', 'tel', true, '', 'tel') }}
+          {{ field('email', 'Email', 'email', false, '', 'email', 'sm:col-span-2') }}
+          {{ field('message', 'Nội dung', 'textarea', true, 'Bạn cần shop hỗ trợ điều gì?', '', 'sm:col-span-2') }}
+        </div>
+        {{ antiSpam(formToken) }}
+        {{ submitArea('Gửi lời nhắn', s) }}
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

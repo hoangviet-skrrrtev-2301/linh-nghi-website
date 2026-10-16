@@ -1,0 +1,35 @@
+{% extends "layout.njk" %}
+{% from "partials/icons.njk" import icon %}
+{% block title %}Blog{% endblock %}
+{% block heading %}Blog{% endblock %}
+{% block content %}
+<div x-data="postsList">
+  <div class="mb-5 flex flex-wrap items-center gap-3">
+    <input type="search" class="input max-w-xs" placeholder="Tìm bài viết..." x-model="filters.q" @input.debounce.400ms="search()">
+    <select class="input !w-auto" x-model="filters.status" @change="search()"><option value="">Tất cả</option><option value="published">Đã đăng</option><option value="draft">Nháp</option></select>
+    <span class="text-xs text-slate-500">Bật/tắt trang Blog tại <a href="{{ A }}/settings/features" class="text-brand-600 underline">Cài đặt › Bật/tắt tính năng</a></span>
+    <a href="{{ A }}/posts/new" class="btn btn-primary ml-auto">{{ icon('plus', 'w-4 h-4') }} Viết bài mới</a>
+  </div>
+  <div class="card overflow-hidden">
+    <table class="table">
+      <thead><tr><th class="w-20"></th><th>Tiêu đề</th><th>Trạng thái</th><th>Ngày đăng</th><th class="w-24"></th></tr></thead>
+      <tbody>
+        <template x-for="p in items" :key="p.id">
+          <tr>
+            <td><img :src="p.cover?.sm" class="h-12 w-16 rounded-lg bg-slate-100 object-cover" alt=""></td>
+            <td><a :href="'{{ A }}/posts/' + p.id" class="font-medium hover:text-brand-600" x-text="p.title"></a><p class="line-clamp-1 text-xs text-slate-500" x-text="p.summary"></p></td>
+            <td><span class="badge" :class="p.status === 'published' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'" x-text="p.status === 'published' ? 'Đã đăng' : 'Nháp'"></span></td>
+            <td class="text-slate-500" x-text="$fmt.date(p.published_at, false)"></td>
+            <td class="whitespace-nowrap text-right">
+              <a :href="'/blog/' + p.slug" target="_blank" class="btn btn-ghost btn-sm" x-show="p.status === 'published'">{{ icon('eye', 'w-4 h-4') }}</a>
+              <button class="btn btn-ghost btn-sm text-red-600" @click="remove(p)">{{ icon('trash', 'w-4 h-4') }}</button>
+            </td>
+          </tr>
+        </template>
+        <tr x-show="!loading && !items.length"><td colspan="5" class="py-14 text-center text-slate-500">Chưa có bài viết.</td></tr>
+      </tbody>
+    </table>
+    {% include "partials/pager.njk" %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,7 @@
+# Mọi file văn bản dùng ký tự xuống dòng LF trên mọi máy (Windows, macOS, VPS Linux)
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.webp binary
+*.sqlite binary
+*.gz binary

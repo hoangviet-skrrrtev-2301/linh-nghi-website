@@ -1,0 +1,70 @@
+{% from "partials/icons.njk" import icon %}
+{# ===== Thông báo ===== #}
+<div x-data class="fixed bottom-4 right-4 z-[100] flex w-80 flex-col gap-2" aria-live="polite">
+  <template x-for="t in $store.toast.items" :key="t.id">
+    <div x-transition class="flex items-start gap-3 rounded-xl px-4 py-3 text-sm shadow-lg"
+      :class="t.type === 'error' ? 'bg-red-600 text-white' : 'bg-slate-900 text-white'">
+      <span x-text="t.message" class="flex-1"></span>
+    </div>
+  </template>
+</div>
+
+{# ===== Hộp xác nhận ===== #}
+<div x-data x-cloak x-show="$store.confirm.open" class="fixed inset-0 z-[95] flex items-center justify-center p-4" @keydown.escape.window="$store.confirm.answer(false)">
+  <div class="absolute inset-0 bg-slate-900/50" @click="$store.confirm.answer(false)"></div>
+  <div x-show="$store.confirm.open" x-transition x-trap="$store.confirm.open" class="card relative w-full max-w-sm p-6">
+    <div class="flex gap-4">
+      <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" :class="$store.confirm.danger ? 'bg-red-50 text-red-600' : 'bg-brand-50 text-brand-600'">{{ icon('alert') }}</span>
+      <div><h3 class="font-semibold" x-text="$store.confirm.title"></h3><p class="mt-1 text-sm text-slate-600" x-text="$store.confirm.message"></p></div>
+    </div>
+    <div class="mt-6 flex justify-end gap-2">
+      <button class="btn btn-secondary" @click="$store.confirm.answer(false)">Hủy</button>
+      <button class="btn" :class="$store.confirm.danger ? 'btn-danger' : 'btn-primary'" @click="$store.confirm.answer(true)" x-text="$store.confirm.okLabel"></button>
+    </div>
+  </div>
+</div>
+
+{# ===== Chọn ảnh ===== #}
+<div x-data x-cloak x-show="$store.picker.open" class="fixed inset-0 z-[90] flex items-center justify-center p-2 sm:p-6" @keydown.escape.window="$store.picker.open = false">
+  <div class="absolute inset-0 bg-slate-900/60" @click="$store.picker.open = false"></div>
+  <div x-show="$store.picker.open" x-transition class="card relative flex max-h-[92vh] w-full max-w-5xl flex-col"
+    @dragover.prevent @drop.prevent="$store.picker.upload($event.dataTransfer.files)">
+    <div class="card-head">
+      <h3 class="card-title">Chọn ảnh <span class="font-normal text-slate-500" x-text="$store.picker.multiple ? '(chọn được nhiều ảnh)' : ''"></span></h3>
+      <button class="btn btn-ghost btn-sm" @click="$store.picker.open = false">{{ icon('close', 'w-4 h-4') }}</button>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-3">
+      <label class="btn btn-primary cursor-pointer">
+        {{ icon('upload', 'w-4 h-4') }} Tải ảnh lên
+        <input type="file" accept="image/*" multiple class="hidden" @change="$store.picker.upload($event.target.files); $event.target.value = ''">
+      </label>
+      <span class="text-xs text-slate-500" x-show="!$store.picker.uploading">hoặc kéo thả ảnh vào đây · JPG, PNG, WebP, AVIF · ảnh tự động nén</span>
+      <span class="text-xs text-brand-600" x-show="$store.picker.uploading" x-text="'Đang tải ' + $store.picker.uploading + ' ảnh...'"></span>
+      <input type="search" placeholder="Tìm theo tên ảnh..." class="input ml-auto !w-56" x-model.debounce.400ms="$store.picker.q" @input.debounce.400ms="$store.picker.page = 1; $store.picker.load()">
+    </div>
+    <div class="flex-1 overflow-y-auto p-5">
+      <div class="grid grid-cols-3 gap-3 sm:grid-cols-5 lg:grid-cols-7">
+        <template x-for="m in $store.picker.items" :key="m.id">
+          <button type="button" @click="$store.picker.toggle(m)" @dblclick="$store.picker.toggle(m); $store.picker.confirm()"
+            class="group relative aspect-square overflow-hidden rounded-lg border-2 bg-slate-100 transition"
+            :class="$store.picker.isSelected(m) ? 'border-brand-600 ring-4 ring-brand-500/20' : 'border-transparent hover:border-slate-300'">
+            <img :src="m.sm" :alt="m.alt" class="h-full w-full object-cover" loading="lazy">
+            <span x-show="$store.picker.isSelected(m)" class="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-brand-600 text-white">{{ icon('check', 'w-3.5 h-3.5') }}</span>
+          </button>
+        </template>
+      </div>
+      <p x-show="!$store.picker.loading && !$store.picker.items.length" class="py-16 text-center text-slate-500">Chưa có ảnh. Bấm "Tải ảnh lên" để bắt đầu.</p>
+    </div>
+    <div class="flex items-center justify-between gap-3 border-t border-slate-100 px-5 py-3">
+      <div class="flex items-center gap-2 text-sm text-slate-500">
+        <button class="btn btn-secondary btn-sm" :disabled="$store.picker.page <= 1" @click="$store.picker.page--; $store.picker.load()">‹</button>
+        <span x-text="'Trang ' + $store.picker.page + ' / ' + Math.max(1, Math.ceil($store.picker.total / 40))"></span>
+        <button class="btn btn-secondary btn-sm" :disabled="$store.picker.page * 40 >= $store.picker.total" @click="$store.picker.page++; $store.picker.load()">›</button>
+      </div>
+      <div class="flex gap-2">
+        <button class="btn btn-secondary" @click="$store.picker.open = false">Hủy</button>
+        <button class="btn btn-primary" :disabled="!$store.picker.selected.length" @click="$store.picker.confirm()" x-text="'Chọn' + ($store.picker.selected.length > 1 ? ' ' + $store.picker.selected.length + ' ảnh' : '')"></button>
+      </div>
+    </div>
+  </div>
+</div>

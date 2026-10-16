@@ -1,0 +1,86 @@
+{% extends "layout.njk" %}
+{% from "partials/icons.njk" import icon %}
+{% from "partials/fields.njk" import schemaField %}
+{% block title %}Cài đặt · {{ group.label }}{% endblock %}
+{% block heading %}Cài đặt website{% endblock %}
+{% block content %}
+<div class="grid gap-6 lg:grid-cols-[220px_1fr]">
+  <nav class="flex gap-1 overflow-x-auto lg:flex-col">
+    {% for g in groups %}<a href="{{ A }}/settings/{{ g.key }}" class="tab {{ 'active' if g.key == group.key }}">{{ g.label }}</a>{% endfor %}
+    {% if currentUser.role == 'owner' %}
+    <a href="{{ A }}/api/backup" class="tab mt-4 border-t border-slate-200 pt-3 text-brand-700">{{ icon('download', 'inline w-4 h-4 mr-1') }} Tải bản sao lưu</a>
+    {% endif %}
+  </nav>
+
+  <div x-data="settingsPage({{ group.key | dump }})">
+    <template x-if="values">
+      <form @submit.prevent="save()" class="space-y-6">
+        <div class="card">
+          <div class="card-head">
+            <div><h2 class="card-title">{{ group.label }}</h2>{% if group.description %}<p class="mt-0.5 text-xs text-slate-500">{{ group.description }}</p>{% endif %}</div>
+            <button class="btn btn-primary" :disabled="saving">{{ icon('check', 'w-4 h-4') }} Lưu</button>
+          </div>
+          <div class="card-body grid gap-5 md:grid-cols-2">
+            {% for f in group.fields %}
+              {% if f.type == 'list' %}
+              {# ---- Danh sách lặp (slide, khối thông tin, bảng size...) ---- #}
+              <div class="md:col-span-2">
+                <div class="mb-2 flex items-center justify-between">
+                  <label class="label !mb-0">{{ f.label }}</label>
+                  <button type="button" class="btn btn-secondary btn-sm" @click="addItem('{{ f.name }}', {{ f.fields | blankItem | attrjson }})">{{ icon('plus', 'w-3.5 h-3.5') }} Thêm</button>
+                </div>
+                <div class="space-y-3">
+                  <template x-for="(item, i) in values.{{ f.name }}" :key="i">
+                    <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                      <div class="mb-3 flex items-center gap-2 text-xs text-slate-500">
+                        <span class="font-semibold" x-text="'#' + (i + 1)"></span>
+                        <span class="ml-auto"></span>
+                        <button type="button" class="btn btn-ghost btn-sm" @click="move('{{ f.name }}', i, -1)" :disabled="i === 0">↑</button>
+                        <button type="button" class="btn btn-ghost btn-sm" @click="move('{{ f.name }}', i, 1)" :disabled="i === values.{{ f.name }}.length - 1">↓</button>
+                        <button type="button" class="btn btn-ghost btn-sm text-red-600" @click="removeItem('{{ f.name }}', i)">{{ icon('trash', 'w-3.5 h-3.5') }}</button>
+                      </div>
+                      <div class="grid gap-4 {{ 'md:grid-cols-2' if f.fields.length > 1 }} {{ 'lg:grid-cols-4' if f.fields.length == 4 and (f.fields | allText) }}">
+                        {% for sub in f.fields %}
+                        <div class="{{ 'md:col-span-2 lg:col-span-full' if sub.type in ['richtext', 'textarea'] }}">
+                          {{ schemaField(sub, 'item.' + sub.name, 'media[item.' + sub.name + ']') }}
+                        </div>
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </template>
+                  <p x-show="!values.{{ f.name }}.length" class="rounded-xl border border-dashed border-slate-300 py-6 text-center text-sm text-slate-500">Chưa có mục nào</p>
+                </div>
+              </div>
+              {% else %}
+              <div class="{{ 'md:col-span-2' if f.type in ['richtext', 'textarea', 'toggle'] }}">
+                {{ schemaField(f, 'values.' + f.name, 'media[values.' + f.name + ']') }}
+              </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+          <div class="flex flex-wrap items-center gap-3 border-t border-slate-100 px-5 py-4">
+            <button class="btn btn-primary" :disabled="saving">{{ icon('check', 'w-4 h-4') }} Lưu thay đổi</button>
+            {% if group.key == 'mail' %}
+            <button type="button" class="btn btn-secondary" :disabled="testing" @click="testMail()">{{ icon('mail', 'w-4 h-4') }} <span x-text="testing ? 'Đang gửi...' : 'Lưu & gửi email thử'"></span></button>
+            {% endif %}
+            <a href="/" target="_blank" class="btn btn-ghost ml-auto">{{ icon('eye', 'w-4 h-4') }} Xem website</a>
+          </div>
+        </div>
+
+        {% if group.key == 'mail' %}
+        <div class="card card-body text-sm leading-relaxed text-slate-600">
+          <h3 class="card-title mb-2">Hướng dẫn tạo Mật khẩu ứng dụng Gmail</h3>
+          <ol class="list-decimal space-y-1 pl-5">
+            <li>Đăng nhập Gmail của shop, vào <b>myaccount.google.com › Bảo mật</b>.</li>
+            <li>Bật <b>Xác minh 2 bước</b> (bắt buộc).</li>
+            <li>Tìm mục <b>Mật khẩu ứng dụng</b> (App passwords), đặt tên “Website” và bấm Tạo.</li>
+            <li>Copy mã 16 ký tự, dán vào ô <b>Mật khẩu ứng dụng</b> ở trên (không cần dấu cách).</li>
+            <li>Máy chủ: <code>smtp.gmail.com</code>, cổng <code>465</code>, bật SSL. Bấm “Lưu & gửi email thử”.</li>
+          </ol>
+        </div>
+        {% endif %}
+      </form>
+    </template>
+  </div>
+</div>
+{% endblock %}

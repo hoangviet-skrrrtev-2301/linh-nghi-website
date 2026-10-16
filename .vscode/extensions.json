@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    "bradlc.vscode-tailwindcss",
+    "ronnidc.nunjucks",
+    "alexcvzz.vscode-sqlite",
+    "editorconfig.editorconfig"
+  ]
+}

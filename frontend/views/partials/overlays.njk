@@ -1,0 +1,188 @@
+{% from "partials/icons.njk" import icon %}
+
+{# ============ POPUP XEM NHANH SẢN PHẨM ============ #}
+<div x-data x-cloak x-show="$store.quick.open" class="fixed inset-0 z-[80] flex items-end justify-center sm:items-center sm:p-6"
+  role="dialog" aria-modal="true" aria-label="Chi tiết sản phẩm" @keydown.escape.window="$store.quick.close()">
+  <div x-show="$store.quick.open" x-transition.opacity class="modal-backdrop" @click="$store.quick.close()"></div>
+  <div x-show="$store.quick.open" x-trap.noscroll="$store.quick.open"
+    x-transition:enter="transition duration-300 ease-out" x-transition:enter-start="translate-y-8 opacity-0 sm:scale-95"
+    x-transition:leave="transition duration-200" x-transition:leave-end="translate-y-8 opacity-0"
+    class="modal-panel max-h-[92vh] max-w-5xl overflow-y-auto rounded-b-none sm:rounded-lg">
+    <button class="icon-btn absolute right-3 top-3 z-10 bg-surface/80 backdrop-blur" @click="$store.quick.close()" aria-label="Đóng">{{ icon('close') }}</button>
+
+    <template x-if="$store.quick.loading">
+      <div class="flex h-96 items-center justify-center"><span class="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></span></div>
+    </template>
+
+    <template x-if="!$store.quick.loading && $store.quick.p">
+      <div class="grid md:grid-cols-2" x-data="{ get p() { return $store.quick.p } }">
+        <div class="bg-ink/[.03] p-4 md:p-6">
+          <div class="aspect-square overflow-hidden rounded-md bg-surface">
+            <img :src="p.images[$store.quick.img]?.lg" :alt="p.images[$store.quick.img]?.alt || p.name" class="h-full w-full object-cover">
+          </div>
+          <div class="mt-3 flex gap-2 overflow-x-auto scrollbar-none" x-show="p.images.length > 1">
+            <template x-for="(im, i) in p.images" :key="im.id">
+              <button @click="$store.quick.img = i" class="h-16 w-16 shrink-0 overflow-hidden rounded-sm border-2 transition"
+                :class="$store.quick.img === i ? 'border-primary' : 'border-transparent opacity-70 hover:opacity-100'">
+                <img :src="im.sm" alt="" class="h-full w-full object-cover">
+              </button>
+            </template>
+          </div>
+        </div>
+
+        <div class="flex flex-col p-6 md:p-8">
+          <p class="eyebrow" x-text="p.jade_type"></p>
+          <h2 class="mt-2 text-3xl font-medium" x-text="p.name"></h2>
+          <div class="mt-3 flex items-center gap-3" x-show="$store.app.showPrices">
+            <span class="price text-2xl" x-text="p.final_price != null ? $store.cart.vnd(p.final_price) : 'Liên hệ'"></span>
+            <span class="price-old" x-show="p.on_sale" x-text="$store.cart.vnd(p.price)"></span>
+          </div>
+          <div class="mt-3 flex flex-wrap gap-1.5">
+            <span x-show="p.is_bestseller" class="badge bg-ink text-white">★ Best Seller</span>
+            <span x-show="p.show_new" class="badge bg-primary text-on-primary">Mới</span>
+            <span class="badge" :class="{'bg-emerald-50 text-emerald-700': p.stock_status==='in_stock', 'bg-amber-50 text-amber-700': p.stock_status==='made_to_order', 'bg-ink/5 text-muted': p.stock_status==='sold_out'}" x-text="p.stock_label"></span>
+          </div>
+          <p class="mt-4 text-[15px] leading-relaxed text-muted" x-text="p.summary"></p>
+          <p x-show="p.fengshui" class="mt-3 rounded-md bg-accent/5 p-3 text-sm leading-relaxed text-ink/80"><b class="text-accent">Ý nghĩa phong thủy: </b><span x-text="p.fengshui"></span></p>
+
+          <dl class="mt-5 grid grid-cols-2 gap-x-6 gap-y-3 border-y border-line py-5 text-sm">
+            <template x-for="row in [['Loại ngọc', p.jade_type], ['Màu sắc', p.color], ['Kiểu dáng', p.style], ['Hợp mệnh', p.elements.join(', ')], ['Kích thước hạt', p.bead_size], ['Xuất xứ', p.origin]].filter(r => r[1])">
+              <div><dt class="text-xs text-muted" x-text="row[0]"></dt><dd class="font-medium" x-text="row[1]"></dd></div>
+            </template>
+          </dl>
+
+          <template x-if="p.certificates.length">
+            <div class="mt-4 flex items-start gap-3 rounded-md bg-primary/5 p-3 text-sm">
+              {{ icon('certificate', 'w-5 h-5 shrink-0 text-primary mt-0.5') }}
+              <div>
+                <p class="font-medium">Có chứng chỉ kiểm định</p>
+                <p class="text-muted" x-text="p.certificates.map(c => [c.issuer, c.code && ('Mã: ' + c.code)].filter(Boolean).join(' · ')).join(' | ')"></p>
+              </div>
+            </div>
+          </template>
+
+          <div class="mt-5" x-show="p.sizes.length">
+            <p class="label">Chọn ni tay (mm)</p>
+            <div class="flex flex-wrap gap-2">
+              <template x-for="sz in p.sizes" :key="sz">
+                <button type="button" @click="$store.quick.size = sz" class="chip"
+                  :class="$store.quick.size === sz && '!border-primary !bg-primary !text-on-primary'" x-text="sz"></button>
+              </template>
+            </div>
+          </div>
+
+          <div class="mt-auto flex flex-col gap-3 pt-6 sm:flex-row">
+            <template x-if="$store.app.checkout && p.stock_status !== 'sold_out'">
+              <button class="btn btn-primary flex-1" @click="$store.cart.add(p, $store.quick.size); $store.quick.close()">{{ icon('bag', 'w-4 h-4') }} Thêm vào giỏ</button>
+            </template>
+            <template x-if="!$store.app.checkout || p.stock_status === 'sold_out'">
+              <a class="btn btn-primary flex-1" :href="'https://zalo.me/' + $store.app.zalo" target="_blank" rel="noopener">{{ icon('chat', 'w-4 h-4') }} Nhắn Zalo tư vấn</a>
+            </template>
+            <a class="btn btn-outline flex-1" :href="'/san-pham/' + p.slug">Xem chi tiết {{ icon('arrow-right', 'w-4 h-4') }}</a>
+          </div>
+          <button type="button" class="btn btn-ghost mt-2 w-full text-primary" @click="$store.quick.close(); $store.consult.show(p, 'consult', $store.quick.size)">{{ icon('mail', 'w-4 h-4') }} Gửi yêu cầu tư vấn về mẫu này</button>
+        </div>
+      </div>
+    </template>
+  </div>
+</div>
+
+{# ============ POPUP YÊU CẦU TƯ VẤN / ĐẶT NHANH 1 SẢN PHẨM ============ #}
+{% from "partials/form-fields.njk" import field, antiSpam %}
+<div x-data="quickInquiry" x-cloak x-show="$store.consult.open" class="fixed inset-0 z-[82] flex items-end justify-center sm:items-center sm:p-6"
+  role="dialog" aria-modal="true" @keydown.escape.window="$store.consult.open = false">
+  <div x-show="$store.consult.open" x-transition.opacity class="modal-backdrop" @click="$store.consult.open = false"></div>
+  <div x-show="$store.consult.open" x-trap.noscroll="$store.consult.open" x-transition class="modal-panel max-h-[94vh] max-w-lg overflow-y-auto rounded-b-none p-6 sm:rounded-lg md:p-8">
+    <button class="icon-btn absolute right-3 top-3" @click="$store.consult.open = false" aria-label="Đóng">{{ icon('close') }}</button>
+    <template x-if="success">
+      <div class="py-8 text-center">
+        <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary text-on-primary">{{ icon('check', 'w-7 h-7') }}</span>
+        <p class="mt-5 text-lg font-medium" x-text="message"></p>
+        <p class="mt-2 text-sm text-muted">Mã yêu cầu: <b class="font-mono" x-text="code"></b></p>
+        <button class="btn btn-outline mt-6" @click="$store.consult.open = false">Đóng</button>
+      </div>
+    </template>
+    <form x-show="!success" @submit.prevent="submit($el)" novalidate class="relative">
+      <h3 class="pr-8 text-2xl font-medium" x-text="$store.consult.mode === 'order' ? 'Đặt nhanh' : 'Yêu cầu tư vấn'"></h3>
+      <div class="mt-4 flex items-center gap-3 rounded-md bg-ink/[.03] p-3" x-show="$store.consult.p">
+        <img :src="$store.consult.p?.cover?.sm" alt="" class="h-14 w-14 rounded object-cover">
+        <div class="min-w-0 text-sm">
+          <p class="truncate font-medium" x-text="$store.consult.p?.name"></p>
+          <p class="text-muted"><span x-show="$store.consult.size" x-text="'Ni ' + $store.consult.size"></span><span x-show="$store.consult.mode === 'order'" x-text="' · SL ' + $store.consult.qty"></span></p>
+        </div>
+      </div>
+      <div class="mt-5 grid gap-4">
+        {{ field('name', 'Họ và tên', 'text', true, '', 'name', '', 'q') }}
+        {{ field('phone', 'Số điện thoại', 'tel', true, '', 'tel', '', 'q') }}
+        <template x-if="$store.consult.mode === 'order'">{{ field('address', 'Địa chỉ nhận hàng', 'text', true, '', 'street-address', '', 'q') }}</template>
+        <div x-show="$store.consult.mode !== 'order'">
+          <label class="label" for="q-size">Ni tay của bạn (nếu biết)</label>
+          <input id="q-size" name="size" class="input" maxlength="60" :value="$store.consult.size">
+        </div>
+        {{ field('message', 'Lời nhắn', 'textarea', false, 'Bạn muốn shop tư vấn thêm điều gì?', '', '', 'q') }}
+      </div>
+      {{ antiSpam(formToken) }}
+      <p class="mt-3 text-sm text-red-600" x-show="message && !success" x-text="message" role="alert"></p>
+      <button type="submit" class="btn btn-primary mt-5 w-full" :disabled="loading" x-text="loading ? 'Đang gửi...' : ($store.consult.mode === 'order' ? 'Gửi đơn đặt hàng' : 'Gửi yêu cầu tư vấn')"></button>
+      <p class="mt-3 text-center text-xs text-muted">{{ s.forms.privacy_note }}</p>
+    </form>
+  </div>
+</div>
+
+{# ============ POPUP NỘI DUNG (khối thông tin trang chủ...) ============ #}
+<div x-data x-cloak x-show="$store.info.open" class="fixed inset-0 z-[80] flex items-center justify-center p-4"
+  role="dialog" aria-modal="true" @keydown.escape.window="$store.info.open = false">
+  <div x-show="$store.info.open" x-transition.opacity class="modal-backdrop" @click="$store.info.open = false"></div>
+  <div x-show="$store.info.open" x-trap.noscroll="$store.info.open" x-transition.scale.95 class="modal-panel max-h-[85vh] max-w-lg overflow-y-auto p-8">
+    <button class="icon-btn absolute right-3 top-3" @click="$store.info.open = false" aria-label="Đóng">{{ icon('close') }}</button>
+    <h3 class="pr-8 text-2xl font-medium" x-text="$store.info.title"></h3>
+    <div class="divider-ornament !mx-0 mb-5"></div>
+    <div class="prose-jade" x-html="$store.info.html"></div>
+  </div>
+</div>
+
+{# ============ THÔNG BÁO NHỎ (toast) ============ #}
+<div x-data class="pointer-events-none fixed inset-x-0 bottom-4 z-[90] flex flex-col items-center gap-2 px-4" aria-live="polite">
+  <template x-for="t in $store.toast.items" :key="t.id">
+    <div x-transition class="pointer-events-auto flex items-center gap-3 rounded-full bg-ink px-5 py-3 text-sm text-white shadow-xl">
+      <span x-text="t.message"></span>
+      <template x-if="t.link"><a :href="t.link.url" class="font-semibold text-accent underline-offset-2 hover:underline" x-text="t.link.label"></a></template>
+    </div>
+  </template>
+</div>
+
+{# ============ NÚT LIÊN HỆ NỔI ============ #}
+{% if features.floating_contact %}
+<div class="fixed bottom-5 right-4 z-40 flex flex-col gap-3">
+  {% if s.site.zalo %}
+  <a href="https://zalo.me/{{ s.site.zalo | phoneHref }}" target="_blank" rel="noopener" aria-label="Nhắn Zalo"
+    class="flex h-12 w-12 items-center justify-center rounded-full bg-[#0068ff] text-[13px] font-bold text-white shadow-lg shadow-[#0068ff]/30 transition hover:scale-110">Zalo</a>
+  {% endif %}
+  {% if s.site.phone %}
+  <a href="tel:{{ s.site.phone | phoneHref }}" aria-label="Gọi điện" class="relative flex h-12 w-12 items-center justify-center rounded-full bg-primary text-on-primary shadow-lg transition hover:scale-110">
+    <span class="absolute inset-0 animate-ping rounded-full bg-primary/40"></span>{{ icon('phone', 'w-5 h-5 relative') }}
+  </a>
+  {% endif %}
+</div>
+{% endif %}
+
+{# ============ POPUP CHÀO MỪNG ============ #}
+{% if features.welcome_popup %}
+<div x-data="welcomePopup" x-cloak x-show="open" class="fixed inset-0 z-[85] flex items-center justify-center p-4" role="dialog" aria-modal="true" @keydown.escape.window="close()">
+  <div x-show="open" x-transition.opacity class="modal-backdrop" @click="close()"></div>
+  <div x-show="open" x-trap.noscroll="open" x-transition.scale.90 class="modal-panel grid max-w-2xl {{ 'md:grid-cols-2' if features.welcome_popup_image else '' }}">
+    {% if features.welcome_popup_image %}<img src="{{ features.welcome_popup_image.md }}" alt="" class="hidden h-full w-full object-cover md:block">{% endif %}
+    <div class="p-8 text-center md:p-10">
+      <button class="icon-btn absolute right-3 top-3" @click="close()" aria-label="Đóng">{{ icon('close') }}</button>
+      <span class="eyebrow">{{ s.site.name }}</span>
+      <h3 class="mt-3 text-3xl font-medium">{{ features.welcome_popup_title }}</h3>
+      <div class="divider-ornament"></div>
+      <p class="mt-5 text-muted">{{ features.welcome_popup_content | nl2br }}</p>
+      <div class="mt-7 flex flex-col gap-2">
+        {% if s.site.zalo %}<a href="https://zalo.me/{{ s.site.zalo | phoneHref }}" target="_blank" rel="noopener" class="btn btn-primary" @click="close()">Nhắn Zalo ngay</a>{% endif %}
+        <button class="btn btn-ghost text-muted" @click="close()">Để sau</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}

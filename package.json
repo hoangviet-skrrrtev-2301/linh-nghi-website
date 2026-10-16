@@ -1,0 +1,50 @@
+{
+  "name": "website-linh-nghi",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Website bán vòng tay ngọc: giao diện khách, trang quản trị, API và cơ sở dữ liệu",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node --watch-path=backend backend/server.js",
+    "build": "npm run build:css",
+    "build:css": "tailwindcss -i frontend/src/css/app.css -o frontend/public/css/app.css --minify && tailwindcss -i admin/src/admin.css -o admin/public/css/admin.css --minify",
+    "watch:css": "tailwindcss -i frontend/src/css/app.css -o frontend/public/css/app.css --watch",
+    "migrate": "node backend/scripts/migrate.js",
+    "seed": "node backend/scripts/seed.js",
+    "create-admin": "node backend/scripts/create-admin.js",
+    "backup": "node backend/scripts/backup.js",
+    "restore": "node backend/scripts/restore.js",
+    "setup": "npm run build && npm run migrate"
+  },
+  "dependencies": {
+    "@alpinejs/collapse": "^3.17.4",
+    "@alpinejs/focus": "^3.17.4",
+    "@alpinejs/sort": "^3.17.4",
+    "alpinejs": "^3.17.4",
+    "better-sqlite3": "^13.0.3",
+    "compression": "^1.8.2",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.1",
+    "express-session": "^1.19.0",
+    "gsap": "^3.15.0",
+    "helmet": "^8.3.0",
+    "multer": "^2.4.0",
+    "nodemailer": "^10.1.1",
+    "nunjucks": "^3.2.4",
+    "photoswipe": "^5.4.4",
+    "qrcode": "^1.5.4",
+    "quill": "^2.0.3",
+    "sanitize-html": "^2.18.1",
+    "sharp": "^0.35.5",
+    "swiper": "^14.3.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "tailwindcss": "^4.3.3"
+  }
+}

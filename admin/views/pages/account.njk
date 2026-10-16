@@ -1,0 +1,48 @@
+{% extends "layout.njk" %}
+{% from "partials/icons.njk" import icon %}
+{% block title %}Tài khoản & bảo mật{% endblock %}
+{% block heading %}Tài khoản & bảo mật{% endblock %}
+{% block content %}
+<div x-data="accountPage({{ currentUser | attrjson }})" class="grid max-w-5xl gap-6 lg:grid-cols-2">
+  <div class="space-y-6">
+    <form class="card card-body space-y-4" @submit.prevent="saveProfile()">
+      <h2 class="card-title">Thông tin</h2>
+      <div><label class="label">Email</label><input class="input bg-slate-50" :value="me.email" disabled></div>
+      <div><label class="label">Tên hiển thị</label><input class="input" x-model="me.name"></div>
+      <button class="btn btn-secondary">Lưu</button>
+    </form>
+    <form class="card card-body space-y-4" @submit.prevent="changePassword()">
+      <h2 class="card-title">Đổi mật khẩu</h2>
+      <div><label class="label">Mật khẩu hiện tại</label><input type="password" class="input" autocomplete="current-password" x-model="pw.current_password" required></div>
+      <div><label class="label">Mật khẩu mới</label><input type="password" class="input" autocomplete="new-password" x-model="pw.new_password" required minlength="10"><p class="help">Tối thiểu 10 ký tự, có cả chữ và số.</p></div>
+      <div><label class="label">Nhập lại mật khẩu mới</label><input type="password" class="input" autocomplete="new-password" x-model="pw.confirm" required></div>
+      <button class="btn btn-primary" :disabled="saving">Đổi mật khẩu</button>
+    </form>
+  </div>
+
+  <div class="card card-body h-fit space-y-4">
+    <div class="flex items-center gap-3">
+      <span class="flex h-10 w-10 items-center justify-center rounded-xl" :class="me.totp_enabled ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'">{{ icon('shield') }}</span>
+      <div><h2 class="card-title">Xác thực 2 bước (2FA)</h2><p class="text-xs" :class="me.totp_enabled ? 'text-emerald-600' : 'text-amber-600'" x-text="me.totp_enabled ? 'Đang bật – tài khoản được bảo vệ' : 'Chưa bật – khuyến nghị bật cho tài khoản Chủ shop'"></p></div>
+    </div>
+    <p class="text-sm text-slate-600">Khi đăng nhập, ngoài mật khẩu bạn cần nhập mã 6 số từ ứng dụng <b>Google Authenticator</b> hoặc <b>Microsoft Authenticator</b> trên điện thoại.</p>
+
+    <template x-if="!me.totp_enabled && !setup"><button class="btn btn-primary" @click="start2fa()">Bật xác thực 2 bước</button></template>
+    <template x-if="setup">
+      <div class="space-y-3 rounded-xl border border-slate-200 p-4">
+        <p class="text-sm"><b>Bước 1:</b> Mở ứng dụng Authenticator, quét mã QR:</p>
+        <img :src="setup.qr" alt="Mã QR" class="mx-auto h-48 w-48">
+        <p class="text-center text-xs text-slate-500">Hoặc nhập mã: <code class="select-all break-all font-mono" x-text="setup.secret"></code></p>
+        <p class="text-sm"><b>Bước 2:</b> Nhập mã 6 số đang hiển thị trong ứng dụng:</p>
+        <div class="flex gap-2"><input class="input text-center font-mono tracking-widest" inputmode="numeric" maxlength="7" x-model="code" placeholder="000000"><button class="btn btn-primary" @click="enable2fa()">Xác nhận</button></div>
+      </div>
+    </template>
+    <template x-if="me.totp_enabled">
+      <div class="space-y-2 border-t border-slate-100 pt-4">
+        <label class="label">Tắt 2FA (nhập mật khẩu để xác nhận)</label>
+        <div class="flex gap-2"><input type="password" class="input" x-model="disablePw" autocomplete="current-password"><button class="btn btn-secondary" @click="disable2fa()">Tắt</button></div>
+      </div>
+    </template>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends "layouts/base.njk" %}
+{% from "partials/icons.njk" import icon %}
+{% from "partials/form-fields.njk" import contactFields, field, antiSpam, submitArea, successBox %}
+
+{% block content %}
+<section class="container-x py-10 md:py-14" x-data="inquiryForm('order')">
+  <h1 class="text-4xl font-medium md:text-5xl" x-show="!success">{{ s.forms.order_title }}</h1>
+
+  {{ successBox(s) }}
+
+  <div x-show="!success">
+    <template x-if="$store.cart.items.length === 0">
+      <div class="card mt-8 flex flex-col items-center px-6 py-20 text-center">
+        <span class="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">{{ icon('bag', 'w-6 h-6') }}</span>
+        <h2 class="mt-5 text-2xl">Giỏ hàng đang trống</h2>
+        <p class="mt-2 text-muted">Chọn chiếc vòng bạn yêu thích rồi quay lại đây nhé.</p>
+        <a href="/san-pham" class="btn btn-primary mt-6">Xem sản phẩm</a>
+      </div>
+    </template>
+
+    <div x-show="$store.cart.items.length > 0"><form @submit.prevent="submit($el)" novalidate class="relative mt-8 grid gap-10 lg:grid-cols-[1fr_400px]">
+      <div>
+        {# ----- Danh sách sản phẩm ----- #}
+        <div class="card divide-y divide-line">
+          <template x-for="(it, idx) in $store.cart.items" :key="it.key">
+            <div class="flex gap-4 p-4 sm:p-5">
+              <a :href="'/san-pham/' + it.slug" class="h-24 w-24 shrink-0 overflow-hidden rounded-md bg-ink/5"><img :src="it.cover?.sm" :alt="it.name" class="h-full w-full object-cover"></a>
+              <div class="flex min-w-0 flex-1 flex-col">
+                <div class="flex items-start justify-between gap-3">
+                  <a :href="'/san-pham/' + it.slug" class="font-heading text-lg font-medium leading-snug hover:text-primary" x-text="it.name"></a>
+                  <button type="button" class="p-1 text-muted hover:text-red-600" @click="$store.cart.remove(it.key)" aria-label="Xóa">{{ icon('trash', 'w-4 h-4') }}</button>
+                </div>
+                <p class="mt-0.5 text-xs text-red-600" x-show="it.unavailable">Sản phẩm này không còn bán, vui lòng xóa khỏi giỏ</p>
+                <div class="mt-auto flex flex-wrap items-center justify-between gap-3 pt-3">
+                  <div class="flex items-center gap-3">
+                    <template x-if="it.sizes && it.sizes.length">
+                      <select class="input !w-auto !py-1.5 text-sm" :value="it.size" @change="$store.cart.setSize(it.key, $event.target.value)" aria-label="Ni tay">
+                        <option value="">Chọn ni</option>
+                        <template x-if="it.size && !it.sizes.map(String).includes(String(it.size))"><option :value="it.size" selected x-text="'Ni riêng: ' + it.size"></option></template>
+                        <template x-for="sz in it.sizes"><option :value="sz" x-text="'Ni ' + sz" :selected="String(sz) === String(it.size)"></option></template>
+                      </select>
+                    </template>
+                    <div class="flex items-center rounded-md border border-line">
+                      <button type="button" class="px-2.5 py-1.5" @click="$store.cart.setQty(it.key, it.qty - 1)" aria-label="Giảm">{{ icon('minus', 'w-3.5 h-3.5') }}</button>
+                      <span class="w-7 text-center text-sm" x-text="it.qty"></span>
+                      <button type="button" class="px-2.5 py-1.5" @click="$store.cart.setQty(it.key, it.qty + 1)" aria-label="Tăng">{{ icon('plus', 'w-3.5 h-3.5') }}</button>
+                    </div>
+                  </div>
+                  <span class="price" x-show="$store.app.showPrices" x-text="it.final_price != null ? $store.cart.vnd(it.final_price * it.qty) : 'Liên hệ'"></span>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        {# ----- Thông tin khách hàng ----- #}
+        <div class="card mt-8 p-6 md:p-8">
+          <h2 class="text-2xl font-medium">Thông tin nhận hàng</h2>
+          <div class="mt-6">{{ contactFields(s, true) }}</div>
+          <div class="mt-5">{{ field('message', 'Ghi chú cho shop', 'textarea', false, 'Thời gian nhận hàng, yêu cầu gói quà, khắc chữ...') }}</div>
+          {{ antiSpam(formToken) }}
+        </div>
+      </div>
+
+      {# ----- Tóm tắt ----- #}
+      <aside class="lg:sticky lg:top-24 lg:self-start">
+        <div class="card p-6">
+          <h2 class="text-xl font-medium">Tóm tắt đơn hàng</h2>
+          <dl class="mt-5 space-y-3 text-sm">
+            <div class="flex justify-between"><dt class="text-muted">Số lượng</dt><dd x-text="$store.cart.count + ' sản phẩm'"></dd></div>
+            <div class="flex justify-between" x-show="$store.app.showPrices"><dt class="text-muted">Tạm tính</dt><dd class="font-medium" x-text="$store.cart.total != null ? $store.cart.vnd($store.cart.total) : 'Liên hệ'"></dd></div>
+            <div class="flex justify-between gap-6"><dt class="text-muted">Vận chuyển</dt><dd class="text-right text-xs text-muted">{{ s.forms.shipping_note }}</dd></div>
+          </dl>
+          <div class="mt-5 flex items-baseline justify-between border-t border-line pt-5" x-show="$store.app.showPrices">
+            <span class="font-medium">Tổng</span><span class="price text-2xl" x-text="$store.cart.total != null ? $store.cart.vnd($store.cart.total) : 'Liên hệ'"></span>
+          </div>
+          <div class="prose-jade mt-5 rounded-md bg-primary/5 p-4 text-[13px]">{{ s.forms.order_note | safe }}</div>
+          {{ submitArea('Gửi đơn đặt hàng', s) }}
+        </div>
+      </aside>
+    </form></div>
+  </div>
+</section>
+{% endblock %}

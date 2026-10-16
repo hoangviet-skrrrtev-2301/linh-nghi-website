@@ -1,0 +1,333 @@
+// API trang quản trị (đã yêu cầu đăng nhập ở router cha).
+import fs from 'node:fs';
+import path from 'node:path';
+import { Router } from 'express';
+import multer from 'multer';
+import QRCode from 'qrcode';
+import { config } from '../../config/index.js';
+import { db } from '../../lib/db.js';
+import { requireOwner } from '../../middleware/auth.js';
+import { HttpError, toInt } from '../../lib/utils.js';
+import { verifyPassword, verifyTotp, generateTotpSecret, totpUri } from '../../lib/security.js';
+import * as media from '../../services/media.js';
+import * as catalog from '../../services/catalog.js';
+import * as content from '../../services/content.js';
+import * as inquiries from '../../services/inquiries.js';
+import * as users from '../../services/users.js';
+import * as settings from '../../services/settings.js';
+import { SETTINGS_SCHEMA, SCHEMA_BY_KEY } from '../../config/settings-schema.js';
+import { verifyConnection, sendMail } from '../../services/mailer.js';
+
+const router = Router();
+const { audit } = users;
+const id = (req) => {
+  const n = toInt(req.params.id);
+  if (!n) throw new HttpError(400, 'ID không hợp lệ');
+  return n;
+};
+// Bọc handler: tự bắt lỗi async
+const h = (fn) => async (req, res, next) => {
+  try {
+    const out = await fn(req, res);
+    if (out !== undefined && !res.headersSent) res.json(out);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: config.uploadMaxMb * 1024 * 1024, files: 20 },
+  fileFilter: (req, file, cb) => cb(null, /^image\//.test(file.mimetype)),
+});
+
+// ---------------- Tổng quan ----------------
+router.get('/me', h((req) => ({ user: req.user })));
+
+router.get('/dashboard', h(() => ({
+  stats: inquiries.inquiryStats(),
+  counts: {
+    products: db.prepare(`SELECT COUNT(*) FROM products WHERE status = 'published'`).pluck().get(),
+    drafts: db.prepare(`SELECT COUNT(*) FROM products WHERE status = 'draft'`).pluck().get(),
+    customers: db.prepare('SELECT COUNT(*) FROM customers').pluck().get(),
+    posts: db.prepare(`SELECT COUNT(*) FROM posts WHERE status = 'published'`).pluck().get(),
+  },
+  latest: inquiries.listInquiries({ perPage: 8 }).items,
+  mailConfigured: settings.getRaw('mail').enabled,
+})));
+
+// ---------------- Thư viện ảnh ----------------
+router.get('/media', h((req) => media.listMedia({ folder: req.query.folder, q: req.query.q, page: toInt(req.query.page, 1) })));
+
+router.post('/media', upload.array('files', 20), h(async (req) => {
+  if (!req.files?.length) throw new HttpError(400, 'Chưa chọn ảnh hoặc định dạng không hỗ trợ');
+  const out = [];
+  for (const f of req.files) {
+    out.push(await media.saveImage(f.buffer, {
+      originalName: f.originalname, folder: String(req.body.folder || 'general').slice(0, 40), userId: req.user.id,
+    }));
+  }
+  audit(req, 'upload', 'media', out.map((m) => m.id).join(','));
+  return { items: out };
+}));
+
+router.patch('/media/:id', h((req) => media.updateMediaAlt(id(req), req.body.alt)));
+router.delete('/media/:id', h((req) => {
+  media.deleteMedia(id(req));
+  settings.invalidateSettings();
+  audit(req, 'delete', 'media', req.params.id);
+  return { ok: true };
+}));
+
+// ---------------- Danh mục ----------------
+router.get('/terms', h((req) => (req.query.type ? catalog.listTerms(req.query.type) : catalog.allTermsGrouped())));
+router.post('/terms', h((req) => {
+  const tid = catalog.saveTerm(null, req.body);
+  audit(req, 'create', 'term', tid, req.body.name);
+  return { id: tid };
+}));
+router.put('/terms/:id', h((req) => {
+  catalog.saveTerm(id(req), req.body);
+  audit(req, 'update', 'term', req.params.id, req.body.name);
+  return { ok: true };
+}));
+router.delete('/terms/:id', h((req) => {
+  catalog.deleteTerm(id(req));
+  audit(req, 'delete', 'term', req.params.id);
+  return { ok: true };
+}));
+
+// ---------------- Sản phẩm ----------------
+router.get('/products', h((req) => catalog.searchProducts(
+  { q: req.query.q, status: req.query.status, loai: req.query.loai, sap_xep: req.query.sort || 'moi' },
+  { page: req.query.page, perPage: Math.min(200, toInt(req.query.per_page, 30)), includeDrafts: true },
+)));
+router.get('/products/:id', h((req) => {
+  const p = catalog.getProduct(id(req), { publicOnly: false });
+  if (!p) throw new HttpError(404, 'Không tìm thấy sản phẩm');
+  return p;
+}));
+router.post('/products', h((req) => {
+  const pid = catalog.saveProduct(null, req.body);
+  audit(req, 'create', 'product', pid, req.body.name);
+  return { id: pid };
+}));
+router.put('/products/:id', h((req) => {
+  catalog.saveProduct(id(req), req.body);
+  audit(req, 'update', 'product', req.params.id, req.body.name);
+  return { id: id(req) };
+}));
+router.post('/products/:id/duplicate', h((req) => {
+  const pid = catalog.duplicateProduct(id(req));
+  audit(req, 'duplicate', 'product', pid);
+  return { id: pid };
+}));
+router.delete('/products/:id', h((req) => {
+  catalog.deleteProduct(id(req));
+  audit(req, 'delete', 'product', req.params.id);
+  return { ok: true };
+}));
+
+// ---------------- Gallery ----------------
+router.get('/gallery', h(() => content.listGallery({ activeOnly: false })));
+router.post('/gallery', h((req) => {
+  // Cho phép thêm nhiều ảnh một lần
+  const ids = [].concat(req.body.media_ids || req.body.media_id || []);
+  const created = ids.map((mid) => content.saveGalleryItem(null, { ...req.body, media_id: mid }));
+  audit(req, 'create', 'gallery', created.join(','));
+  return { ids: created };
+}));
+router.put('/gallery/:id', h((req) => {
+  content.saveGalleryItem(id(req), req.body);
+  return { ok: true };
+}));
+router.post('/gallery/reorder', h((req) => {
+  content.reorderGallery([].concat(req.body.ids || []).map((x) => toInt(x)).filter(Boolean));
+  return { ok: true };
+}));
+router.delete('/gallery/:id', h((req) => {
+  content.deleteGalleryItem(id(req));
+  audit(req, 'delete', 'gallery', req.params.id);
+  return { ok: true };
+}));
+
+// ---------------- Blog ----------------
+router.get('/posts', h((req) => content.listPosts({ includeDrafts: true, q: req.query.q, status: req.query.status, page: req.query.page, perPage: 30 })));
+router.get('/posts/:id', h((req) => {
+  const p = content.getPost(id(req), { publicOnly: false });
+  if (!p) throw new HttpError(404, 'Không tìm thấy bài viết');
+  return p;
+}));
+router.post('/posts', h((req) => {
+  const pid = content.savePost(null, req.body, req.user.id);
+  audit(req, 'create', 'post', pid, req.body.title);
+  return { id: pid };
+}));
+router.put('/posts/:id', h((req) => {
+  content.savePost(id(req), req.body, req.user.id);
+  audit(req, 'update', 'post', req.params.id, req.body.title);
+  return { id: id(req) };
+}));
+router.delete('/posts/:id', h((req) => {
+  content.deletePost(id(req));
+  audit(req, 'delete', 'post', req.params.id);
+  return { ok: true };
+}));
+
+// ---------------- Đơn hàng / yêu cầu ----------------
+router.get('/inquiries', h((req) => inquiries.listInquiries({
+  type: req.query.type, status: req.query.status, q: req.query.q, from: req.query.from, to: req.query.to, page: toInt(req.query.page, 1),
+})));
+router.get('/inquiries/:id', h((req) => {
+  const inq = inquiries.getInquiry(id(req));
+  if (!inq) throw new HttpError(404, 'Không tìm thấy');
+  return inq;
+}));
+router.patch('/inquiries/:id', h((req) => {
+  const inq = inquiries.updateInquiry(id(req), req.body);
+  audit(req, 'update', 'inquiry', inq.code, `status=${inq.status}`);
+  return inq;
+}));
+router.post('/inquiries/:id/resend', h(async (req) => {
+  await inquiries.resendNotification(id(req));
+  return inquiries.getInquiry(id(req));
+}));
+router.delete('/inquiries/:id', requireOwner, h((req) => {
+  inquiries.deleteInquiry(id(req));
+  audit(req, 'delete', 'inquiry', req.params.id);
+  return { ok: true };
+}));
+
+// ---------------- Khách hàng ----------------
+router.get('/customers/export.csv', requireOwner, (req, res) => {
+  audit(req, 'export', 'customers');
+  res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="khach-hang-${new Date().toISOString().slice(0, 10)}.csv"` });
+  res.send(inquiries.customersCsv());
+});
+router.get('/customers', h((req) => inquiries.listCustomers({ q: req.query.q, page: toInt(req.query.page, 1) })));
+router.get('/customers/:id', h((req) => {
+  const c = inquiries.getCustomer(id(req));
+  if (!c) throw new HttpError(404, 'Không tìm thấy khách hàng');
+  return c;
+}));
+router.put('/customers/:id', h((req) => {
+  const c = inquiries.updateCustomer(id(req), req.body);
+  audit(req, 'update', 'customer', req.params.id);
+  return c;
+}));
+router.delete('/customers/:id', requireOwner, h((req) => {
+  inquiries.deleteCustomer(id(req));
+  audit(req, 'delete', 'customer', req.params.id);
+  return { ok: true };
+}));
+
+// ---------------- Cài đặt ----------------
+const canEdit = (req, key) => {
+  const g = SCHEMA_BY_KEY[key];
+  if (!g) throw new HttpError(404, 'Nhóm cấu hình không tồn tại');
+  if (g.ownerOnly && req.user.role !== 'owner') throw new HttpError(403, 'Chỉ Chủ shop được sửa mục này');
+  return g;
+};
+
+router.get('/settings', h((req) => SETTINGS_SCHEMA.filter((g) => !g.ownerOnly || req.user.role === 'owner')));
+router.get('/settings/:key', h((req) => {
+  const group = canEdit(req, req.params.key);
+  const values = settings.getForAdmin(req.params.key);
+  // Gửi kèm thông tin ảnh để hiện ảnh xem trước
+  const ids = [];
+  const walk = (fields, data) => fields.forEach((f) => {
+    if (f.type === 'image' && data?.[f.name]) ids.push(data[f.name]);
+    if (f.type === 'list') (data?.[f.name] || []).forEach((it) => walk(f.fields, it));
+  });
+  walk(group.fields, values);
+  return { group, values, media: media.getMediaMap(ids) };
+}));
+router.put('/settings/:key', h((req) => {
+  canEdit(req, req.params.key);
+  const values = settings.saveGroup(req.params.key, req.body || {});
+  audit(req, 'update', 'settings', req.params.key);
+  return { values };
+}));
+router.post('/settings/mail/test', requireOwner, h(async (req) => {
+  await verifyConnection();
+  const m = settings.getRaw('mail');
+  const to = (m.notify_to || m.user).split(',')[0].trim();
+  await sendMail({ to, subject: 'Email thử nghiệm từ website', html: '<p>Cấu hình email hoạt động tốt. Bạn sẽ nhận thông báo đơn hàng tại địa chỉ này.</p>' });
+  audit(req, 'test', 'mail');
+  return { ok: true, message: `Đã gửi email thử tới ${to}` };
+}));
+
+// Tải bản sao lưu database (chỉ Chủ shop)
+router.get('/backup', requireOwner, h(async (req, res) => {
+  fs.mkdirSync(config.paths.backups, { recursive: true });
+  const file = path.join(config.paths.backups, `download-${Date.now()}.sqlite`);
+  await db.backup(file);
+  audit(req, 'backup', 'database');
+  res.download(file, `backup-${new Date().toISOString().slice(0, 10)}.sqlite`, () => fs.rm(file, { force: true }, () => {}));
+}));
+
+// ---------------- Tài khoản cá nhân ----------------
+router.put('/account', h(async (req) => {
+  const me = users.getUserWithSecrets(req.user.id);
+  if (req.body.new_password) {
+    if (!(await verifyPassword(String(req.body.current_password || ''), me.password_hash))) {
+      throw new HttpError(400, 'Mật khẩu hiện tại không đúng');
+    }
+    await users.setPassword(me.id, req.body.new_password, req.sessionID);
+    audit(req, 'change_password', 'user', me.id);
+  }
+  if (req.body.name) await users.updateUser(me.id, { name: req.body.name });
+  return { user: users.getUser(me.id) };
+}));
+
+router.post('/account/2fa/setup', h(async (req) => {
+  const secret = generateTotpSecret();
+  req.session.totpSetup = secret;
+  const uri = totpUri(secret, req.user.email, settings.getRaw('site').name || 'Admin');
+  return { secret, qr: await QRCode.toDataURL(uri, { margin: 1, width: 220 }) };
+}));
+
+router.post('/account/2fa/enable', h((req) => {
+  const secret = req.session.totpSetup;
+  if (!secret) throw new HttpError(400, 'Vui lòng tạo mã QR trước');
+  if (!verifyTotp(secret, req.body.code)) throw new HttpError(400, 'Mã xác thực không đúng, hãy thử lại');
+  users.setTotp(req.user.id, secret, true);
+  req.session.totpSetup = null;
+  audit(req, 'enable_2fa', 'user', req.user.id);
+  return { ok: true };
+}));
+
+router.post('/account/2fa/disable', h(async (req) => {
+  const me = users.getUserWithSecrets(req.user.id);
+  if (!(await verifyPassword(String(req.body.password || ''), me.password_hash))) throw new HttpError(400, 'Mật khẩu không đúng');
+  users.setTotp(me.id, null, false);
+  audit(req, 'disable_2fa', 'user', me.id);
+  return { ok: true };
+}));
+
+// ---------------- Quản lý tài khoản (Chủ shop) ----------------
+router.get('/users', requireOwner, h(() => users.listUsers()));
+router.post('/users', requireOwner, h(async (req) => {
+  const uid = await users.createUser(req.body);
+  audit(req, 'create', 'user', uid, req.body.email);
+  return { id: uid };
+}));
+router.put('/users/:id', requireOwner, h(async (req) => {
+  const u = await users.updateUser(id(req), req.body);
+  audit(req, 'update', 'user', req.params.id);
+  return u;
+}));
+router.post('/users/:id/reset-2fa', requireOwner, h((req) => {
+  users.setTotp(id(req), null, false);
+  audit(req, 'reset_2fa', 'user', req.params.id);
+  return { ok: true };
+}));
+router.delete('/users/:id', requireOwner, h((req) => {
+  users.deleteUser(id(req), req.user.id);
+  audit(req, 'delete', 'user', req.params.id);
+  return { ok: true };
+}));
+
+router.get('/audit', requireOwner, h((req) => users.listAudit({ page: toInt(req.query.page, 1) })));
+
+export default router;

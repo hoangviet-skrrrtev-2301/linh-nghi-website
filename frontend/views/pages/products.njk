@@ -1,0 +1,140 @@
+{% extends "layouts/base.njk" %}
+{% from "partials/icons.njk" import icon %}
+{% from "partials/product-card.njk" import productCard %}
+
+{# Bộ lọc dạng form GET: hoạt động cả khi tắt JavaScript, link lọc chia sẻ được, tốt cho SEO #}
+{% macro filterGroup(title, name, terms, selected, swatch=false) %}
+{% from "partials/icons.njk" import icon %}
+{% if terms.length %}
+<div class="border-b border-line py-5" x-data="{ open: true }">
+  <button type="button" class="flex w-full items-center justify-between text-left text-sm font-semibold" @click="open = !open" :aria-expanded="open">
+    {{ title }} <span :class="open && 'rotate-180'" class="transition">{{ icon('chevron-down', 'w-4 h-4') }}</span>
+  </button>
+  <div x-show="open" x-collapse class="flex flex-wrap gap-2 pt-4">
+    {% for t in terms %}
+    <label class="chip {{ 'opacity-50' if not t.count }}">
+      <input type="checkbox" name="{{ name }}" value="{{ t.slug }}" class="sr-only" {{ 'checked' if t.slug in selected }} @change="submit()">
+      {% if swatch and t.color_hex %}<span class="h-3.5 w-3.5 rounded-full ring-1 ring-ink/10" style="background: {{ t.color_hex }}"></span>{% endif %}
+      {{ t.name }} <span class="text-[11px] opacity-60">{{ t.count }}</span>
+    </label>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endmacro %}
+
+{% block content %}
+<section class="border-b border-line bg-surface">
+  <div class="container-x py-10 md:py-14">
+    <nav class="mb-4 text-xs text-muted" aria-label="Breadcrumb"><a href="/" class="hover:text-primary">Trang chủ</a> <span class="mx-1.5">/</span> <span class="text-ink">Sản phẩm</span></nav>
+    <h1 class="text-4xl font-medium md:text-5xl">{% if filters.q %}Kết quả cho “{{ filters.q }}”{% elif activeType %}Vòng {{ activeType.name }}{% else %}{{ s.pages.products_title }}{% endif %}</h1>
+    <p class="mt-3 max-w-2xl text-muted">{{ activeType.description if activeType and activeType.description else s.pages.products_intro }}</p>
+  </div>
+</section>
+
+<section class="container-x py-10" x-data="productFilters">
+  <form id="filter-form" method="get" action="/san-pham" x-ref="form" class="lg:grid lg:grid-cols-[260px_1fr] lg:gap-10">
+    {# ===== Thanh lọc ===== #}
+    <div x-cloak x-show="drawer" x-transition.opacity class="fixed inset-0 z-[60] bg-ink/40 lg:hidden" @click="drawer = false"></div>
+    <aside :class="drawer ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
+      class="fixed inset-y-0 left-0 z-[61] w-[86%] max-w-sm overflow-y-auto bg-surface px-5 pb-28 pt-4 shadow-2xl transition-transform duration-300 lg:static lg:z-auto lg:w-auto lg:max-w-none lg:overflow-visible lg:bg-transparent lg:p-0 lg:shadow-none"
+      aria-label="Bộ lọc sản phẩm">
+      <div class="flex items-center justify-between pb-2 lg:hidden">
+        <span class="font-heading text-xl">Bộ lọc</span>
+        <button type="button" class="icon-btn" @click="drawer = false" aria-label="Đóng">{{ icon('close') }}</button>
+      </div>
+
+      <div class="pb-5">
+        <label for="f-q" class="label">Tìm kiếm</label>
+        <div class="relative">
+          <input id="f-q" type="search" name="q" value="{{ filters.q }}" placeholder="Tên, mã, loại ngọc..." class="input pr-10">
+          <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-muted hover:text-primary" aria-label="Tìm">{{ icon('search', 'w-4 h-4') }}</button>
+        </div>
+      </div>
+
+      {{ filterGroup('Loại ngọc', 'loai', facets.terms.jade_type, filters.loai) }}
+      {{ filterGroup('Màu sắc', 'mau', facets.terms.color, filters.mau, true) }}
+      {{ filterGroup('Kiểu dáng', 'kieu', facets.terms.style, filters.kieu) }}
+      {{ filterGroup('Mệnh phong thủy', 'menh', facets.terms.element, filters.menh) }}
+
+      {% if features.show_prices %}
+      <div class="border-b border-line py-5">
+        <p class="text-sm font-semibold">Khoảng giá (VNĐ)</p>
+        <div class="mt-4 grid grid-cols-2 gap-2">
+          <input type="number" name="gia_tu" value="{{ filters.gia_tu }}" placeholder="Từ" min="0" step="100000" class="input !py-2 text-sm" aria-label="Giá từ">
+          <input type="number" name="gia_den" value="{{ filters.gia_den }}" placeholder="Đến" min="0" step="100000" class="input !py-2 text-sm" aria-label="Giá đến">
+        </div>
+        <div class="mt-3 flex flex-wrap gap-2">
+          {% for r in s.pages.price_ranges %}
+          {% set rmin = (r.min | string) if r.min else '' %}{% set rmax = (r.max | string) if r.max else '' %}
+          <button type="button" class="chip !text-xs {{ '!border-primary !bg-primary !text-on-primary' if filters.gia_tu == rmin and filters.gia_den == rmax and (rmin or rmax) }}" @click="price('{{ rmin }}', '{{ rmax }}')">{{ r.label }}</button>
+          {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-outline btn-sm mt-3 w-full">Áp dụng</button>
+      </div>
+      {% endif %}
+
+      {% if facets.sizes.length %}
+      <div class="border-b border-line py-5">
+        <p class="text-sm font-semibold">Ni tay (mm) <a href="/huong-dan-size" class="ml-1 text-xs font-normal text-accent hover:underline">Cách đo?</a></p>
+        <div class="mt-4 flex flex-wrap gap-2">
+          {% for sz in facets.sizes %}
+          <label class="chip min-w-12 justify-center"><input type="radio" name="ni" value="{{ sz }}" class="sr-only" {{ 'checked' if (filters.ni | string) == (sz | string) }} @change="submit()">{{ sz }}</label>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="space-y-3 py-5 text-sm">
+        <label class="flex cursor-pointer items-center gap-3"><input type="checkbox" name="con_hang" value="1" {{ 'checked' if filters.con_hang }} @change="submit()" class="h-4 w-4 accent-[var(--c-primary)]"> Chỉ hiện sản phẩm còn hàng</label>
+        <label class="flex cursor-pointer items-center gap-3"><input type="checkbox" name="custom" value="1" {{ 'checked' if filters.custom }} @change="submit()" class="h-4 w-4 accent-[var(--c-primary)]"> Có thể custom</label>
+      </div>
+
+      {% if hasFilter %}<a href="/san-pham" class="btn btn-ghost btn-sm w-full text-muted">Xóa tất cả bộ lọc</a>{% endif %}
+
+      <div class="fixed inset-x-0 bottom-0 w-[86%] max-w-sm border-t border-line bg-surface p-4 lg:hidden">
+        <button type="submit" class="btn btn-primary w-full">Xem {{ result.total }} sản phẩm</button>
+      </div>
+    </aside>
+
+    {# ===== Danh sách ===== #}
+    <div>
+      <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <button type="button" class="btn btn-outline btn-sm lg:hidden" @click="drawer = true">{{ icon('filter', 'w-4 h-4') }} Bộ lọc</button>
+          <p class="text-sm text-muted"><span class="font-semibold text-ink">{{ result.total }}</span> sản phẩm</p>
+        </div>
+        <label class="flex items-center gap-2 text-sm"><span class="hidden text-muted sm:inline">Sắp xếp</span>
+          <select name="sap_xep" class="input !w-auto !py-2 text-sm" @change="submit()">
+            {% for o in sortOptions %}<option value="{{ o.value }}" {{ 'selected' if filters.sap_xep == o.value }}>{{ o.label }}</option>{% endfor %}
+          </select>
+        </label>
+      </div>
+
+      {% if result.items.length %}
+      <div class="grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 md:gap-x-6 {{ 'xl:grid-cols-4' if s.theme.product_grid == '4' }}">
+        {% for p in result.items %}{{ productCard(p, features, loop.index0, false) }}{% endfor %}
+      </div>
+
+      {% if result.pages > 1 %}
+      <nav class="mt-14 flex items-center justify-center gap-1.5" aria-label="Phân trang">
+        {% for n in range(1, result.pages + 1) %}
+        <button type="submit" name="trang" value="{{ n }}" class="h-10 min-w-10 rounded-full px-3 text-sm transition {{ 'bg-primary text-on-primary' if n == result.page else 'hover:bg-ink/5' }}" {{ 'aria-current=page' if n == result.page }}>{{ n }}</button>
+        {% endfor %}
+      </nav>
+      {% endif %}
+      {% else %}
+      <div class="card flex flex-col items-center px-6 py-20 text-center">
+        <span class="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">{{ icon('search', 'w-6 h-6') }}</span>
+        <h2 class="mt-5 text-2xl">Chưa tìm thấy sản phẩm phù hợp</h2>
+        <p class="mt-2 max-w-md text-muted">Thử bỏ bớt bộ lọc hoặc gửi yêu cầu để shop tìm mẫu theo ý bạn.</p>
+        <div class="mt-6 flex flex-wrap justify-center gap-3">
+          <a href="/san-pham" class="btn btn-outline">Xóa bộ lọc</a>
+          {% if features.custom_request %}<a href="/thiet-ke-rieng" class="btn btn-primary">Gửi yêu cầu custom</a>{% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </form>
+</section>
+{% endblock %}

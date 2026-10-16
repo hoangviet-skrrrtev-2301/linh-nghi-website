@@ -1,0 +1,46 @@
+{% from "partials/icons.njk" import icon %}
+{# Thẻ sản phẩm dùng chung.
+   quick = true  : bấm vào ảnh mở popup xem nhanh (dùng ở trang chủ)
+   quick = false : bấm vào ảnh sang trang chi tiết (dùng ở trang danh sách), vẫn có nút "Xem nhanh" #}
+{% macro productCard(p, features, index=0, quick=true) %}
+{% from "partials/icons.njk" import icon %}
+<article class="product-card group reveal">
+  <div class="media">
+    <a href="/san-pham/{{ p.slug }}" {% if quick %}@click.prevent="$store.quick.show('{{ p.slug }}')"{% endif %} aria-label="{{ ('Xem nhanh ' if quick else 'Xem chi tiết ') + p.name }}">
+      {% if p.cover %}
+      <img src="{{ p.cover.md }}" srcset="{{ p.cover | srcset }}" sizes="(min-width:1024px) 25vw, (min-width:640px) 33vw, 50vw"
+        alt="{{ p.cover.alt or p.name }}" width="{{ p.cover.width }}" height="{{ p.cover.height }}" loading="{{ 'eager' if index < 4 else 'lazy' }}" decoding="async">
+      {% endif %}
+      {% if p.hover %}
+      {# Ảnh góc khác, hiện khi di chuột #}
+      <img src="{{ p.hover.md }}" alt="{{ p.hover.alt or p.name }}" loading="lazy" decoding="async" class="hover-img absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
+      {% endif %}
+    </a>
+    <div class="pointer-events-none absolute left-3 top-3 flex flex-col items-start gap-1.5">
+      {% if p.is_bestseller %}<span class="badge bg-ink text-white">★ Best Seller</span>{% endif %}
+      {% if p.show_new %}<span class="badge bg-primary text-on-primary">Mới</span>{% endif %}
+      {% if p.on_sale and features.show_prices %}<span class="badge bg-accent text-white">Sale -{{ ((1 - p.sale_price / p.price) * 100) | round }}%</span>{% endif %}
+      {% if p.stock_status == 'sold_out' %}<span class="badge bg-ink/80 text-white">Đã bán</span>
+      {% elif p.stock_status == 'made_to_order' %}<span class="badge bg-surface/90 text-ink">Đặt trước</span>{% endif %}
+      {% if p.is_customizable %}<span class="badge bg-surface/90 text-primary">Có thể custom</span>{% endif %}
+    </div>
+    <button type="button" class="quick btn btn-light btn-sm" @click="$store.quick.show('{{ p.slug }}')">{{ icon('eye', 'w-4 h-4') }} Xem nhanh</button>
+  </div>
+  <div class="mt-4 px-0.5">
+    {% if p.jade_type %}<p class="text-[11px] uppercase tracking-[0.16em] text-muted">{{ p.jade_type.name }}</p>{% endif %}
+    <h3 class="mt-1 font-heading text-[1.15rem] font-medium leading-snug">
+      <a href="/san-pham/{{ p.slug }}" class="transition hover:text-primary">{{ p.name }}</a>
+    </h3>
+    {% if features.show_prices %}
+    <div class="mt-1.5 flex items-baseline gap-2">
+      {% if p.final_price != null %}
+        <span class="price">{{ p.final_price | vnd }}</span>
+        {% if p.on_sale %}<span class="price-old">{{ p.price | vnd }}</span>{% endif %}
+      {% else %}
+        <span class="price text-base">Liên hệ</span>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</article>
+{% endmacro %}

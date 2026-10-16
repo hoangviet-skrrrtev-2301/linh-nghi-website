@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Lỗi {{ status }}</title>
+<link rel="stylesheet" href="/admin-assets/css/admin.css?v={{ assetVersion }}"></head>
+<body class="flex min-h-screen items-center justify-center p-6">
+  <div class="card max-w-md p-8 text-center">
+    <p class="text-5xl font-bold text-slate-300">{{ status }}</p>
+    <p class="mt-4 text-slate-700">{{ message }}</p>
+    <a href="{{ A or adminPath }}" class="btn btn-primary mt-6">Về trang quản trị</a>
+  </div>
+</body></html>

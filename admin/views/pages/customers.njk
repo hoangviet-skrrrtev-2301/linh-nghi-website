@@ -1,0 +1,36 @@
+{% extends "layout.njk" %}
+{% from "partials/icons.njk" import icon %}
+{% block title %}Khách hàng{% endblock %}
+{% block heading %}Khách hàng{% endblock %}
+{% block content %}
+<div x-data="customersList">
+  <div class="mb-5 flex flex-wrap items-center gap-3">
+    <div class="relative w-full max-w-xs"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{{ icon('search', 'w-4 h-4') }}</span>
+      <input type="search" class="input pl-9" placeholder="Tên, SĐT, email, nhãn..." x-model="filters.q" @input.debounce.400ms="search()"></div>
+    <p class="text-xs text-slate-500">Khách hàng tự động được tạo khi gửi đơn/yêu cầu (gộp theo số điện thoại).</p>
+    {% if currentUser.role == 'owner' %}<a href="{{ A }}/api/customers/export.csv" class="btn btn-secondary ml-auto">{{ icon('download', 'w-4 h-4') }} Xuất Excel (CSV)</a>{% endif %}
+  </div>
+  <div class="card overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="table">
+        <thead><tr><th>Khách hàng</th><th>Liên hệ</th><th>Ni tay</th><th>Nhãn</th><th>Số yêu cầu</th><th>Đã mua</th><th>Gần nhất</th></tr></thead>
+        <tbody>
+          <template x-for="c in items" :key="c.id">
+            <tr class="cursor-pointer" @click="location.href = '{{ A }}/customers/' + c.id">
+              <td class="font-medium" x-text="c.name"></td>
+              <td><p x-text="c.phone"></p><p class="text-xs text-slate-500" x-text="c.email"></p></td>
+              <td x-text="c.wrist_size || '—'"></td>
+              <td><template x-for="t in c.tags.split(',').map(s => s.trim()).filter(Boolean)"><span class="badge mr-1 bg-slate-100 text-slate-600" x-text="t"></span></template></td>
+              <td x-text="c.inquiry_count"></td>
+              <td x-text="c.total_spent ? $fmt.vnd(c.total_spent) : '—'"></td>
+              <td class="text-slate-500" x-text="$fmt.date(c.last_inquiry_at || c.created_at, false)"></td>
+            </tr>
+          </template>
+          <tr x-show="!loading && !items.length"><td colspan="7" class="py-14 text-center text-slate-500">Chưa có khách hàng.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    {% include "partials/pager.njk" %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+{
+  "files.associations": { "*.njk": "nunjucks" },
+  "emmet.includeLanguages": { "nunjucks": "html" },
+  "tailwindCSS.includeLanguages": { "nunjucks": "html" },
+  "tailwindCSS.experimental.configFile": {
+    "frontend/src/css/app.css": "frontend/**",
+    "admin/src/admin.css": "admin/**"
+  },
+  "files.eol": "\n",
+  "search.exclude": { "node_modules": true, "database/uploads": true, "frontend/public/css": true, "admin/public/css": true }
+}

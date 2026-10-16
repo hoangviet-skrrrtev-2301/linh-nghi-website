@@ -1,0 +1,74 @@
+{# Macro dựng ô nhập liệu dùng chung trong admin. model = biểu thức Alpine, ví dụ "form.name" #}
+
+{% macro imageField(model, preview='null') %}
+{% from "partials/icons.njk" import icon %}
+<div x-data="mediaField({{ preview }})" x-modelable="value" x-model="{{ model }}" class="flex items-center gap-3">
+  <button type="button" @click="pick()" class="group relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 text-slate-400 transition hover:border-brand-500 hover:text-brand-600">
+    <template x-if="preview"><img :src="preview.sm" alt="" class="h-full w-full object-cover"></template>
+    <template x-if="!preview"><span class="flex flex-col items-center text-xs">{{ icon('image', 'w-6 h-6') }}<span class="mt-1">Chọn ảnh</span></span></template>
+  </button>
+  <div class="flex flex-col gap-1.5" x-show="preview">
+    <button type="button" class="btn btn-secondary btn-sm" @click="pick()">Đổi ảnh</button>
+    <button type="button" class="btn btn-ghost btn-sm text-red-600" @click="clear()">Bỏ ảnh</button>
+  </div>
+</div>
+{% endmacro %}
+
+{% macro imageList(model, initial='[]') %}
+{% from "partials/icons.njk" import icon %}
+<div x-data="mediaList({{ initial }})" x-modelable="value" x-model="{{ model }}">
+  <div x-sort="reorder($item, $position)" class="flex flex-wrap gap-3">
+    <template x-for="(m, i) in items" :key="m.id">
+      <div x-sort:item="m.id" class="group relative h-24 w-24 cursor-move overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+        <img :src="m.sm" alt="" class="h-full w-full object-cover">
+        <button type="button" x-sort:ignore @click="remove(i)" class="absolute right-1 top-1 hidden h-6 w-6 items-center justify-center rounded-full bg-white/90 text-red-600 shadow group-hover:flex" aria-label="Bỏ ảnh">{{ icon('close', 'w-3.5 h-3.5') }}</button>
+        <span x-show="i === 0" class="absolute inset-x-0 bottom-0 bg-brand-600/90 py-0.5 text-center text-[10px] text-white">Ảnh đầu</span>
+      </div>
+    </template>
+  </div>
+  <button type="button" class="btn btn-secondary mt-3" @click="add()">{{ icon('plus', 'w-4 h-4') }} Thêm ảnh</button>
+  <p class="help">Kéo thả để sắp xếp thứ tự hiển thị.</p>
+</div>
+{% endmacro %}
+
+{% macro richText(model) %}
+<div x-data="richText" x-modelable="value" x-model="{{ model }}">
+  <div x-ref="editor"></div>
+</div>
+{% endmacro %}
+
+{% macro switch(model, label, help='') %}
+<label class="flex cursor-pointer items-start gap-3">
+  <button type="button" role="switch" class="switch mt-0.5" :class="{{ model }} && 'on'" :aria-checked="!!{{ model }}" @click="{{ model }} = !{{ model }}"></button>
+  <span><span class="block text-sm font-medium text-slate-700">{{ label }}</span>{% if help %}<span class="help !mt-0">{{ help }}</span>{% endif %}</span>
+</label>
+{% endmacro %}
+
+{# Dựng 1 trường từ schema cấu hình (backend/config/settings-schema.js) #}
+{% macro schemaField(f, model, mediaExpr) %}
+{% if f.type == 'toggle' %}
+  {{ switch(model, f.label, f.help) }}
+{% else %}
+<div>
+  <label class="label">{{ f.label }}</label>
+  {% if f.type == 'textarea' %}
+    <textarea class="input" rows="3" x-model="{{ model }}"></textarea>
+  {% elif f.type == 'richtext' %}
+    {{ richText(model) }}
+  {% elif f.type == 'image' %}
+    {{ imageField(model, mediaExpr) }}
+  {% elif f.type == 'color' %}
+    <div class="flex items-center gap-2"><input type="color" class="h-10 w-14 cursor-pointer rounded-lg border border-slate-300 bg-white p-1" x-model="{{ model }}"><input class="input !w-32 font-mono" x-model="{{ model }}"></div>
+  {% elif f.type == 'select' %}
+    <select class="input" x-model="{{ model }}">{% for o in f.options %}<option value="{{ o.value }}">{{ o.label }}</option>{% endfor %}</select>
+  {% elif f.type == 'number' %}
+    <input type="number" class="input" x-model.number="{{ model }}">
+  {% elif f.type == 'secret' %}
+    <input type="password" class="input" autocomplete="new-password" x-model="{{ model }}" :placeholder="{{ model }} === '__SET__' ? '•••••••• (đã lưu)' : ''" @focus="if ({{ model }} === '__SET__') {{ model }} = ''">
+  {% else %}
+    <input type="{{ 'email' if f.type == 'email' else ('url' if f.type == 'url' else 'text') }}" class="input" x-model="{{ model }}">
+  {% endif %}
+  {% if f.help %}<p class="help">{{ f.help }}</p>{% endif %}
+</div>
+{% endif %}
+{% endmacro %}

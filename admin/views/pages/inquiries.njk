@@ -1,0 +1,42 @@
+{% extends "layout.njk" %}
+{% from "partials/icons.njk" import icon %}
+{% set label = meta.inquiryTypes[query.type] if query.type else 'Tất cả yêu cầu' %}
+{% block title %}{{ label }}{% endblock %}
+{% block heading %}{{ label }}{% endblock %}
+{% block content %}
+<div x-data="inquiriesList({{ (query.type or '') | dump }})">
+  <div class="mb-4 flex flex-wrap gap-1">
+    <button class="tab" :class="filters.status === '' && 'active'" @click="filters.status = ''; search()">Tất cả</button>
+    {% for k, v in meta.inquiryStatus %}<button class="tab" :class="filters.status === '{{ k }}' && 'active'" @click="filters.status = '{{ k }}'; search()">{{ v }}</button>{% endfor %}
+  </div>
+  <div class="mb-5 flex flex-wrap items-end gap-3">
+    <div class="relative w-full max-w-xs"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{{ icon('search', 'w-4 h-4') }}</span>
+      <input type="search" class="input pl-9" placeholder="Mã, tên, SĐT, email..." x-model="filters.q" @input.debounce.400ms="search()"></div>
+    <div><label class="label !text-xs">Từ ngày</label><input type="date" class="input" x-model="filters.from" @change="search()"></div>
+    <div><label class="label !text-xs">Đến ngày</label><input type="date" class="input" x-model="filters.to" @change="search()"></div>
+  </div>
+  <div class="card overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="table">
+        <thead><tr><th>Mã</th>{% if not query.type %}<th>Loại</th>{% endif %}<th>Khách hàng</th><th>Nội dung</th>{% if query.type == 'order' %}<th>Tạm tính</th>{% endif %}<th>Trạng thái</th><th>Email</th><th>Thời gian</th></tr></thead>
+        <tbody>
+          <template x-for="i in items" :key="i.id">
+            <tr class="cursor-pointer" @click="location.href = '{{ A }}/inquiries/' + i.id">
+              <td class="font-mono text-xs" x-text="i.code"></td>
+              {% if not query.type %}<td x-text="i.type_label"></td>{% endif %}
+              <td><p class="font-medium" x-text="i.name"></p><p class="text-xs text-slate-500" x-text="i.phone"></p></td>
+              <td class="max-w-xs"><p class="line-clamp-2 text-slate-600" x-text="i.type === 'order' ? i.items.map(x => x.qty + '× ' + x.name + (x.size ? ' (ni ' + x.size + ')' : '')).join(', ') : i.message"></p></td>
+              {% if query.type == 'order' %}<td class="whitespace-nowrap" x-text="$fmt.vnd(i.total)"></td>{% endif %}
+              <td><span class="badge" :class="Admin.STATUS_COLOR[i.status]" x-text="i.status_label"></span></td>
+              <td><span class="text-xs" :class="{ 'text-emerald-600': i.mail_status === 'sent', 'text-red-600': i.mail_status === 'failed', 'text-slate-400': !['sent','failed'].includes(i.mail_status) }" x-text="{ sent: 'Đã gửi', failed: 'Lỗi', not_configured: 'Chưa cấu hình', pending: 'Đang gửi' }[i.mail_status]"></span></td>
+              <td class="whitespace-nowrap text-slate-500" x-text="$fmt.date(i.created_at)"></td>
+            </tr>
+          </template>
+          <tr x-show="!loading && !items.length"><td colspan="8" class="py-14 text-center text-slate-500">Không có dữ liệu.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    {% include "partials/pager.njk" %}
+  </div>
+</div>
+{% endblock %}

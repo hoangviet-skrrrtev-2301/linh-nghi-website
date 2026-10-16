@@ -1,0 +1,35 @@
+{% extends "layout.njk" %}
+{% from "partials/icons.njk" import icon %}
+{% block title %}Gallery{% endblock %}
+{% block heading %}Gallery{% endblock %}
+{% block content %}
+<div x-data="galleryPage">
+  <div class="mb-5 flex flex-wrap items-center gap-3">
+    <p class="flex-1 text-sm text-slate-600">Kéo biểu tượng {{ icon('drag', 'inline w-4 h-4') }} để sắp xếp. Album dùng để chia nhóm ảnh trên trang Gallery (ví dụ: “Khách hàng”, “Bộ sưu tập Thu”).</p>
+    <button class="btn btn-primary" @click="add()">{{ icon('plus', 'w-4 h-4') }} Thêm ảnh</button>
+  </div>
+  <div x-sort="reorder($item, $position)" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <template x-for="g in items" :key="g.id">
+      <div x-sort:item="g.id" class="card overflow-hidden" :class="!g.active && 'opacity-60'">
+        <div class="relative aspect-[4/3] bg-slate-100">
+          <img :src="g.image?.md" class="h-full w-full object-cover" alt="">
+          <span x-sort:handle class="absolute left-2 top-2 flex h-8 w-8 cursor-move items-center justify-center rounded-lg bg-white/90 text-slate-600 shadow">{{ icon('drag', 'w-4 h-4') }}</span>
+          <button class="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-lg bg-white/90 text-red-600 shadow" @click="remove(g)" title="Gỡ khỏi gallery">{{ icon('trash', 'w-4 h-4') }}</button>
+        </div>
+        <div class="space-y-2 p-3">
+          <input class="input !py-1.5" placeholder="Tiêu đề" x-model="g.title" @change="save(g)">
+          <input class="input !py-1.5" placeholder="Mô tả ngắn" x-model="g.caption" @change="save(g)">
+          <input class="input !py-1.5" placeholder="Album" x-model="g.album" @change="save(g)" list="albums">
+          <select class="input !py-1.5" x-model.number="g.product_id" @change="save(g)">
+            <option value="">— Gắn link sản phẩm (không bắt buộc) —</option>
+            <template x-for="p in products" :key="p.id"><option :value="p.id" x-text="p.name" :selected="p.id === g.product_id"></option></template>
+          </select>
+          <label class="flex items-center gap-2 text-sm"><input type="checkbox" x-model="g.active" @change="save(g)" class="h-4 w-4 accent-brand-600"> Hiển thị</label>
+        </div>
+      </div>
+    </template>
+  </div>
+  <datalist id="albums"><template x-for="a in [...new Set(items.map(i => i.album).filter(Boolean))]"><option :value="a"></option></template></datalist>
+  <div x-show="!loading && !items.length" class="card py-16 text-center text-slate-500">Gallery đang trống. Bấm “Thêm ảnh” để bắt đầu.</div>
+</div>
+{% endblock %}

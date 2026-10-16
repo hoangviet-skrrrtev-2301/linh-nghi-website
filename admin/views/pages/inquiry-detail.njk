@@ -1,0 +1,67 @@
+{% extends "layout.njk" %}
+{% from "partials/icons.njk" import icon %}
+{% block title %}Chi tiết yêu cầu{% endblock %}
+{% block heading %}<a href="javascript:history.back()" class="mr-2 text-slate-400 hover:text-slate-600">{{ icon('arrow-left', 'inline w-4 h-4') }}</a>Chi tiết yêu cầu{% endblock %}
+{% block content %}
+<div x-data="inquiryDetail({{ params.id | dump }})">
+  <template x-if="d">
+    <div class="grid gap-6 lg:grid-cols-[1fr_340px]">
+      <div class="space-y-6">
+        <div class="card">
+          <div class="card-head">
+            <div><p class="text-xs text-slate-500" x-text="d.type_label"></p><h2 class="font-mono text-lg font-semibold" x-text="d.code"></h2></div>
+            <span class="badge text-sm" :class="Admin.STATUS_COLOR[d.status]" x-text="d.status_label"></span>
+          </div>
+          <dl class="card-body grid gap-x-8 gap-y-4 sm:grid-cols-2">
+            <div><dt class="text-xs text-slate-500">Khách hàng</dt><dd class="font-medium"><a :href="'{{ A }}/customers/' + d.customer_id" class="hover:text-brand-600" x-text="d.name"></a></dd></div>
+            <div><dt class="text-xs text-slate-500">Điện thoại</dt><dd class="font-medium"><a :href="'tel:' + d.phone" class="text-brand-600" x-text="d.phone"></a>
+              <a :href="'https://zalo.me/' + d.phone" target="_blank" class="ml-2 text-xs text-blue-600 hover:underline">Zalo</a></dd></div>
+            <div x-show="d.email"><dt class="text-xs text-slate-500">Email</dt><dd><a :href="'mailto:' + d.email" class="text-brand-600" x-text="d.email"></a></dd></div>
+            <div x-show="d.contact_via"><dt class="text-xs text-slate-500">Muốn liên hệ qua</dt><dd x-text="d.contact_via"></dd></div>
+            <div x-show="d.address" class="sm:col-span-2"><dt class="text-xs text-slate-500">Địa chỉ</dt><dd x-text="d.address"></dd></div>
+            <template x-for="r in detailRows"><div><dt class="text-xs text-slate-500" x-text="r[0]"></dt><dd class="font-medium" x-text="r[1]"></dd></div></template>
+            <div x-show="d.message" class="sm:col-span-2"><dt class="text-xs text-slate-500">Lời nhắn / mô tả</dt><dd class="whitespace-pre-line rounded-lg bg-slate-50 p-3" x-text="d.message"></dd></div>
+          </dl>
+        </div>
+
+        <div class="card overflow-hidden" x-show="d.items.length">
+          <div class="card-head"><h3 class="card-title">Sản phẩm đặt</h3></div>
+          <table class="table">
+            <thead><tr><th>Sản phẩm</th><th>Ni</th><th>SL</th><th class="text-right">Đơn giá</th><th class="text-right">Thành tiền</th></tr></thead>
+            <tbody>
+              <template x-for="it in d.items">
+                <tr><td><a :href="'/san-pham/' + it.slug" target="_blank" class="font-medium hover:text-brand-600" x-text="it.name"></a><p class="text-xs text-slate-500" x-text="it.sku"></p></td>
+                  <td x-text="it.size || '—'"></td><td x-text="it.qty"></td><td class="text-right" x-text="$fmt.vnd(it.price)"></td><td class="text-right font-medium" x-text="it.price != null ? $fmt.vnd(it.price * it.qty) : 'Liên hệ'"></td></tr>
+              </template>
+              <tr><td colspan="4" class="text-right font-semibold">Tạm tính</td><td class="text-right text-base font-semibold text-brand-700" x-text="d.total != null ? $fmt.vnd(d.total) : 'Liên hệ'"></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <aside class="space-y-4">
+        <div class="card card-body space-y-3">
+          <label class="label">Cập nhật trạng thái</label>
+          <div class="grid grid-cols-2 gap-2">
+            {% for k, v in meta.inquiryStatus %}
+            <button class="btn btn-sm" :class="d.status === '{{ k }}' ? 'btn-primary' : 'btn-secondary'" :disabled="saving" @click="update({ status: '{{ k }}' })">{{ v }}</button>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="card card-body">
+          <label class="label">Ghi chú nội bộ</label>
+          <textarea class="input" rows="4" x-model="d.admin_note" placeholder="Đã gọi lúc..., khách hẹn..."></textarea>
+          <button class="btn btn-secondary btn-sm mt-2" :disabled="saving" @click="update({ admin_note: d.admin_note })">Lưu ghi chú</button>
+        </div>
+        <div class="card card-body space-y-2 text-sm text-slate-600">
+          <p>Nhận lúc: <b x-text="$fmt.date(d.created_at)"></b></p>
+          <p>Email thông báo: <b x-text="{ sent: 'Đã gửi', failed: 'Gửi lỗi', not_configured: 'Chưa cấu hình email', pending: 'Đang gửi' }[d.mail_status]"></b></p>
+          <button class="btn btn-secondary btn-sm" @click="resend()">{{ icon('mail', 'w-3.5 h-3.5') }} Gửi lại email thông báo</button>
+          <p class="break-all text-xs text-slate-400" x-text="'IP: ' + d.ip"></p>
+        </div>
+        {% if currentUser.role == 'owner' %}<button class="btn btn-ghost w-full text-red-600" @click="remove()">{{ icon('trash', 'w-4 h-4') }} Xóa yêu cầu</button>{% endif %}
+      </aside>
+    </div>
+  </template>
+</div>
+{% endblock %}

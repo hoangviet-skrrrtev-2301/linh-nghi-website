@@ -1,0 +1,51 @@
+{% extends "layout.njk" %}
+{% from "partials/icons.njk" import icon %}
+{% block title %}Sản phẩm{% endblock %}
+{% block heading %}Sản phẩm{% endblock %}
+{% block content %}
+<div x-data="productsList({{ (query.status or '') | dump }})">
+  <div class="mb-5 flex flex-wrap items-center gap-3">
+    <div class="relative w-full max-w-xs">
+      <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{{ icon('search', 'w-4 h-4') }}</span>
+      <input type="search" class="input pl-9" placeholder="Tìm tên, mã sản phẩm..." x-model="filters.q" @input.debounce.400ms="search()">
+    </div>
+    <select class="input !w-auto" x-model="filters.status" @change="search()">
+      <option value="">Tất cả trạng thái</option><option value="published">Đang hiển thị</option><option value="draft">Bản nháp</option>
+    </select>
+    <select class="input !w-auto" x-model="filters.sort" @change="search()">
+      <option value="moi">Mới nhất</option><option value="noi_bat">Thứ tự hiển thị</option><option value="ten">Tên A–Z</option><option value="gia_tang">Giá tăng</option><option value="gia_giam">Giá giảm</option>
+    </select>
+    <a href="{{ A }}/products/new" class="btn btn-primary ml-auto">{{ icon('plus', 'w-4 h-4') }} Thêm sản phẩm</a>
+  </div>
+
+  <div class="card overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="table">
+        <thead><tr><th class="w-16"></th><th>Sản phẩm</th><th>Loại ngọc</th><th>Giá</th><th>Tình trạng</th><th>Hiển thị</th><th class="w-32"></th></tr></thead>
+        <tbody>
+          <template x-for="p in items" :key="p.id">
+            <tr>
+              <td><img :src="p.cover?.sm" alt="" class="h-12 w-12 rounded-lg bg-slate-100 object-cover"></td>
+              <td>
+                <a :href="'{{ A }}/products/' + p.id" class="font-medium text-slate-900 hover:text-brand-600" x-text="p.name"></a>
+                <div class="mt-0.5 flex gap-1.5 text-xs text-slate-500"><span x-text="p.sku"></span><span x-show="p.is_bestseller" class="badge bg-slate-900 text-white">Best Seller</span><span x-show="p.is_featured" class="badge bg-amber-50 text-amber-700">Nổi bật</span><span x-show="p.show_new" class="badge bg-emerald-50 text-emerald-700">Mới</span></div>
+              </td>
+              <td x-text="p.jade_type?.name || '—'"></td>
+              <td><span x-text="p.final_price != null ? $fmt.vnd(p.final_price) : 'Liên hệ'"></span><span x-show="p.on_sale" class="ml-1 text-xs text-slate-400 line-through" x-text="$fmt.vnd(p.price)"></span></td>
+              <td x-text="p.stock_label"></td>
+              <td><span class="badge" :class="p.status === 'published' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'" x-text="p.status === 'published' ? 'Đang hiển thị' : 'Bản nháp'"></span></td>
+              <td class="text-right whitespace-nowrap">
+                <a :href="'/san-pham/' + p.slug" target="_blank" class="btn btn-ghost btn-sm" title="Xem trên web" x-show="p.status === 'published'">{{ icon('eye', 'w-4 h-4') }}</a>
+                <button class="btn btn-ghost btn-sm" title="Nhân bản" @click="duplicate(p)">{{ icon('copy', 'w-4 h-4') }}</button>
+                <button class="btn btn-ghost btn-sm text-red-600" title="Xóa" @click="remove(p)">{{ icon('trash', 'w-4 h-4') }}</button>
+              </td>
+            </tr>
+          </template>
+          <tr x-show="!loading && !items.length"><td colspan="7" class="py-14 text-center text-slate-500">Chưa có sản phẩm nào.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    {% include "partials/pager.njk" %}
+  </div>
+</div>
+{% endblock %}

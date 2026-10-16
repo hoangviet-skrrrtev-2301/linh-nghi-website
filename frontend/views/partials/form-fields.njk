@@ -1,0 +1,65 @@
+{# Các trường dùng chung cho form đơn hàng / custom / liên hệ.
+   Dùng trong component Alpine "inquiryForm": errors[...] chứa lỗi từ server. #}
+
+{% macro field(name, label, type='text', required=false, placeholder='', autocomplete='', cls='', idp='f') %}
+<div class="{{ cls }}">
+  <label for="{{ idp }}-{{ name }}" class="label">{{ label }}{% if required %} <span class="text-red-500">*</span>{% endif %}</label>
+  {% if type == 'textarea' %}
+  <textarea id="{{ idp }}-{{ name }}" name="{{ name }}" rows="4" class="input" placeholder="{{ placeholder }}" {{ 'required' if required }} maxlength="3000"
+    :class="errors.{{ name }} && 'is-invalid'" @input="delete errors.{{ name }}"></textarea>
+  {% else %}
+  <input id="{{ idp }}-{{ name }}" name="{{ name }}" type="{{ type }}" class="input" placeholder="{{ placeholder }}" {{ 'required' if required }}
+    {% if autocomplete %}autocomplete="{{ autocomplete }}"{% endif %} :class="errors.{{ name }} && 'is-invalid'" @input="delete errors.{{ name }}">
+  {% endif %}
+  <p class="field-error" x-show="errors.{{ name }}" x-text="errors.{{ name }}" x-cloak></p>
+</div>
+{% endmacro %}
+
+{% macro contactFields(s, addressRequired=false) %}
+<div class="grid gap-5 sm:grid-cols-2">
+  {{ field('name', 'Họ và tên', 'text', true, 'Nguyễn Văn A', 'name') }}
+  {{ field('phone', 'Số điện thoại', 'tel', true, '09xx xxx xxx', 'tel') }}
+  {{ field('email', 'Email', 'email', false, 'Để nhận xác nhận qua email', 'email') }}
+  <div>
+    <label for="f-contact_via" class="label">Liên hệ với tôi qua</label>
+    <select id="f-contact_via" name="contact_via" class="input">
+      {% for o in s.forms.contact_via_options %}<option>{{ o.label }}</option>{% endfor %}
+    </select>
+  </div>
+  {{ field('address', 'Địa chỉ nhận hàng' if addressRequired else 'Địa chỉ', 'text', addressRequired, 'Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành', 'street-address', 'sm:col-span-2') }}
+</div>
+{% endmacro %}
+
+{# Bẫy chống spam: ô ẩn (bot điền vào sẽ bị loại) + mã thời gian ký số #}
+{% macro antiSpam(token) %}
+<div aria-hidden="true" class="absolute -left-[9999px] h-0 w-0 overflow-hidden">
+  <label>Website <input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+</div>
+<input type="hidden" name="_ft" value="{{ token }}">
+{% endmacro %}
+
+{% macro submitArea(label, s) %}
+{% from "partials/icons.njk" import icon %}
+<div class="mt-7">
+  <p class="mb-3 text-sm text-red-600" x-show="message && !success" x-text="message" x-cloak role="alert"></p>
+  <button type="submit" class="btn btn-primary w-full sm:w-auto" :disabled="loading">
+    <span x-show="loading" class="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" x-cloak></span>
+    {{ label }}
+  </button>
+  <p class="mt-3 flex items-start gap-2 text-xs text-muted">{{ icon('shield', 'w-3.5 h-3.5 shrink-0 mt-0.5') }} {{ s.forms.privacy_note }}</p>
+</div>
+{% endmacro %}
+
+{% macro successBox(s) %}
+{% from "partials/icons.njk" import icon %}
+<div x-show="success" x-cloak x-transition class="card flex flex-col items-center px-6 py-14 text-center">
+  <span class="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-on-primary">{{ icon('check', 'w-8 h-8') }}</span>
+  <h2 class="mt-6 text-3xl font-medium">Gửi thành công!</h2>
+  <p class="mt-3 max-w-md text-muted" x-text="message"></p>
+  <p class="mt-2 text-sm">Mã yêu cầu: <b class="font-mono" x-text="code"></b></p>
+  <div class="mt-8 flex flex-wrap justify-center gap-3">
+    <a href="/san-pham" class="btn btn-outline">Tiếp tục xem sản phẩm</a>
+    {% if s.site.zalo %}<a href="https://zalo.me/{{ s.site.zalo | phoneHref }}" target="_blank" rel="noopener" class="btn btn-primary">{{ icon('chat', 'w-4 h-4') }} Nhắn Zalo cho shop</a>{% endif %}
+  </div>
+</div>
+{% endmacro %}

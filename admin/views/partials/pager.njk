@@ -1,0 +1,8 @@
+<div class="flex items-center justify-between gap-3 border-t border-slate-100 px-5 py-3 text-sm text-slate-500" x-show="total > 0">
+  <span x-text="'Tổng ' + total + ' mục'"></span>
+  <div class="flex items-center gap-2" x-show="pages > 1">
+    <button class="btn btn-secondary btn-sm" :disabled="page <= 1" @click="go(page - 1)">‹ Trước</button>
+    <span x-text="page + ' / ' + pages"></span>
+    <button class="btn btn-secondary btn-sm" :disabled="page >= pages" @click="go(page + 1)">Sau ›</button>
+  </div>
+</div>

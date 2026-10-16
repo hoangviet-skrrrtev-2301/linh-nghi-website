@@ -1,0 +1,9 @@
+{% from "partials/icons.njk" import icon %}
+<article class="reveal group">
+  <a href="/blog/{{ p.slug }}" class="block aspect-[16/10] overflow-hidden rounded-lg bg-ink/5">
+    {% if p.cover %}<img src="{{ p.cover.md }}" alt="{{ p.cover.alt or p.title }}" loading="lazy" class="h-full w-full object-cover transition duration-700 group-hover:scale-105">{% endif %}
+  </a>
+  <p class="mt-4 text-xs uppercase tracking-[0.14em] text-muted">{{ p.published_at | date }} · {{ p.reading_minutes }} phút đọc</p>
+  <h3 class="mt-2 text-xl font-medium leading-snug"><a href="/blog/{{ p.slug }}" class="transition hover:text-primary">{{ p.title }}</a></h3>
+  <p class="mt-2 line-clamp-2 text-sm text-muted">{{ p.summary }}</p>
+</article>

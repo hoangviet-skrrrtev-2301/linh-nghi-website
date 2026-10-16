@@ -1,0 +1,133 @@
+{% extends "layout.njk" %}
+{% from "partials/icons.njk" import icon %}
+{% from "partials/fields.njk" import imageField, imageList, richText, switch %}
+{% block title %}{{ 'Sửa sản phẩm' if params.id else 'Thêm sản phẩm' }}{% endblock %}
+{% block heading %}<a href="{{ A }}/products" class="mr-2 text-slate-400 hover:text-slate-600">Sản phẩm /</a>{{ 'Sửa sản phẩm' if params.id else 'Thêm sản phẩm' }}{% endblock %}
+{% block content %}
+<div x-data="productEdit({{ (params.id or '') | dump }})">
+  <template x-if="!form"><div class="py-20 text-center text-slate-500">Đang tải...</div></template>
+  <template x-if="form">
+    <form @submit.prevent="save()" class="grid gap-6 lg:grid-cols-[1fr_320px]">
+      <div class="space-y-6">
+        <div class="flex gap-1 overflow-x-auto">
+          {% for t in [['info', 'Thông tin'], ['images', 'Hình ảnh'], ['specs', 'Thông số & phân loại'], ['cert', 'Chứng chỉ kiểm định'], ['seo', 'SEO']] %}
+          <button type="button" class="tab" :class="tab === '{{ t[0] }}' && 'active'" @click="tab = '{{ t[0] }}'">{{ t[1] }}</button>
+          {% endfor %}
+        </div>
+
+        {# ---- Thông tin ---- #}
+        <div class="card card-body space-y-5" x-show="tab === 'info'">
+          <div><label class="label">Tên sản phẩm *</label><input class="input text-base" x-model="form.name" @input="onName()" required></div>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div><label class="label">Đường dẫn (slug)</label><div class="flex items-center rounded-lg border border-slate-300 bg-slate-50 text-sm"><span class="whitespace-nowrap pl-3 text-slate-400">/san-pham/</span><input class="w-full bg-transparent px-1 py-2 outline-none" x-model="form.slug" @input="slugTouched = true"></div></div>
+            <div><label class="label">Mã sản phẩm (SKU)</label><input class="input" x-model="form.sku"></div>
+          </div>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div><label class="label">Giá bán (VNĐ)</label><input type="number" min="0" step="1000" class="input" x-model="form.price" placeholder="Để trống = Liên hệ"><p class="help" x-text="form.price ? $fmt.vnd(form.price) : 'Để trống sẽ hiển thị “Liên hệ”'"></p></div>
+            <div><label class="label">Giá khuyến mãi (VNĐ)</label><input type="number" min="0" step="1000" class="input" x-model="form.sale_price"><p class="help" x-text="form.sale_price ? $fmt.vnd(form.sale_price) : 'Không bắt buộc'"></p></div>
+          </div>
+          <div><label class="label">Mô tả ngắn</label><textarea class="input" rows="2" maxlength="500" x-model="form.short_description" placeholder="Hiển thị trong popup xem nhanh và đầu trang chi tiết"></textarea></div>
+          <div><label class="label">Mô tả chi tiết</label>{{ richText('form.description') }}</div>
+        </div>
+
+        {# ---- Hình ảnh ---- #}
+        <div class="card card-body space-y-6" x-show="tab === 'images'">
+          <div><label class="label">Ảnh đại diện</label>{{ imageField('form.cover_media_id', 'form.cover') }}<p class="help">Ảnh vuông, tối thiểu 1200×1200px cho đẹp nhất.</p></div>
+          <div><label class="label">Ảnh khác</label>{{ imageList('form.image_ids', 'form.images') }}</div>
+        </div>
+
+        {# ---- Thông số ---- #}
+        <div class="card card-body space-y-5" x-show="tab === 'specs'">
+          <div class="grid gap-4 sm:grid-cols-3">
+            {% for f in [['jade_type_id', 'jade_type', 'Loại ngọc'], ['color_id', 'color', 'Màu sắc'], ['style_id', 'style', 'Kiểu dáng']] %}
+            <div><label class="label">{{ f[2] }}</label>
+              <select class="input" x-model.number="form.{{ f[0] }}"><option value="">— Chọn —</option>
+                <template x-for="t in terms.{{ f[1] }} || []" :key="t.id"><option :value="t.id" x-text="t.name" :selected="t.id == form.{{ f[0] }}"></option></template>
+              </select></div>
+            {% endfor %}
+          </div>
+          <div><label class="label">Ý nghĩa phong thủy</label><textarea class="input" rows="3" maxlength="3000" x-model="form.fengshui" placeholder="VD: Ngọc xanh tượng trưng cho sức khỏe, bình an; hợp người mệnh Mộc, Hỏa..."></textarea></div>
+          <div><label class="label">Hợp mệnh</label>
+            <div class="flex flex-wrap gap-2">
+              <template x-for="t in terms.element || []" :key="t.id">
+                <button type="button" @click="toggleElement(t.id)" class="rounded-full border px-3 py-1.5 text-sm transition" :class="form.element_ids.includes(t.id) ? 'border-brand-600 bg-brand-600 text-white' : 'border-slate-300 hover:border-slate-400'" x-text="t.name"></button>
+              </template>
+            </div>
+            <p class="help">Thêm/sửa các lựa chọn tại <a href="{{ A }}/terms" class="text-brand-600 underline">Danh mục & bộ lọc</a>.</p>
+          </div>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div><label class="label">Ni có sẵn (mm)</label><input class="input" x-model="form.sizesText" placeholder="Ví dụ: 52, 54, 56"><p class="help">Cách nhau bằng dấu phẩy. Để trống với vòng hạt / vòng điều chỉnh được.</p></div>
+            <div><label class="label">Kích thước hạt / bản vòng</label><input class="input" x-model="form.bead_size" placeholder="Ví dụ: bản 12mm, hạt 8mm"></div>
+            <div><label class="label">Xuất xứ</label><input class="input" x-model="form.origin"></div>
+            <div><label class="label">Trọng lượng</label><input class="input" x-model="form.weight"></div>
+          </div>
+          <div>
+            <label class="label">Thông số bổ sung</label>
+            <div class="space-y-2">
+              <template x-for="(sp, i) in form.specs" :key="i">
+                <div class="flex gap-2"><input class="input" placeholder="Tên (VD: Độ trong)" x-model="sp.label"><input class="input" placeholder="Giá trị" x-model="sp.value">
+                  <button type="button" class="btn btn-ghost text-red-600" @click="form.specs.splice(i, 1)">{{ icon('trash', 'w-4 h-4') }}</button></div>
+              </template>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm mt-2" @click="addSpec()">{{ icon('plus', 'w-3.5 h-3.5') }} Thêm thông số</button>
+          </div>
+        </div>
+
+        {# ---- Chứng chỉ ---- #}
+        <div class="space-y-4" x-show="tab === 'cert'">
+          <template x-for="(c, i) in form.certificates" :key="i">
+            <div class="card card-body">
+              <div class="flex gap-5">
+                <div>{{ imageField('c.media_id', 'c.image') }}</div>
+                <div class="grid flex-1 gap-3 sm:grid-cols-2">
+                  <div><label class="label">Nơi cấp</label><input class="input" x-model="c.issuer" placeholder="VD: SJC, PNJLab, GIV..."></div>
+                  <div><label class="label">Mã số chứng chỉ</label><input class="input font-mono" x-model="c.code"></div>
+                  <div><label class="label">Ngày cấp</label><input type="date" class="input" x-model="c.issued_date"></div>
+                  <div><label class="label">Ghi chú</label><input class="input" x-model="c.note"></div>
+                </div>
+              </div>
+              <div class="mt-3 text-right"><button type="button" class="btn btn-ghost btn-sm text-red-600" @click="form.certificates.splice(i, 1)">{{ icon('trash', 'w-3.5 h-3.5') }} Xóa chứng chỉ</button></div>
+            </div>
+          </template>
+          <button type="button" class="btn btn-secondary" @click="addCert()">{{ icon('plus', 'w-4 h-4') }} Thêm chứng chỉ</button>
+        </div>
+
+        {# ---- SEO ---- #}
+        <div class="card card-body space-y-5" x-show="tab === 'seo'">
+          <div><label class="label">Tiêu đề SEO</label><input class="input" maxlength="200" x-model="form.seo_title" :placeholder="form.name"><p class="help" x-text="(form.seo_title || form.name).length + '/60 ký tự khuyến nghị'"></p></div>
+          <div><label class="label">Mô tả SEO</label><textarea class="input" rows="3" maxlength="400" x-model="form.seo_description" :placeholder="form.short_description"></textarea><p class="help" x-text="(form.seo_description || form.short_description).length + '/160 ký tự khuyến nghị'"></p></div>
+          <div class="rounded-lg border border-slate-200 p-4">
+            <p class="text-xs text-slate-500">Xem trước trên Google</p>
+            <p class="mt-1 truncate text-lg text-[#1a0dab]" x-text="form.seo_title || form.name"></p>
+            <p class="truncate text-xs text-emerald-700" x-text="location.origin + '/san-pham/' + form.slug"></p>
+            <p class="line-clamp-2 text-sm text-slate-600" x-text="form.seo_description || form.short_description"></p>
+          </div>
+        </div>
+      </div>
+
+      {# ---- Cột phải ---- #}
+      <aside class="space-y-4 lg:sticky lg:top-24 lg:self-start">
+        <div class="card card-body space-y-4">
+          <div class="flex items-center justify-between text-sm"><span class="text-slate-500">Trạng thái</span>
+            <span class="badge" :class="form.status === 'published' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'" x-text="form.status === 'published' ? 'Đang hiển thị' : 'Bản nháp'"></span></div>
+          <div class="flex flex-col gap-2">
+            <button type="button" class="btn btn-primary" :disabled="saving" @click="save(true)" x-text="form.status === 'published' ? 'Lưu thay đổi' : 'Lưu & hiển thị'"></button>
+            <button type="button" class="btn btn-secondary" :disabled="saving" @click="save(false)" x-text="form.status === 'published' ? 'Chuyển về nháp' : 'Lưu nháp'"></button>
+            <a x-show="id && form.status === 'published'" :href="'/san-pham/' + form.slug" target="_blank" class="btn btn-ghost">{{ icon('eye', 'w-4 h-4') }} Xem trên website</a>
+          </div>
+        </div>
+        <div class="card card-body space-y-4">
+          <div><label class="label">Tình trạng hàng</label>
+            <select class="input" x-model="form.stock_status">{% for k, v in meta.stockLabels %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
+          {{ switch('form.is_bestseller', '★ Best Seller', 'Gắn nhãn và ưu tiên hiển thị ở trang chủ') }}
+          {{ switch('form.is_new', 'Sản phẩm mới', 'Gắn nhãn "Mới" (ngoài nhãn tự động theo ngày đăng)') }}
+          {{ switch('form.is_featured', 'Sản phẩm nổi bật', 'Hiển thị ở trang chủ') }}
+          {{ switch('form.is_customizable', 'Cho phép custom', 'Hiện nút gửi yêu cầu custom mẫu này') }}
+          <div><label class="label">Thứ tự hiển thị</label><input type="number" class="input" x-model.number="form.sort_order"><p class="help">Số nhỏ hiển thị trước</p></div>
+        </div>
+        <button type="button" x-show="id" class="btn btn-ghost w-full text-red-600" @click="remove()">{{ icon('trash', 'w-4 h-4') }} Xóa sản phẩm</button>
+      </aside>
+    </form>
+  </template>
+</div>
+{% endblock %}

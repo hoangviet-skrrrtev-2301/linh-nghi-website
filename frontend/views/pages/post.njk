@@ -1,0 +1,28 @@
+{% extends "layouts/base.njk" %}
+{% block content %}
+<article>
+  <header class="container-x max-w-3xl pt-10 text-center md:pt-16">
+    <nav class="text-xs text-muted" aria-label="Breadcrumb"><a href="/" class="hover:text-primary">Trang chủ</a><span class="mx-1.5">/</span><a href="/blog" class="hover:text-primary">Blog</a></nav>
+    <h1 class="mt-5 text-balance text-4xl font-medium leading-tight md:text-5xl">{{ post.title }}</h1>
+    <p class="mt-4 text-sm text-muted">{{ post.published_at | date }}{% if post.author %} · {{ post.author }}{% endif %} · {{ post.reading_minutes }} phút đọc</p>
+  </header>
+  {% if post.cover %}
+  <div class="container-x mt-10 max-w-5xl">
+    <img src="{{ post.cover.lg }}" srcset="{{ post.cover | srcset }}" sizes="(min-width:1024px) 1024px, 100vw" alt="{{ post.cover.alt or post.title }}" class="aspect-[16/9] w-full rounded-lg object-cover" fetchpriority="high">
+  </div>
+  {% endif %}
+  <div class="container-x max-w-3xl py-12">
+    {% if post.excerpt %}<p class="mb-8 font-heading text-xl italic leading-relaxed text-ink/80">{{ post.excerpt }}</p>{% endif %}
+    <div class="prose-jade">{{ post.content | safe }}</div>
+  </div>
+</article>
+
+{% if recent.length %}
+<section class="section border-t border-line bg-surface">
+  <div class="container-x">
+    <h2 class="mb-10 text-center text-3xl font-medium">Bài viết khác</h2>
+    <div class="grid gap-8 md:grid-cols-3">{% for p in recent %}{% include "partials/post-card.njk" %}{% endfor %}</div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

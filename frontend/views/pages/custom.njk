@@ -1,0 +1,83 @@
+{% extends "layouts/base.njk" %}
+{% from "partials/icons.njk" import icon %}
+{% from "partials/form-fields.njk" import contactFields, field, antiSpam, submitArea, successBox %}
+
+{% macro termSelect(name, label, terms) %}
+<div>
+  <label for="f-{{ name }}" class="label">{{ label }}</label>
+  <select id="f-{{ name }}" name="{{ name }}" class="input">
+    <option value="">Chưa chắc / nhờ shop tư vấn</option>
+    {% for t in terms %}<option>{{ t.name }}</option>{% endfor %}
+    <option>Khác (ghi trong mô tả)</option>
+  </select>
+</div>
+{% endmacro %}
+
+{% block content %}
+{% set f = s.forms %}
+<section class="border-b border-line bg-surface">
+  <div class="container-x py-12 md:py-16">
+    <span class="eyebrow">Thiết kế riêng</span>
+    <h1 class="mt-3 text-4xl font-medium md:text-5xl">{{ f.custom_title }}</h1>
+    <div class="prose-jade mt-4 max-w-2xl text-muted">{{ f.custom_intro | safe }}</div>
+  </div>
+</section>
+
+<section class="container-x py-12" x-data="inquiryForm('custom')">
+  {{ successBox(s) }}
+  <div x-show="!success"><form @submit.prevent="submit($el)" novalidate class="relative grid gap-8 lg:grid-cols-[1fr_340px]">
+    <div class="space-y-8">
+      <div class="card p-6 md:p-8">
+        <h2 class="flex items-center gap-3 text-2xl font-medium"><span class="flex h-8 w-8 items-center justify-center rounded-full bg-primary font-body text-sm text-on-primary">1</span> Chiếc vòng bạn mong muốn</h2>
+        <div class="mt-6 grid gap-5 sm:grid-cols-2">
+          {{ termSelect('jade_type', 'Loại ngọc', options.jade_type) }}
+          {{ termSelect('color', 'Màu sắc', options.color) }}
+          {{ termSelect('style', 'Kiểu dáng', options.style) }}
+          {{ termSelect('element', 'Mệnh của bạn', options.element) }}
+          <div>
+            <label for="f-size" class="label">Ni tay / số đo <span class="text-red-500">*</span></label>
+            <input id="f-size" name="size" class="input" placeholder="Ví dụ: ni 56 hoặc chu vi bàn tay 18cm" required :class="errors.size && 'is-invalid'" @input="delete errors.size">
+            <p class="field-error" x-show="errors.size" x-text="errors.size" x-cloak></p>
+            {% if features.size_guide %}<a href="/huong-dan-size" target="_blank" class="mt-1 inline-block text-xs text-accent hover:underline">Chưa biết ni? Xem cách đo</a>{% endif %}
+          </div>
+          <div>
+            <label for="f-budget" class="label">Ngân sách dự kiến</label>
+            <select id="f-budget" name="budget" class="input"><option value="">Chọn mức ngân sách</option>{% for b in f.budget_options %}<option>{{ b.label }}</option>{% endfor %}</select>
+          </div>
+          {% if f.accessory_options.length %}
+          <div>
+            <label for="f-accessory" class="label">Dây / mặt / phụ kiện đi kèm</label>
+            <select id="f-accessory" name="accessory" class="input"><option value="">Chưa chắc / nhờ shop tư vấn</option>{% for a in f.accessory_options %}<option>{{ a.label }}</option>{% endfor %}</select>
+          </div>
+          {% endif %}
+          {{ field('purpose', 'Mục đích', 'text', false, 'Tự đeo, tặng mẹ, quà cưới...') }}
+          {{ field('deadline', 'Thời gian cần nhận', 'text', false, 'Ví dụ: trước 20/12') }}
+        </div>
+        <div class="mt-5">
+          <label for="f-message" class="label">Mô tả chi tiết <span class="text-red-500">*</span></label>
+          <textarea id="f-message" name="message" rows="5" class="input" maxlength="3000" required :class="errors.message && 'is-invalid'" @input="delete errors.message"
+            placeholder="Mô tả màu ngọc, độ trong, bản vòng, phụ kiện (bọc vàng, charm...), hoặc dán link mẫu bạn thích">{{ ('Tôi muốn custom theo mẫu: ' + preset) if preset }}</textarea>
+          <p class="field-error" x-show="errors.message" x-text="errors.message" x-cloak></p>
+          <p class="mt-1 text-xs text-muted">Nếu có ảnh tham khảo, bạn có thể gửi cho shop qua Zalo sau khi gửi yêu cầu.</p>
+        </div>
+      </div>
+
+      <div class="card p-6 md:p-8">
+        <h2 class="flex items-center gap-3 text-2xl font-medium"><span class="flex h-8 w-8 items-center justify-center rounded-full bg-primary font-body text-sm text-on-primary">2</span> Thông tin liên hệ</h2>
+        <div class="mt-6">{{ contactFields(s) }}</div>
+        {{ antiSpam(formToken) }}
+        {{ submitArea('Gửi yêu cầu thiết kế', s) }}
+      </div>
+    </div>
+
+    <aside class="space-y-4 lg:sticky lg:top-24 lg:self-start">
+      {% for step in [['Gửi yêu cầu', 'Mô tả chiếc vòng bạn mong muốn và để lại thông tin.'], ['Shop liên hệ', 'Shop gọi điện / nhắn Zalo tư vấn, gửi ảnh ngọc thực tế.'], ['Báo giá & chốt mẫu', 'Bạn xem và duyệt mẫu, shop báo giá chi tiết.'], ['Chế tác & giao hàng', 'Hoàn thiện vòng kèm chứng chỉ kiểm định.']] %}
+      <div class="card flex gap-4 p-5">
+        <span class="font-heading text-3xl leading-none text-accent">{{ loop.index }}</span>
+        <div><p class="font-medium">{{ step[0] }}</p><p class="mt-1 text-sm text-muted">{{ step[1] }}</p></div>
+      </div>
+      {% endfor %}
+    </aside>
+  </form></div>
+</section>
+{% endblock %}

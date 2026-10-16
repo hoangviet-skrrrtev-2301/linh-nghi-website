@@ -1,0 +1,28 @@
+{% extends "layout.njk" %}
+{% block title %}Nhật ký hoạt động{% endblock %}
+{% block heading %}Nhật ký hoạt động{% endblock %}
+{% block content %}
+<div x-data="auditPage">
+  <p class="mb-5 text-sm text-slate-600">Ghi lại các thao tác trong trang quản trị: đăng nhập, thêm/sửa/xóa dữ liệu, xuất dữ liệu khách hàng...</p>
+  <div class="card overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="table">
+        <thead><tr><th>Thời gian</th><th>Người thực hiện</th><th>Thao tác</th><th>Đối tượng</th><th>Chi tiết</th><th>IP</th></tr></thead>
+        <tbody>
+          <template x-for="a in items" :key="a.id">
+            <tr>
+              <td class="whitespace-nowrap text-slate-500" x-text="$fmt.date(a.created_at)"></td>
+              <td x-text="a.user_name || '—'"></td>
+              <td><span class="badge bg-slate-100 text-slate-700" x-text="{ login: 'Đăng nhập', logout: 'Đăng xuất', create: 'Thêm', update: 'Sửa', delete: 'Xóa', upload: 'Tải ảnh', export: 'Xuất dữ liệu', backup: 'Sao lưu', duplicate: 'Nhân bản', test: 'Thử', change_password: 'Đổi mật khẩu', enable_2fa: 'Bật 2FA', disable_2fa: 'Tắt 2FA', reset_2fa: 'Đặt lại 2FA' }[a.action] || a.action"></span></td>
+              <td x-text="a.entity + (a.entity_id ? ' #' + a.entity_id : '')"></td>
+              <td class="max-w-xs truncate text-slate-500" x-text="a.detail"></td>
+              <td class="font-mono text-xs text-slate-400" x-text="a.ip"></td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
+    {% include "partials/pager.njk" %}
+  </div>
+</div>
+{% endblock %}

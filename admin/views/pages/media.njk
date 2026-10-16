@@ -1,0 +1,48 @@
+{% extends "layout.njk" %}
+{% from "partials/icons.njk" import icon %}
+{% block title %}Thư viện ảnh{% endblock %}
+{% block heading %}Thư viện ảnh{% endblock %}
+{% block content %}
+<div x-data="mediaPage" @dragover.prevent @drop.prevent="upload($event.dataTransfer.files)">
+  <div class="mb-5 flex flex-wrap items-center gap-3">
+    <input type="search" class="input max-w-xs" placeholder="Tìm theo tên / mô tả ảnh..." x-model="filters.q" @input.debounce.400ms="search()">
+    <span class="text-xs text-slate-500" x-show="!uploading">Kéo thả ảnh vào trang này để tải lên. Ảnh được tự động xoay đúng chiều, xóa thông tin vị trí (EXIF) và nén WebP.</span>
+    <span class="text-xs text-brand-600" x-show="uploading" x-text="'Đang tải ' + uploading + ' ảnh...'"></span>
+    <label class="btn btn-primary ml-auto cursor-pointer">{{ icon('upload', 'w-4 h-4') }} Tải ảnh lên<input type="file" accept="image/*" multiple class="hidden" @change="upload($event.target.files); $event.target.value = ''"></label>
+  </div>
+
+  <div class="grid gap-6 lg:grid-cols-[1fr_300px]">
+    <div class="card overflow-hidden">
+      <div class="grid grid-cols-3 gap-3 p-4 sm:grid-cols-4 xl:grid-cols-6">
+        <template x-for="m in items" :key="m.id">
+          <button type="button" @click="selected = m" class="aspect-square overflow-hidden rounded-lg border-2 bg-slate-100" :class="selected?.id === m.id ? 'border-brand-600' : 'border-transparent hover:border-slate-300'">
+            <img :src="m.sm" :alt="m.alt" class="h-full w-full object-cover" loading="lazy">
+          </button>
+        </template>
+      </div>
+      <p x-show="!loading && !items.length" class="py-16 text-center text-slate-500">Chưa có ảnh nào.</p>
+      {% include "partials/pager.njk" %}
+    </div>
+
+    <aside class="card h-fit lg:sticky lg:top-24">
+      <template x-if="selected">
+        <div>
+          <img :src="selected.md" class="w-full rounded-t-xl bg-slate-100" alt="">
+          <div class="card-body space-y-3 text-sm">
+            <p class="break-all font-medium" x-text="selected.original_name || ('Ảnh #' + selected.id)"></p>
+            <p class="text-xs text-slate-500" x-text="selected.width + '×' + selected.height + 'px · ' + $fmt.bytes(selected.size_bytes) + ' · ' + $fmt.date(selected.created_at)"></p>
+            <div><label class="label">Mô tả ảnh (alt, tốt cho SEO)</label><textarea class="input" rows="2" x-model="selected.alt"></textarea>
+              <button class="btn btn-secondary btn-sm mt-2" @click="saveAlt()">Lưu mô tả</button></div>
+            <div class="flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+              <button class="btn btn-secondary btn-sm" @click="copy(selected.lg)">{{ icon('copy', 'w-3.5 h-3.5') }} Sao chép link</button>
+              <a :href="selected.lg" target="_blank" class="btn btn-secondary btn-sm">{{ icon('eye', 'w-3.5 h-3.5') }} Xem</a>
+              <button class="btn btn-ghost btn-sm text-red-600" @click="remove(selected)">{{ icon('trash', 'w-3.5 h-3.5') }} Xóa</button>
+            </div>
+          </div>
+        </div>
+      </template>
+      <p x-show="!selected" class="p-8 text-center text-sm text-slate-500">Chọn một ảnh để xem chi tiết</p>
+    </aside>
+  </div>
+</div>
+{% endblock %}

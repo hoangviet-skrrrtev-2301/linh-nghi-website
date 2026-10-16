@@ -1,0 +1,12 @@
+{% extends "layouts/base.njk" %}
+{% block content %}
+<section class="container-x flex flex-col items-center py-24 text-center md:py-32">
+  <p class="font-heading text-8xl font-medium text-primary/20 md:text-9xl">{{ status }}</p>
+  <h1 class="mt-4 text-3xl font-medium md:text-4xl">{{ 'Không tìm thấy trang' if status == 404 else 'Đã có lỗi xảy ra' }}</h1>
+  <p class="mt-3 max-w-md text-muted">{{ message }}</p>
+  <div class="mt-8 flex flex-wrap justify-center gap-3">
+    <a href="/" class="btn btn-primary">Về trang chủ</a>
+    <a href="/san-pham" class="btn btn-outline">Xem sản phẩm</a>
+  </div>
+</section>
+{% endblock %}

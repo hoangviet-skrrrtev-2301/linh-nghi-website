@@ -1,0 +1,71 @@
+{% extends "layout.njk" %}
+{% from "partials/icons.njk" import icon %}
+{% block title %}Tổng quan{% endblock %}
+{% block heading %}Tổng quan{% endblock %}
+{% block content %}
+<div x-data="dashboard">
+  <div x-cloak x-show="d && !d.mailConfigured" class="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+    {{ icon('alert', 'w-5 h-5') }}
+    <span class="flex-1">Email thông báo đơn hàng chưa được bật. Đơn hàng vẫn được lưu trong hệ thống nhưng bạn sẽ không nhận email.</span>
+    {% if currentUser.role == 'owner' %}<a href="{{ A }}/settings/mail" class="btn btn-secondary btn-sm">Cấu hình email</a>{% endif %}
+  </div>
+
+  <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+    {% for c in [['order', 'Đơn hàng', 'bag', 'text-blue-600 bg-blue-50'], ['custom', 'Yêu cầu custom', 'sparkle', 'text-violet-600 bg-violet-50'], ['contact', 'Lời nhắn', 'mail', 'text-amber-600 bg-amber-50']] %}
+    <a href="{{ A }}/inquiries?type={{ c[0] }}" class="card flex items-start gap-4 p-5 transition hover:border-brand-500">
+      <span class="flex h-11 w-11 items-center justify-center rounded-xl {{ c[3] }}">{{ icon(c[2]) }}</span>
+      <div><p class="text-xs text-slate-500">{{ c[1] }}</p><p class="text-2xl font-semibold" x-text="count('{{ c[0] }}')">–</p>
+        <p class="text-xs text-blue-600" x-show="count('{{ c[0] }}', 'new_count') > 0" x-text="count('{{ c[0] }}', 'new_count') + ' mới chưa xử lý'"></p></div>
+    </a>
+    {% endfor %}
+    <div class="card flex items-start gap-4 p-5">
+      <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">{{ icon('gem') }}</span>
+      <div><p class="text-xs text-slate-500">Doanh thu tháng này</p><p class="text-xl font-semibold" x-text="d ? $fmt.vnd(d.stats.revenue) : '–'"></p><p class="text-xs text-slate-500">Đơn đã hoàn thành</p></div>
+    </div>
+  </div>
+
+  <div class="mt-6 grid gap-6 lg:grid-cols-3">
+    <div class="card lg:col-span-2">
+      <div class="card-head"><h2 class="card-title">Đơn & yêu cầu 30 ngày qua</h2></div>
+      <div class="card-body">
+        <div class="flex h-40 items-end gap-1">
+          <template x-for="b in chart" :key="b.d">
+            <div class="group relative flex h-full flex-1 items-end">
+              <div class="w-full rounded-t bg-brand-500/80 transition group-hover:bg-brand-600" :style="`height:${Math.max(b.h, 2)}%`" style="min-height:2px"></div>
+              <span class="pointer-events-none absolute -top-7 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded bg-slate-900 px-2 py-0.5 text-[11px] text-white group-hover:block" x-text="b.d.slice(8) + '/' + b.d.slice(5,7) + ': ' + b.c"></span>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2 class="card-title">Nội dung</h2></div>
+      <div class="card-body grid grid-cols-2 gap-4 text-sm">
+        <a href="{{ A }}/products" class="rounded-lg bg-slate-50 p-4 hover:bg-slate-100"><p class="text-2xl font-semibold" x-text="d?.counts.products ?? '–'"></p><p class="text-slate-500">Sản phẩm đang bán</p></a>
+        <a href="{{ A }}/products?status=draft" class="rounded-lg bg-slate-50 p-4 hover:bg-slate-100"><p class="text-2xl font-semibold" x-text="d?.counts.drafts ?? '–'"></p><p class="text-slate-500">Bản nháp</p></a>
+        <a href="{{ A }}/customers" class="rounded-lg bg-slate-50 p-4 hover:bg-slate-100"><p class="text-2xl font-semibold" x-text="d?.counts.customers ?? '–'"></p><p class="text-slate-500">Khách hàng</p></a>
+        <a href="{{ A }}/posts" class="rounded-lg bg-slate-50 p-4 hover:bg-slate-100"><p class="text-2xl font-semibold" x-text="d?.counts.posts ?? '–'"></p><p class="text-slate-500">Bài viết</p></a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mt-6">
+    <div class="card-head"><h2 class="card-title">Mới nhận</h2><a href="{{ A }}/inquiries" class="text-sm text-brand-600 hover:underline">Xem tất cả</a></div>
+    <div class="overflow-x-auto">
+      <table class="table">
+        <thead><tr><th>Mã</th><th>Loại</th><th>Khách</th><th>Điện thoại</th><th>Trạng thái</th><th>Thời gian</th></tr></thead>
+        <tbody>
+          <template x-for="i in d?.latest || []" :key="i.id">
+            <tr class="cursor-pointer" @click="location.href = '{{ A }}/inquiries/' + i.id">
+              <td class="font-mono text-xs" x-text="i.code"></td><td x-text="i.type_label"></td><td class="font-medium" x-text="i.name"></td>
+              <td x-text="i.phone"></td><td><span class="badge" :class="Admin.STATUS_COLOR[i.status]" x-text="i.status_label"></span></td>
+              <td class="text-slate-500" x-text="$fmt.date(i.created_at)"></td>
+            </tr>
+          </template>
+          <tr x-show="d && !d.latest.length"><td colspan="6" class="py-10 text-center text-slate-500">Chưa có đơn hàng hay yêu cầu nào.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% from "partials/icons.njk" import icon %}
+<!doctype html>
+<html lang="vi" class="{{ '' if s.theme.enable_animations else 'no-anim' }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <script nonce="{{ nonce }}">document.documentElement.classList.add('js')</script>
+  <title>{{ seo.title }}</title>
+  <meta name="description" content="{{ seo.description }}">
+  {% if seo.keywords %}<meta name="keywords" content="{{ seo.keywords }}">{% endif %}
+  <meta name="robots" content="{{ seo.robots }}">
+  <link rel="canonical" href="{{ seo.canonical }}">
+  <meta name="theme-color" content="{{ s.theme.color_primary }}">
+  <meta name="format-detection" content="telephone=no">
+  {% if s.seo.google_site_verification %}<meta name="google-site-verification" content="{{ s.seo.google_site_verification }}">{% endif %}
+
+  {# Open Graph & Twitter: hiển thị đẹp khi chia sẻ link lên Facebook, Zalo... #}
+  <meta property="og:type" content="{{ seo.type }}">
+  <meta property="og:site_name" content="{{ seo.siteName }}">
+  <meta property="og:locale" content="vi_VN">
+  <meta property="og:title" content="{{ seo.title }}">
+  <meta property="og:description" content="{{ seo.description }}">
+  <meta property="og:url" content="{{ seo.canonical }}">
+  {% if seo.image %}<meta property="og:image" content="{{ seo.image }}"><meta property="og:image:alt" content="{{ seo.title }}">{% endif %}
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ seo.title }}">
+  <meta name="twitter:description" content="{{ seo.description }}">
+  {% if seo.image %}<meta name="twitter:image" content="{{ seo.image }}">{% endif %}
+
+  {% if s.site.favicon %}
+  <link rel="icon" href="{{ s.site.favicon.sm }}" type="image/webp">
+  <link rel="apple-touch-icon" href="{{ s.site.favicon.sm }}">
+  {% else %}
+  <link rel="icon" href="/assets/images/favicon.svg" type="image/svg+xml">
+  {% endif %}
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="{{ fontsUrl }}">
+  <link rel="stylesheet" href="/assets/css/app.css?v={{ assetVersion }}">
+  <link rel="stylesheet" href="/theme.css?v={{ assetVersion }}">
+  {% block head %}{% endblock %}
+
+  {% for ld in seo.jsonLd %}<script type="application/ld+json">{{ ld | safe }}</script>
+  {% endfor %}
+
+  {% if s.seo.ga_measurement_id %}
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{ s.seo.ga_measurement_id }}" nonce="{{ nonce }}"></script>
+  <script nonce="{{ nonce }}">window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config',{{ s.seo.ga_measurement_id | dump | safe }});</script>
+  {% endif %}
+  {% if s.seo.facebook_pixel_id %}
+  <script nonce="{{ nonce }}">!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init',{{ s.seo.facebook_pixel_id | dump | safe }});fbq('track','PageView');</script>
+  {% endif %}
+
+  {# Cấu hình cho JavaScript phía trình duyệt #}
+  <script type="application/json" id="app-config">{{ clientConfig | jsonScript }}</script>
+  <script type="module" src="/assets/js/app.js?v={{ assetVersion }}"></script>
+  <script defer src="/vendor/alpine-collapse/cdn.min.js"></script>
+  <script defer src="/vendor/alpine-focus/cdn.min.js"></script>
+  <script defer src="/vendor/alpine/cdn.min.js"></script>
+</head>
+<body class="min-h-screen flex flex-col" x-data>
+  <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] btn btn-primary">Bỏ qua tới nội dung</a>
+
+  {% include "partials/header.njk" %}
+
+  <main id="main" class="flex-1">
+    {% block content %}{% endblock %}
+  </main>
+
+  {% include "partials/footer.njk" %}
+  {% include "partials/overlays.njk" %}
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

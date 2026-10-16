@@ -1,0 +1,53 @@
+{% extends "layout.njk" %}
+{% from "partials/icons.njk" import icon %}
+{% from "partials/fields.njk" import switch %}
+{% block title %}Tài khoản quản trị{% endblock %}
+{% block heading %}Tài khoản quản trị{% endblock %}
+{% block content %}
+<div x-data="usersPage">
+  <div class="mb-5 flex flex-wrap items-center gap-3">
+    <p class="flex-1 text-sm text-slate-600"><b>Chủ shop</b>: toàn quyền (cấu hình email, tài khoản, xóa dữ liệu, sao lưu). <b>Nhân viên</b>: quản lý sản phẩm, nội dung, xem và xử lý đơn hàng.</p>
+    <button class="btn btn-primary" @click="open()">{{ icon('plus', 'w-4 h-4') }} Thêm tài khoản</button>
+  </div>
+  <div class="card overflow-hidden">
+    <table class="table">
+      <thead><tr><th>Tên</th><th>Email</th><th>Vai trò</th><th>2FA</th><th>Trạng thái</th><th>Đăng nhập gần nhất</th><th></th></tr></thead>
+      <tbody>
+        <template x-for="u in users" :key="u.id">
+          <tr>
+            <td class="font-medium" x-text="u.name"></td><td x-text="u.email"></td>
+            <td x-text="$meta.roles[u.role]"></td>
+            <td><span class="badge" :class="u.totp_enabled ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'" x-text="u.totp_enabled ? 'Đã bật' : 'Chưa bật'"></span></td>
+            <td><span class="badge" :class="u.active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'" x-text="u.active ? 'Hoạt động' : 'Đã khóa'"></span></td>
+            <td class="text-slate-500" x-text="$fmt.date(u.last_login_at) || '—'"></td>
+            <td class="whitespace-nowrap text-right">
+              <button class="btn btn-ghost btn-sm" @click="open(u)">{{ icon('edit', 'w-4 h-4') }}</button>
+              <button class="btn btn-ghost btn-sm" x-show="u.totp_enabled" @click="reset2fa(u)" title="Tắt 2FA">{{ icon('shield', 'w-4 h-4') }}</button>
+              <button class="btn btn-ghost btn-sm text-red-600" x-show="u.id !== Admin.ME.id" @click="remove(u)">{{ icon('trash', 'w-4 h-4') }}</button>
+            </td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
+  </div>
+
+  <div x-cloak x-show="editing" class="fixed inset-0 z-[80] flex items-center justify-center p-4" @keydown.escape.window="editing = null">
+    <div class="absolute inset-0 bg-slate-900/50" @click="editing = null"></div>
+    <template x-if="editing">
+      <form @submit.prevent="save()" class="card relative w-full max-w-md">
+        <div class="card-head"><h3 class="card-title" x-text="editing.id ? 'Sửa tài khoản' : 'Thêm tài khoản'"></h3></div>
+        <div class="card-body space-y-4">
+          <div><label class="label">Email đăng nhập</label><input type="email" class="input" x-model="editing.email" :disabled="!!editing.id" required></div>
+          <div><label class="label">Tên hiển thị</label><input class="input" x-model="editing.name" required></div>
+          <div><label class="label">Vai trò</label><select class="input" x-model="editing.role">{% for k, v in meta.roles %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
+          <div><label class="label" x-text="editing.id ? 'Đặt mật khẩu mới (để trống nếu không đổi)' : 'Mật khẩu'"></label><input type="password" class="input" autocomplete="new-password" x-model="editing.password" :required="!editing.id"><p class="help">Tối thiểu 10 ký tự, có cả chữ và số.</p></div>
+          <template x-if="editing.id">{{ switch('editing.active', 'Cho phép đăng nhập', 'Tắt để khóa tài khoản ngay lập tức') }}</template>
+        </div>
+        <div class="flex justify-end gap-2 border-t border-slate-100 px-5 py-3">
+          <button type="button" class="btn btn-secondary" @click="editing = null">Hủy</button><button class="btn btn-primary" :disabled="saving">Lưu</button>
+        </div>
+      </form>
+    </template>
+  </div>
+</div>
+{% endblock %}
