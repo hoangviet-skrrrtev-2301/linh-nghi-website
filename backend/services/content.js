@@ -82,11 +82,13 @@ export function deletePost(id) {
 }
 
 // ---------------- Gallery ----------------
+// activeOnly: chỉ ảnh đang bật "Hiện ở Gallery tổng" (tab Tất cả, trang chủ).
+// Khi lọc theo album thì luôn lấy hết ảnh của album đó, bật hay tắt đều hiện.
 export function listGallery({ activeOnly = true, album, limit } = {}) {
   const where = [];
   const params = [];
-  if (activeOnly) where.push('g.active = 1');
   if (album) { where.push('g.album = ?'); params.push(album); }
+  else if (activeOnly) where.push('g.active = 1');
   const rows = db.prepare(`SELECT g.*, p.slug AS product_slug, p.name AS product_name FROM gallery_items g
     LEFT JOIN products p ON p.id = g.product_id AND p.status = 'published'
     ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY g.sort_order, g.id DESC ${limit ? 'LIMIT ' + Number(limit) : ''}`).all(...params);
@@ -95,7 +97,7 @@ export function listGallery({ activeOnly = true, album, limit } = {}) {
 }
 
 export function galleryAlbums() {
-  return db.prepare(`SELECT album, COUNT(*) AS count FROM gallery_items WHERE active = 1 AND album != '' GROUP BY album ORDER BY album`).all();
+  return db.prepare(`SELECT album, COUNT(*) AS count FROM gallery_items WHERE album != '' GROUP BY album ORDER BY album`).all();
 }
 
 export function saveGalleryItem(id, data) {

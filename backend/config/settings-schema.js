@@ -220,6 +220,9 @@ export const SETTINGS_SCHEMA = [
       { name: 'custom_subtitle', label: 'Mô tả khối thiết kế riêng', type: 'textarea', default: 'Chọn loại ngọc, màu sắc, kích thước theo ý thích. Shop sẽ tư vấn và báo giá trong 24 giờ.' },
       { name: 'custom_image', label: 'Ảnh khối thiết kế riêng', type: 'image' },
       { name: 'show_gallery', label: 'Hiện khối Gallery trên trang chủ', type: 'toggle', default: true },
+      { name: 'gallery_limit', label: 'Số ảnh tối đa ở khối Gallery trang chủ', type: 'number', default: 24, help: 'Lấy từ các ảnh đang bật "Hiện ở Gallery tổng" trong Admin › Gallery.' },
+      { name: 'gallery_autoscroll', label: 'Gallery trang chủ tự lướt từ phải sang trái', type: 'toggle', default: true, help: 'Gallery hiện 2 hàng × 4 cột. Chỉ chạy khi có nhiều hơn 8 ảnh; nếu tắt thì chỉ hiện 8 ảnh đầu. Từ 8 ảnh trở xuống đứng yên.' },
+      { name: 'gallery_scroll_seconds', label: 'Thời gian lướt hết một vòng (giây)', type: 'number', default: 45, help: 'Số càng lớn thì lướt càng chậm.' },
       { name: 'show_blog', label: 'Hiện khối bài viết mới trên trang chủ', type: 'toggle', default: true },
       {
         name: 'testimonials', label: 'Cảm nhận khách hàng', type: 'list',

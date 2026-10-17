@@ -5,7 +5,8 @@
 {% block content %}
 <div x-data="galleryPage">
   <div class="mb-5 flex flex-wrap items-center gap-3">
-    <p class="flex-1 text-sm text-slate-600">Kéo biểu tượng {{ icon('drag', 'inline w-4 h-4') }} để sắp xếp. Album dùng để chia nhóm ảnh trên trang Gallery (ví dụ: “Khách hàng”, “Bộ sưu tập Thu”).</p>
+    <p class="flex-1 text-sm text-slate-600">Kéo biểu tượng {{ icon('drag', 'inline w-4 h-4') }} để sắp xếp. Album dùng để chia nhóm ảnh trên trang Gallery (ví dụ: “Khách hàng”, “Bộ sưu tập Thu”).
+    <b>Hiện ở Gallery tổng</b> bật thì ảnh xuất hiện ở tab “Tất cả” và trang chủ; tắt thì ảnh chỉ hiện trong tab album của nó (album luôn hiện đủ ảnh, dù bật hay tắt).</p>
     <button class="btn btn-primary" @click="add()">{{ icon('plus', 'w-4 h-4') }} Thêm ảnh</button>
   </div>
   <div x-sort="reorder($item, $position)" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -24,7 +25,7 @@
             <option value="">— Gắn link sản phẩm (không bắt buộc) —</option>
             <template x-for="p in products" :key="p.id"><option :value="p.id" x-text="p.name" :selected="p.id === g.product_id"></option></template>
           </select>
-          <label class="flex items-center gap-2 text-sm"><input type="checkbox" x-model="g.active" @change="save(g)" class="h-4 w-4 accent-brand-600"> Hiển thị</label>
+          <label class="flex items-center gap-2 text-sm"><input type="checkbox" x-model="g.active" @change="save(g)" class="h-4 w-4 accent-brand-600"> Hiện ở Gallery tổng</label>
         </div>
       </div>
     </template>

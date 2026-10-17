@@ -353,6 +353,34 @@ function initLightbox() {
   });
 }
 
+// Gallery trang chủ lướt phải → trái: nhân đôi dãy ảnh để chạy vòng liên tục.
+// Bản sao bỏ thuộc tính Alpine / PhotoSwipe, khi bấm thì chuyển về ảnh gốc tương ứng.
+function initMarquee() {
+  document.querySelectorAll('[data-marquee]').forEach((box) => {
+    const track = box.querySelector('.gallery-marquee-track');
+    const group = track.querySelector('.gallery-group');
+    const originals = [...group.children];
+    if (originals.length < 2) return;
+    const copy = group.cloneNode(true);
+    copy.setAttribute('aria-hidden', 'true');
+    [...copy.children].forEach((clone, i) => {
+      [...clone.attributes].forEach((a) => {
+        if (a.name.startsWith('@') || a.name.startsWith('x-') || a.name.startsWith('data-pswp')) clone.removeAttribute(a.name);
+      });
+      clone.tabIndex = -1;
+      clone.dataset.cloneOf = i;
+    });
+    track.appendChild(copy);
+    track.addEventListener('click', (e) => {
+      const clone = e.target.closest('[data-clone-of]');
+      if (!clone) return;
+      e.preventDefault();
+      originals[Number(clone.dataset.cloneOf)]?.click();
+    });
+    box.classList.add('is-running');
+  });
+}
+
 function initReveal() {
   const items = document.querySelectorAll('.reveal');
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -384,6 +412,7 @@ function ready(fn) {
 ready(() => {
   initReveal();
   initLightbox();
+  initMarquee();
   // Swiper nạp bằng thẻ defer, chạy sau khi tải xong
   if (window.Swiper) initSwipers();
   else window.addEventListener('load', initSwipers, { once: true });
