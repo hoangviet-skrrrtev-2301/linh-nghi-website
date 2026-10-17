@@ -101,6 +101,7 @@ function present(row) {
     items: safeJson(row.items, []),
     details: safeJson(row.details, {}),
     type_label: INQUIRY_TYPES[row.type],
+    origin_label: INQUIRY_TYPES[row.origin_type] || '',
     status_label: statusLabel(row.type, row.status),
     flow: flowOf(row.type),
   };
@@ -112,7 +113,8 @@ export function lookupInquiry(code, phone) {
   const c = String(code || '').trim().toUpperCase().replace(/\s+/g, '');
   const p = normalizePhone(String(phone || ''));
   if (!/^[A-Z]{2}\d{6}-[0-9A-F]{6}$/.test(c) || p.length < 9) return null;
-  const row = db.prepare('SELECT * FROM inquiries WHERE code = ? AND phone = ?').get(c, p);
+  // Đơn lên từ custom / liên hệ vẫn tra cứu được bằng mã cũ mà khách đã nhận
+  const row = db.prepare('SELECT * FROM inquiries WHERE (code = ? OR origin_code = ?) AND phone = ?').get(c, c, p);
   if (!row) return null;
   const inq = present(row);
   const showPrice = getPublicSettings().features.show_prices;
@@ -280,8 +282,8 @@ export function listInquiries({ type, status, q, page = 1, perPage = 30, custome
   if (from) { where.push('date(created_at) >= date(?)'); params.push(from); }
   if (to) { where.push('date(created_at) <= date(?)'); params.push(to); }
   if (q) {
-    where.push('(vn(code) LIKE ? OR vn(name) LIKE ? OR vn(phone) LIKE ? OR vn(email) LIKE ? OR vn(message) LIKE ?)');
-    params.push(...Array(5).fill(likeVn(q)));
+    where.push('(vn(code) LIKE ? OR vn(origin_code) LIKE ? OR vn(name) LIKE ? OR vn(phone) LIKE ? OR vn(email) LIKE ? OR vn(message) LIKE ?)');
+    params.push(...Array(6).fill(likeVn(q)));
   }
   const sql = where.length ? `WHERE ${where.join(' AND ')}` : '';
   const total = db.prepare(`SELECT COUNT(*) FROM inquiries ${sql}`).pluck().get(...params);
@@ -340,7 +342,13 @@ export async function notifyStatusChange(id) {
 // Shop tự lên đơn / ghi nhận yêu cầu cho khách (khách nhắn qua Zalo, Facebook, đến cửa hàng...)
 export function createAdminInquiry(type, input, userId = null) {
   if (!INQUIRY_TYPES[type]) throw new HttpError(400, 'Loại không hợp lệ');
-  const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(toInt(input.customer_id));
+  let customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(toInt(input.customer_id));
+  // Khách mới nhập ngay trong form tạo đơn: dùng lại khách cùng số điện thoại nếu đã có, chưa có thì tạo
+  if (!customer && input.customer && typeof input.customer === 'object') {
+    const rawPhone = String(input.customer.phone || '').trim();
+    const found = phoneRe.test(rawPhone) ? db.prepare('SELECT * FROM customers WHERE phone = ?').get(normalizePhone(rawPhone)) : null;
+    customer = found || createCustomer(input.customer);
+  }
   if (!customer) throw new HttpError(422, 'Vui lòng chọn khách hàng');
   let parentId = null;
   if (input.parent_id) {
@@ -352,7 +360,7 @@ export function createAdminInquiry(type, input, userId = null) {
   const id = db.prepare(`INSERT INTO inquiries (code, type, customer_id, name, phone, email, address, contact_via, items, total, details, message,
       status, parent_id, adjustment, adjustment_note, channel, created_by, mail_status)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'admin', ?, 'none')`).run(
-    inquiryCode(type), type, customer.id, customer.name, customer.phone, customer.email, customer.address, '',
+    inquiryCode(type), type, customer.id, customer.name, customer.phone, customer.email, customer.address, cleanText(input.contact_via, 60),
     JSON.stringify(items), computeTotal(items, adjustment), JSON.stringify(details), cleanText(input.message, 3000),
     INQUIRY_FLOW[type].includes(input.status) ? input.status : (parentId ? 'contacted' : 'new'),
     parentId, adjustment, cleanText(input.adjustment_note, 300), userId,
@@ -361,20 +369,25 @@ export function createAdminInquiry(type, input, userId = null) {
   return getInquiry(id);
 }
 
-// Lên đơn hàng từ một yêu cầu (thường là custom) sau khi đã liên hệ khách. Khách tra cứu cả hai bằng mã riêng.
-export function convertToOrder(id, userId = null) {
+// Lên đơn hàng từ một yêu cầu (custom / liên hệ) sau khi đã liên hệ khách.
+// Chính bản ghi đó chuyển thành đơn hàng (mã DH mới), KHÔNG tạo thêm bản ghi thứ hai nên không bị đếm đôi.
+// Mã cũ (CT... / LH...) được giữ ở origin_code: khách vẫn tra cứu được bằng mã đã nhận.
+export function convertToOrder(id) {
   const src = getInquiry(id);
   if (!src) throw new HttpError(404, 'Không tìm thấy');
   if (src.type === 'order') throw new HttpError(400, 'Đây đã là đơn hàng');
-  if (!src.customer_id) throw new HttpError(422, 'Yêu cầu này chưa gắn với khách hàng nào');
   const d = src.details || {};
   const label = src.type === 'custom'
     ? `Vòng thiết kế riêng${d.jade_type ? ` - ${d.jade_type}` : ''}${d.color ? ` ${d.color}` : ''}`
     : (d.product || 'Sản phẩm');
-  return createAdminInquiry('order', {
-    customer_id: src.customer_id, parent_id: src.id, message: src.message, details: d,
-    items: [{ name: label, size: d.size || '', qty: 1, price: null }],
-  }, userId);
+  const items = src.items.length ? src.items : [{ name: label, size: d.size || '', qty: 1, price: null }];
+  // Đã liên hệ khách mới lên đơn nên không quay lại "Mới"; mốc hoàn thành cũ không còn đúng với đơn mới
+  const status = INQUIRY_FLOW.order.includes(src.status) && !['new', 'completed', 'cancelled'].includes(src.status) ? src.status : 'contacted';
+  db.prepare(`UPDATE inquiries SET type = 'order', code = ?, origin_type = ?, origin_code = ?, items = ?, total = ?, status = ?,
+    completed_at = NULL, shipped_at = NULL, updated_at = datetime('now') WHERE id = ?`).run(
+    inquiryCode('order'), src.type, src.code, JSON.stringify(items), computeTotal(items, src.adjustment), status, id,
+  );
+  return getInquiry(id);
 }
 
 export function deleteInquiry(id) {

@@ -11,9 +11,9 @@
     </div>
     <div class="grid grid-cols-2 gap-4 md:gap-6 lg:grid-cols-{{ jadeTypes.length if jadeTypes.length <= 4 else 4 }}">
       {% for t in jadeTypes %}
-      <a href="/san-pham?loai={{ t.slug }}" class="reveal group relative block aspect-[4/5] overflow-hidden rounded-lg bg-primary/10">
+      <a href="/san-pham/{{ t.slug }}" class="reveal group relative block aspect-[4/5] overflow-hidden rounded-lg bg-primary/10">
         {% if t.image %}
-          <img src="{{ t.image.md }}" alt="{{ t.name }}" loading="lazy" class="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105">
+          <img src="{{ t.image.md }}" alt="{{ t.name }}" width="{{ t.image.width }}" height="{{ t.image.height }}" loading="lazy" decoding="async" class="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105">
         {% else %}
           <div class="absolute inset-0 bg-grain transition duration-700 group-hover:scale-105" style="background: radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--c-primary) {{ 20 + loop.index0 * 12 }}%, white), color-mix(in srgb, var(--c-primary) {{ 55 + loop.index0 * 10 }}%, black))"></div>
         {% endif %}

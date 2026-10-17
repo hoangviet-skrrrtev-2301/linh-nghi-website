@@ -1,5 +1,11 @@
 <div class="flex items-center justify-between gap-3 border-t border-slate-100 px-5 py-3 text-sm text-slate-500" x-show="total > 0">
-  <span x-text="'Tổng ' + total + ' mục'"></span>
+  <span class="flex flex-wrap items-center gap-x-3 gap-y-1">
+    <span x-text="'Tổng ' + total + ' mục'"></span>
+    <label class="flex items-center gap-1.5" x-show="perPageOptions.length" x-cloak>Hiện
+      <select class="input !w-auto !py-1 !pr-8 text-sm" :value="perPage" @change="setPerPage($event.target.value)" aria-label="Số dòng mỗi trang">
+        <template x-for="n in perPageOptions" :key="n"><option :value="n" :selected="n === perPage" x-text="n"></option></template>
+      </select> / trang</label>
+  </span>
   <div class="flex items-center gap-2" x-show="pages > 1">
     <button class="btn btn-secondary btn-sm" :disabled="page <= 1" @click="go(page - 1)">‹ Trước</button>
     <span x-text="page + ' / ' + pages"></span>

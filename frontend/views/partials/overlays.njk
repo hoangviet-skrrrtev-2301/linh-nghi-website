@@ -78,7 +78,7 @@
             <template x-if="!$store.app.checkout || p.stock_status === 'sold_out'">
               <a class="btn btn-primary flex-1" :href="'https://zalo.me/' + $store.app.zalo" target="_blank" rel="noopener">{{ icon('chat', 'w-4 h-4') }} Nhắn Zalo tư vấn</a>
             </template>
-            <a class="btn btn-outline flex-1" :href="'/san-pham/' + p.slug">Xem chi tiết {{ icon('arrow-right', 'w-4 h-4') }}</a>
+            <a class="btn btn-outline flex-1" :href="p.url || '/san-pham/' + p.slug">Xem chi tiết {{ icon('arrow-right', 'w-4 h-4') }}</a>
           </div>
           <button type="button" class="btn btn-ghost mt-2 w-full text-primary" @click="$store.quick.close(); $store.consult.show(p, 'consult', $store.quick.size)">{{ icon('mail', 'w-4 h-4') }} Gửi yêu cầu tư vấn về mẫu này</button>
         </div>
@@ -111,7 +111,7 @@
       </div>
     </template>
     <form x-show="!success" @submit.prevent="submit($el)" novalidate class="relative">
-      <h3 class="pr-8 text-2xl font-medium" x-text="$store.consult.mode === 'order' ? 'Đặt nhanh' : 'Yêu cầu tư vấn'"></h3>
+      <h2 class="pr-8 text-2xl font-medium" x-text="$store.consult.mode === 'order' ? 'Đặt nhanh' : 'Yêu cầu tư vấn'"></h2>
       <div class="mt-4 flex items-center gap-3 rounded-md bg-ink/[.03] p-3" x-show="$store.consult.p">
         <img :src="$store.consult.p?.cover?.sm" alt="" class="h-14 w-14 rounded object-cover">
         <div class="min-w-0 text-sm">
@@ -143,7 +143,7 @@
   <div x-show="$store.info.open" x-transition.opacity class="modal-backdrop" @click="$store.info.open = false"></div>
   <div x-show="$store.info.open" x-trap.noscroll="$store.info.open" x-transition.scale.95 class="modal-panel max-h-[85vh] max-w-lg overflow-y-auto p-8">
     <button class="icon-btn absolute right-3 top-3" @click="$store.info.open = false" aria-label="Đóng">{{ icon('close') }}</button>
-    <h3 class="pr-8 text-2xl font-medium" x-text="$store.info.title"></h3>
+    <h2 class="pr-8 text-2xl font-medium" x-text="$store.info.title"></h2>
     <div class="divider-ornament !mx-0 mb-5"></div>
     <div class="prose-jade" x-html="$store.info.html"></div>
   </div>
@@ -183,7 +183,7 @@
     <div class="p-8 text-center md:p-10">
       <button class="icon-btn absolute right-3 top-3" @click="close()" aria-label="Đóng">{{ icon('close') }}</button>
       <span class="eyebrow">{{ s.site.name }}</span>
-      <h3 class="mt-3 text-3xl font-medium">{{ features.welcome_popup_title }}</h3>
+      <h2 class="mt-3 text-3xl font-medium">{{ features.welcome_popup_title }}</h2>
       <div class="divider-ornament"></div>
       <p class="mt-5 text-muted">{{ features.welcome_popup_content | nl2br }}</p>
       <div class="mt-7 flex flex-col gap-2">

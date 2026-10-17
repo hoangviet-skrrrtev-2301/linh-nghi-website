@@ -32,7 +32,7 @@
         <div class="card card-body space-y-5" x-show="tab === 'info'">
           <div><label class="label">Tên sản phẩm *</label><input class="input text-base" x-model="form.name" @input="onName()" required></div>
           <div class="grid gap-4 sm:grid-cols-2">
-            <div><label class="label">Đường dẫn (slug)</label><div class="flex items-center rounded-lg border border-slate-300 bg-slate-50 text-sm"><span class="whitespace-nowrap pl-3 text-slate-400">/san-pham/</span><input class="w-full bg-transparent px-1 py-2 outline-none" x-model="form.slug" @input="slugTouched = true"></div></div>
+            <div><label class="label">Đường dẫn (slug)</label><div class="flex items-center rounded-lg border border-slate-300 bg-slate-50 text-sm"><span class="whitespace-nowrap pl-3 text-slate-400" x-text="publicPath.slice(0, publicPath.length - form.slug.length)"></span><input class="w-full bg-transparent px-1 py-2 outline-none" x-model="form.slug" @input="slugTouched = true"></div></div>
             <div><label class="label">Mã sản phẩm (SKU)</label><input class="input" x-model="form.sku"></div>
           </div>
           <div class="grid gap-4 sm:grid-cols-2">
@@ -144,7 +144,7 @@
           <div class="rounded-lg border border-slate-200 p-4">
             <p class="text-xs text-slate-500">Xem trước trên Google</p>
             <p class="mt-1 truncate text-lg text-[#1a0dab]" x-text="form.seo_title || form.name"></p>
-            <p class="truncate text-xs text-emerald-700" x-text="location.origin + '/san-pham/' + form.slug"></p>
+            <p class="truncate text-xs text-emerald-700" x-text="location.origin + publicPath"></p>
             <p class="line-clamp-2 text-sm text-slate-600" x-text="form.seo_description || form.short_description"></p>
           </div>
         </div>
@@ -158,7 +158,7 @@
           <div class="flex flex-col gap-2">
             <button type="button" class="btn btn-primary" :disabled="saving" @click="save(true)" x-text="form.status === 'published' ? 'Lưu thay đổi' : 'Lưu & hiển thị'"></button>
             <button type="button" class="btn btn-secondary" :disabled="saving" @click="save(false)" x-text="form.status === 'published' ? 'Chuyển về nháp' : 'Lưu nháp'"></button>
-            <a x-show="id && form.status === 'published' && (!type || type.active)" :href="'/san-pham/' + form.slug" target="_blank" class="btn btn-ghost">{{ icon('eye', 'w-4 h-4') }} Xem trên website</a>
+            <a x-show="id && form.status === 'published' && (!type || type.active)" :href="publicPath" target="_blank" class="btn btn-ghost">{{ icon('eye', 'w-4 h-4') }} Xem trên website</a>
             <a x-show="id && !(form.status === 'published' && (!type || type.active))" x-cloak :href="'{{ A }}/preview/san-pham/' + id" target="_blank" class="btn btn-ghost">{{ icon('eye', 'w-4 h-4') }} Xem thử như khách</a>
           </div>
         </div>

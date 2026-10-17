@@ -29,6 +29,8 @@ _Cập nhật lần cuối: 17/10/2026_
 | Blog | Chia theo chuyên mục; trang chuyên mục `noindex, follow`, không có trong sitemap (tắt được) | Để tránh nội dung trùng khi viết bài SEO nhiều chủ đề |
 | Gallery | Hiện tối đa 8 ảnh dạng 2 hàng × 4 cột (trang chủ và trang Gallery); hơn 8 ảnh thành slider tự lướt phải → trái. Tab "Tất cả" chỉ hiện ảnh bật "Hiện ở Gallery tổng", tab album hiện đủ ảnh | Chủ dự án muốn gallery tổng chọn lọc, album phụ chứa feedback / ảnh chưa chọn |
 | Trạng thái đơn | Mỗi loại có chuỗi riêng: đơn hàng thêm **Đang giao hàng** (kèm đơn vị vận chuyển + mã vận đơn khách xem được, tùy chọn email báo khách); liên hệ kết thúc ở "Đã xử lý" | Ngày 17/10/2026 |
+| Cấu trúc URL | Phân cấp cha → con: `/san-pham/<loại>/<sản phẩm>`, `/blog/<chuyên mục>/<bài>`; địa chỉ cũ chuyển 301; shop chỉnh chuyển hướng ở Admin › Chuyển hướng & 404 | Ngày 17/10/2026, làm trước khi có tên miền nên chưa mất xếp hạng |
+| Lên đơn | Custom / liên hệ "lên đơn" thì **chính bản ghi đó** chuyển thành đơn hàng (mã DH mới, mã cũ giữ ở `origin_code`, khách tra cứu được cả hai), không tạo bản ghi thứ hai | Ngày 17/10/2026; tránh đếm đôi. Bản ghi cũ tạo theo kiểu `parent_id` vẫn hiển thị bình thường |
 | Doanh thu | Tính theo **ngày hoàn thành** của đơn (giờ Việt Nam), đơn hoàn thành cũ lấy ngày cập nhật cuối làm gần đúng | Chủ dự án chốt |
 | Thứ tự sản phẩm | Admin kéo thả đổi vị trí; `sort_order` đứng đầu trong sắp xếp "Nổi bật" (khách) và khối nổi bật trang chủ, chưa sắp xếp thì Best Seller / nổi bật trước | `reorderProducts` trong `catalog.js`, ghi lại sort_order 1..n toàn cửa hàng |
 | Tìm kiếm | Không phân biệt hoa/thường và dấu ("áo" = "Áo" = "ao") cho sản phẩm, bài viết, đơn, khách, ảnh | Hàm `vn()` trong SQLite |
@@ -104,7 +106,13 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 | Giỏ hàng chỉ hiểu "ni" dạng số | Loại hàng khác ngọc (Pháp phục) chưa chọn được kích cỡ khi đặt hàng |
 | Ảnh đơn hàng cho khách vẽ trên trình duyệt | Cần font đã tải; nếu trình duyệt khách quá cũ có thể không tạo được ảnh (khách vẫn đặt hàng bình thường) |
 | Tìm kiếm tiếng Việt quét toàn bảng (`vn()`) | Không dùng chỉ mục; nhanh với vài nghìn dòng, cần xem lại nếu lên hàng chục nghìn |
+| Danh sách admin ghi bộ lọc vào URL | `listPage` trong `pages.js` dùng `history.replaceState` để nút Quay lại giữ bộ lọc / trang; trang khách hàng có hàm tải riêng nên chưa giữ |
 | Trạng thái đơn đã chốt trong DB bằng ràng buộc CHECK | Thêm trạng thái mới phải xây lại bảng `inquiries` (xem migration 008 làm mẫu) |
+
+## 5b. Danh sách đã rà soát SEO / bảo mật (17/10/2026)
+
+- **Đã có và đạt:** CSP + HSTS + nosniff + X-Frame-Options + Referrer-Policy + Permissions-Policy; CSRF cho admin; cookie đăng nhập httpOnly / sameSite / secure (production) giới hạn theo đường dẫn admin; mật khẩu băm scrypt, khóa tài khoản khi sai nhiều lần, 2FA; giới hạn tần suất (đăng nhập, form, tra cứu, API, admin); chống spam form (token + honeypot + kiểm tra nguồn); prepared statement; `cleanHtml` cho HTML soạn thảo; JSON-LD escape `<`; upload kiểm tra nội dung thật bằng sharp, không nhận SVG, tên file ngẫu nhiên, EXIF bị xóa; trang lỗi không lộ chi tiết; `query parser = simple`; admin `no-store` + `noindex`.
+- **Còn lại (đã biết):** CSP cần `'unsafe-eval'` vì Alpine.js (dùng bản CSP của Alpine sẽ phải viết lại các biểu thức trong template); font Google tải từ bên ngoài (tự lưu font trên máy chủ sẽ nhanh hơn một chút); cảnh báo `npm audit` mức thấp của Quill 2.0.3 (tính năng xuất HTML, không dùng); chưa có Brotli ở Nginx; ảnh chưa có định dạng AVIF.
 
 ## 6. Bản đồ code: muốn sửa X thì mở file nào
 
@@ -129,6 +137,7 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 | Trạng thái đơn, vận chuyển, email báo khách | `INQUIRY_FLOW` + `updateInquiry` trong `services/inquiries.js`, `customerStatusUpdate` trong `mailer.js`, trang tra cứu `frontend/views/pages/track.njk` |
 | Nhập khách hàng hàng loạt | `backend/services/customer-import.js` + panel trong `admin/views/pages/customers.njk` |
 | Loại sản phẩm, thông số tự đặt, xem thử | `product_types` trong `services/catalog.js` (`TYPE_ACTIVE`, `IN_MAIN_LIST`), `/admin/preview/san-pham/:id` trong `routes/admin.js` |
+| Địa chỉ phân cấp, chuyển hướng, trang 404 | `backend/lib/urls.js` (đường dẫn chuẩn), `backend/middleware/urls.js` (chuẩn hóa + áp dụng chuyển hướng), `backend/services/redirects.js`, `admin/views/pages/redirects.njk`; trang lỗi `frontend/views/pages/error.njk` + nhóm `pages` (phần errors) trong `settings-schema.js` |
 | Chuyên mục blog | `services/content.js` (`listPostCategories`...), `routes/public.js` (`renderBlogList`) |
 | Ảnh đơn hàng khách tải về | `frontend/public/js/order-image.js`, `buildReceipt` trong `app.js` |
 | Tìm kiếm không dấu | `foldVn`, `likeVn`, hàm SQL `vn()` trong `backend/lib/db.js` |

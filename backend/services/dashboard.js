@@ -41,9 +41,9 @@ export function resolveRange(key = '30d', fromIn, toIn) {
   return { key, from, to, days: diffDays(from, to) + 1 };
 }
 
-// Nhóm cột biểu đồ: theo ngày (≤ 45 ngày), theo tuần (≤ 210 ngày), còn lại theo tháng
+// Nhóm cột biểu đồ: theo ngày (≤ 14 ngày, để mỗi cột đủ rộng hiện số), theo tuần (≤ 210 ngày), còn lại theo tháng
 function bucketer(days) {
-  if (days <= 45) {
+  if (days <= 14) {
     return { unit: 'day', key: (d) => d, label: (k) => dm(k), title: (k) => dmy(k) };
   }
   if (days <= 210) {
@@ -60,8 +60,13 @@ function totalsFor(from, to) {
   const done = db.prepare(`SELECT COALESCE(SUM(total), 0) AS revenue, COUNT(*) AS n FROM inquiries
     WHERE type = 'order' AND status = 'completed' AND ${D('completed_at')} BETWEEN ? AND ?`).get(from, to);
   const customers = db.prepare(`SELECT COUNT(*) FROM customers WHERE ${D('created_at')} BETWEEN ? AND ?`).pluck().get(from, to);
+  // Đơn có nguồn gốc là custom / liên hệ (đã "lên đơn"), và đơn shop tự thêm từ ngoài website
+  const fromRequest = db.prepare(`SELECT COUNT(*) FROM inquiries WHERE type = 'order' AND (origin_type != '' OR parent_id IS NOT NULL)
+    AND ${D('created_at')} BETWEEN ? AND ?`).pluck().get(from, to);
+  const manual = db.prepare(`SELECT COUNT(*) FROM inquiries WHERE type = 'order' AND channel = 'admin' AND origin_type = '' AND parent_id IS NULL
+    AND ${D('created_at')} BETWEEN ? AND ?`).pluck().get(from, to);
   return {
-    orders: byType.order || 0, custom: byType.custom || 0, contact: byType.contact || 0, customers,
+    orders: byType.order || 0, custom: byType.custom || 0, contact: byType.contact || 0, customers, fromRequest, manual,
     revenue: done.revenue, completed: done.n, aov: done.n ? Math.round(done.revenue / done.n) : 0,
   };
 }

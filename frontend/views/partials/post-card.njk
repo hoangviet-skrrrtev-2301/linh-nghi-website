@@ -1,9 +1,9 @@
 {% from "partials/icons.njk" import icon %}
 <article class="reveal group">
-  <a href="/blog/{{ p.slug }}" class="block aspect-[16/10] overflow-hidden rounded-lg bg-ink/5">
-    {% if p.cover %}<img src="{{ p.cover.md }}" alt="{{ p.cover.alt or p.title }}" loading="lazy" class="h-full w-full object-cover transition duration-700 group-hover:scale-105">{% endif %}
+  <a href="{{ p.url }}" class="block aspect-[16/10] overflow-hidden rounded-lg bg-ink/5">
+    {% if p.cover %}<img src="{{ p.cover.md }}" alt="{{ p.cover.alt or p.title }}" width="{{ p.cover.width }}" height="{{ p.cover.height }}" loading="lazy" decoding="async" class="h-full w-full object-cover transition duration-700 group-hover:scale-105">{% endif %}
   </a>
-  <p class="mt-4 text-xs uppercase tracking-[0.14em] text-muted">{% if p.category and p.category.active %}<a href="/blog/chuyen-muc/{{ p.category.slug }}" class="text-accent hover:underline">{{ p.category.name }}</a> · {% endif %}{{ p.published_at | date }} · {{ p.reading_minutes }} phút đọc</p>
-  <h3 class="mt-2 text-xl font-medium leading-snug"><a href="/blog/{{ p.slug }}" class="transition hover:text-primary">{{ p.title }}</a></h3>
+  <p class="mt-4 text-xs uppercase tracking-[0.14em] text-muted">{% if p.category and p.category.active %}<a href="/blog/{{ p.category.slug }}" class="text-accent hover:underline">{{ p.category.name }}</a> · {% endif %}{{ p.published_at | date }} · {{ p.reading_minutes }} phút đọc</p>
+  <{{ hTag or 'h3' }} class="mt-2 text-xl font-medium leading-snug"><a href="{{ p.url }}" class="transition hover:text-primary">{{ p.title }}</a></{{ hTag or 'h3' }}>
   <p class="mt-2 line-clamp-2 text-sm text-muted">{{ p.summary }}</p>
 </article>

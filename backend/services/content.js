@@ -3,13 +3,17 @@ import { db, likeVn } from '../lib/db.js';
 import { slugify, HttpError, toInt, bool, stripHtml, truncate } from '../lib/utils.js';
 import { cleanHtml, cleanText } from '../lib/sanitize.js';
 import { getMediaMap } from './media.js';
+import { postPath, productPath, RESERVED_BLOG } from '../lib/urls.js';
+import { addAutoRedirect } from './redirects.js';
 
 // ---------------- Blog ----------------
+const withUrl = (post) => ({ ...post, url: postPath(post) });
+
 function hydratePosts(rows) {
   const media = getMediaMap(rows.map((r) => r.cover_media_id));
   const authors = Object.fromEntries(db.prepare('SELECT id, name FROM users').all().map((u) => [u.id, u.name]));
   const cats = Object.fromEntries(db.prepare('SELECT id, name, slug, active FROM post_categories').all().map((x) => [x.id, x]));
-  return rows.map((r) => ({
+  return rows.map((r) => withUrl({
     ...r,
     category: cats[r.category_id] || null,
     cover: media[r.cover_media_id] || null,
@@ -48,7 +52,8 @@ export function savePost(id, data, userId) {
   let slug = slugify(data.slug || title) || 'bai-viet';
   let i = 2;
   const base = slug;
-  while (db.prepare('SELECT 1 FROM posts WHERE slug = ? AND id != ?').get(slug, id || 0)) slug = `${base}-${i++}`;
+  // Không trùng bài khác, tên chuyên mục, hoặc từ khóa dành riêng (cùng nằm dưới /blog/)
+  while (db.prepare('SELECT 1 FROM posts WHERE slug = ? AND id != ?').get(slug, id || 0) || db.prepare('SELECT 1 FROM post_categories WHERE slug = ?').get(slug) || RESERVED_BLOG.includes(slug)) slug = `${base}-${i++}`;
   const status = data.status === 'published' ? 'published' : 'draft';
   // Ngày đăng: lấy từ form (giờ VN) hoặc hiện tại khi đăng lần đầu
   let publishedAt = null;
@@ -71,10 +76,14 @@ export function savePost(id, data, userId) {
     seo_description: cleanText(data.seo_description, 400),
   };
   if (id) {
+    const before = getPost(id, { publicOnly: false });
     const res = db.prepare(`UPDATE posts SET title=@title, slug=@slug, status=@status, excerpt=@excerpt, content=@content,
       cover_media_id=@cover_media_id, category_id=@category_id, published_at=@published_at, seo_title=@seo_title, seo_description=@seo_description,
       updated_at=datetime('now') WHERE id=@id`).run({ ...v, id });
     if (!res.changes) throw new HttpError(404, 'Không tìm thấy bài viết');
+    // Đổi đường dẫn hoặc chuyên mục thì địa chỉ bài đổi: tự chuyển 301 từ địa chỉ cũ
+    const after = getPost(id, { publicOnly: false });
+    if (before?.status === 'published' && after && before.url !== after.url) addAutoRedirect(before.url, after.url);
     return id;
   }
   return db.prepare(`INSERT INTO posts (title, slug, status, excerpt, content, cover_media_id, category_id, published_at, seo_title, seo_description, author_id)
@@ -105,11 +114,17 @@ export function savePostCategory(id, data) {
   const base = slugify(data.slug || name) || 'chuyen-muc';
   let slug = base;
   let i = 2;
-  while (db.prepare('SELECT 1 FROM post_categories WHERE slug = ? AND id != ?').get(slug, id || 0)) slug = `${base}-${i++}`;
+  while (db.prepare('SELECT 1 FROM post_categories WHERE slug = ? AND id != ?').get(slug, id || 0) || db.prepare('SELECT 1 FROM posts WHERE slug = ?').get(slug) || RESERVED_BLOG.includes(slug)) slug = `${base}-${i++}`;
   const v = { name, slug, description: cleanText(data.description, 400), sort_order: toInt(data.sort_order, 0), active: bool(data.active ?? true) ? 1 : 0 };
   if (id) {
+    const old = db.prepare('SELECT slug FROM post_categories WHERE id = ?').get(id);
+    const beforeUrls = old && old.slug !== slug ? Object.fromEntries(db.prepare("SELECT id FROM posts WHERE category_id = ? AND status = 'published'").pluck().all(id).map((pid) => [pid, getPost(pid, { publicOnly: false }).url])) : null;
     const res = db.prepare('UPDATE post_categories SET name=@name, slug=@slug, description=@description, sort_order=@sort_order, active=@active WHERE id=@id').run({ ...v, id });
     if (!res.changes) throw new HttpError(404, 'Không tìm thấy chuyên mục');
+    if (beforeUrls) {
+      addAutoRedirect(`/blog/${old.slug}`, `/blog/${slug}`);
+      for (const [pid, url] of Object.entries(beforeUrls)) addAutoRedirect(url, getPost(Number(pid), { publicOnly: false }).url);
+    }
     return id;
   }
   return db.prepare('INSERT INTO post_categories (name, slug, description, sort_order, active) VALUES (@name, @slug, @description, @sort_order, @active)').run(v).lastInsertRowid;
@@ -117,7 +132,13 @@ export function savePostCategory(id, data) {
 
 // Xóa chuyên mục: các bài thuộc chuyên mục đó chuyển về "chưa phân loại" (không bị xóa)
 export function deletePostCategory(id) {
+  const old = db.prepare('SELECT slug FROM post_categories WHERE id = ?').get(id);
+  const beforeUrls = old ? Object.fromEntries(db.prepare("SELECT id FROM posts WHERE category_id = ? AND status = 'published'").pluck().all(id).map((pid) => [pid, getPost(pid, { publicOnly: false }).url])) : {};
   db.prepare('DELETE FROM post_categories WHERE id = ?').run(id);
+  if (old) {
+    addAutoRedirect(`/blog/${old.slug}`, '/blog');
+    for (const [pid, url] of Object.entries(beforeUrls)) { const p = getPost(Number(pid), { publicOnly: false }); if (p) addAutoRedirect(url, p.url); }
+  }
 }
 
 // ---------------- Gallery ----------------
@@ -128,11 +149,13 @@ export function listGallery({ activeOnly = true, album, limit } = {}) {
   const params = [];
   if (album) { where.push('g.album = ?'); params.push(album); }
   else if (activeOnly) where.push('g.active = 1');
-  const rows = db.prepare(`SELECT g.*, p.slug AS product_slug, p.name AS product_name FROM gallery_items g
+  const rows = db.prepare(`SELECT g.*, p.slug AS product_slug, p.name AS product_name, jt.slug AS jade_slug,
+      CASE WHEN pt.uses_jade_fields = 0 THEN pt.slug END AS type_slug FROM gallery_items g
     LEFT JOIN products p ON p.id = g.product_id AND p.status = 'published' AND p.product_type_id IN (SELECT id FROM product_types WHERE active = 1)
+    LEFT JOIN terms jt ON jt.id = p.jade_type_id LEFT JOIN product_types pt ON pt.id = p.product_type_id
     ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY g.sort_order, g.id DESC ${limit ? 'LIMIT ' + Number(limit) : ''}`).all(...params);
   const media = getMediaMap(rows.map((r) => r.media_id));
-  return rows.map((r) => ({ ...r, image: media[r.media_id] || null })).filter((r) => r.image);
+  return rows.map((r) => ({ ...r, image: media[r.media_id] || null, product_url: r.product_slug ? productPath({ slug: r.product_slug, jade_type: r.jade_slug ? { slug: r.jade_slug } : null, product_type: r.type_slug ? { slug: r.type_slug, uses_jade_fields: false } : null }) : '' })).filter((r) => r.image);
 }
 
 export function galleryAlbums() {

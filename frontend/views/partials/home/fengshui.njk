@@ -6,7 +6,7 @@
   <div class="container-x grid items-center gap-12 {{ 'lg:grid-cols-[1fr_1.2fr]' if s.home.fengshui_image }}">
     {% if s.home.fengshui_image %}
     <div class="reveal relative">
-      <img src="{{ s.home.fengshui_image.md }}" alt="{{ s.home.fengshui_title }}" loading="lazy" class="aspect-[4/5] w-full rounded-lg object-cover">
+      <img src="{{ s.home.fengshui_image.md }}" alt="{{ s.home.fengshui_title }}" width="{{ s.home.fengshui_image.width }}" height="{{ s.home.fengshui_image.height }}" loading="lazy" decoding="async" class="aspect-[4/5] w-full rounded-lg object-cover">
       <div class="absolute -bottom-5 -right-5 -z-10 h-full w-full rounded-lg border border-accent/40"></div>
     </div>
     {% endif %}

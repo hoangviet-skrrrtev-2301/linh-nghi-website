@@ -3,6 +3,8 @@ import nunjucks from 'nunjucks';
 import { config } from '../config/index.js';
 import { formatVnd, formatDate, escapeHtml } from './utils.js';
 import { pageWindow } from './pagination.js';
+import { addImageDims } from './html-images.js';
+import { fixHeadingLevels } from './toc.js';
 
 // Đổi giá trị này mỗi lần khởi động để trình duyệt tải lại CSS/JS mới
 export const ASSET_VERSION = Date.now().toString(36);
@@ -21,6 +23,9 @@ function makeEnv(dir) {
   env.addFilter('jsonScript', (v) => new nunjucks.runtime.SafeString(JSON.stringify(v ?? null).replace(/</g, '\\u003c')));
   env.addFilter('img', (media, size = 'md') => media?.[size] || media?.lg || '');
   env.addFilter('srcset', (m) => (m ? [m.sm && `${m.sm} 480w`, m.md && `${m.md} 960w`, m.lg && `${m.lg} 1800w`].filter(Boolean).join(', ') : ''));
+  // Nội dung soạn thảo: thêm width/height cho ảnh (chống CLS); headings: không nhảy cấp (start = cấp tiêu đề ngay trước nội dung)
+  env.addFilter('imgdims', (html) => addImageDims(String(html || '')));
+  env.addFilter('headings', (html, start = 1) => fixHeadingLevels(String(html || ''), start));
   env.addFilter('year', (s) => String(s || '').replace('{year}', new Date().getFullYear()));
   env.addFilter('nl2br', (s) => new nunjucks.runtime.SafeString(escapeHtml(s).replace(/\n/g, '<br>')));
   env.addFilter('phoneHref', (s) => String(s || '').replace(/[^\d+]/g, ''));

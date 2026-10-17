@@ -2,7 +2,7 @@
 {% from "partials/icons.njk" import icon %}
 {% from "partials/product-card.njk" import productCard %}
 
-{% block head %}<link rel="stylesheet" href="/vendor/swiper/swiper-bundle.min.css"><link rel="stylesheet" href="/vendor/photoswipe/photoswipe.css">{% endblock %}
+{% block head %}{% set hero = s.home.hero_slides[0] %}{% if hero and hero.image %}<link rel="preload" as="image" href="{{ hero.image.lg }}" imagesrcset="{{ hero.image | srcset }}" imagesizes="100vw" fetchpriority="high">{% endif %}<link rel="stylesheet" href="/vendor/swiper/swiper-bundle.min.css"><link rel="stylesheet" href="/vendor/photoswipe/photoswipe.css">{% endblock %}
 
 {% block content %}
 {% for sec in sections %}

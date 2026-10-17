@@ -54,7 +54,7 @@
     <div class="card min-w-0 lg:col-span-2">
       <div class="card-head">
         <div>
-          <h2 class="card-title" x-text="metric === 'revenue' ? 'Doanh thu theo ' + ({ day: 'ngày', week: 'tuần', month: 'tháng' }[d?.series.unit] || 'ngày') : 'Đơn & yêu cầu theo ' + ({ day: 'ngày', week: 'tuần', month: 'tháng' }[d?.series.unit] || 'ngày')"></h2>
+          <h2 class="card-title" x-text="metric === 'revenue' ? 'Doanh thu theo ' + ({ day: 'ngày', week: 'tuần', month: 'tháng' }[d?.series.unit] || 'ngày') : 'Đơn hàng, custom & khách liên hệ theo ' + ({ day: 'ngày', week: 'tuần', month: 'tháng' }[d?.series.unit] || 'ngày')"></h2>
           <p class="mt-0.5 text-xs text-slate-500">Tổng: <b x-text="chartTotal"></b></p>
         </div>
         <div class="inline-flex rounded-lg border border-slate-300 p-0.5 text-xs">
@@ -63,6 +63,20 @@
         </div>
       </div>
       <div class="card-body">
+        {# Ba loại đếm riêng, bấm để ẩn / hiện trên biểu đồ #}
+        <div class="mb-5 grid grid-cols-3 gap-2 sm:gap-3" x-show="metric !== 'revenue'">
+          <template x-for="s in seriesDefs" :key="s.key">
+            <button type="button" class="rounded-xl border border-slate-200 p-3 text-left transition hover:border-slate-300" :class="hidden[s.key] && 'opacity-45'" @click="toggleSeries(s.key)" :aria-pressed="!hidden[s.key]" :title="hidden[s.key] ? 'Bấm để hiện lại trên biểu đồ' : 'Bấm để ẩn khỏi biểu đồ'">
+              <span class="flex items-center gap-1.5 text-xs text-slate-500"><i class="h-2.5 w-2.5 shrink-0 rounded-sm" :class="s.dot"></i><span x-text="s.label"></span></span>
+              <span class="mt-1 block text-2xl font-semibold leading-none" :class="s.text" x-text="seriesTotal(s.key)"></span>
+              <span class="mt-1.5 block text-[11px] leading-tight text-slate-500">
+                <template x-if="s.key === 'order'"><span><span x-text="d?.totals.fromRequest || 0"></span> lên từ custom/liên hệ · <span x-text="d?.totals.manual || 0"></span> shop tự thêm</span></template>
+                <template x-if="s.key === 'custom'"><span>Yêu cầu thiết kế riêng còn đang xử lý</span></template>
+                <template x-if="s.key === 'contact'"><span>Khách nhắn tư vấn, chưa lên đơn</span></template>
+              </span>
+            </button>
+          </template>
+        </div>
         <div class="flex gap-2">
           <div class="flex h-48 w-10 shrink-0 flex-col justify-between pt-5 text-right text-[10px] text-slate-400">
             <template x-for="(t, i) in axis" :key="i"><span x-text="t"></span></template>
@@ -73,16 +87,21 @@
               <div class="pointer-events-none absolute inset-x-0 top-[calc(50%+10px)] border-t border-dashed border-slate-200"></div>
               <div class="relative flex h-full items-end gap-[3px] border-b border-slate-300">
                 <template x-for="(bk, i) in buckets" :key="bk.key">
-                  <div class="group relative h-full flex-1" :title="bk.title + ': ' + (metric === 'revenue' ? money(bk.revenue) : (bk.order + ' đơn · ' + bk.custom + ' custom · ' + bk.contact + ' liên hệ'))">
-                    <div class="absolute inset-x-0 bottom-0 flex flex-col-reverse overflow-hidden rounded-t transition group-hover:opacity-80" :style="'height:' + Math.max(pct(cell(bk)), cell(bk) ? 2 : 0) + '%'">
-                      <template x-if="metric === 'revenue'"><div class="w-full flex-1 bg-emerald-500"></div></template>
-                      <template x-if="metric !== 'revenue'"><div class="flex h-full w-full flex-col-reverse">
-                        <div class="w-full bg-brand-500" :style="'height:' + (cell(bk) ? bk.order / cell(bk) * 100 : 0) + '%'"></div>
-                        <div class="w-full bg-violet-500" :style="'height:' + (cell(bk) ? bk.custom / cell(bk) * 100 : 0) + '%'"></div>
-                        <div class="w-full bg-amber-400" :style="'height:' + (cell(bk) ? bk.contact / cell(bk) * 100 : 0) + '%'"></div>
-                      </div></template>
-                    </div>
-                    <span class="pointer-events-none absolute inset-x-0 text-center text-[10px] font-medium leading-none text-slate-600" :style="'bottom: calc(' + Math.max(pct(cell(bk)), cell(bk) ? 2 : 0) + '% + 3px)'" x-text="lab(bk)"></span>
+                  <div class="group flex h-full min-w-0 flex-1 items-end justify-center gap-[2px] rounded-t px-px hover:bg-slate-100/70" :title="bk.title + ': ' + (metric === 'revenue' ? money(bk.revenue) : (bk.order + ' đơn hàng · ' + bk.custom + ' custom · ' + bk.contact + ' khách liên hệ'))">
+                    <template x-if="metric === 'revenue'">
+                      <div class="relative h-full w-full max-w-[34px]">
+                        <div class="absolute inset-x-0 bottom-0 rounded-t bg-emerald-500" :style="'height:' + barH(bk.revenue) + '%'"></div>
+                        <span class="pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-semibold leading-none text-slate-700" :style="'bottom: calc(' + barH(bk.revenue) + '% + 3px)'" x-show="showNumbers" x-text="lab(bk.revenue)"></span>
+                      </div>
+                    </template>
+                    <template x-if="metric !== 'revenue'">
+                      <div class="contents"><template x-for="s in series" :key="s.key">
+                        <div class="relative h-full min-w-0 flex-1" :class="series.length > 1 ? 'max-w-[26px]' : 'max-w-[34px]'">
+                          <div class="absolute inset-x-0 bottom-0 rounded-t" :class="s.bar" :style="'height:' + barH(bk[s.key]) + '%'"></div>
+                          <span class="pointer-events-none absolute left-1/2 -translate-x-1/2 text-[10px] font-semibold leading-none" :class="s.text" :style="'bottom: calc(' + barH(bk[s.key]) + '% + 3px)'" x-show="showNumbers" x-text="lab(bk[s.key])"></span>
+                        </div>
+                      </template></div>
+                    </template>
                   </div>
                 </template>
               </div>
@@ -93,16 +112,12 @@
             </div>
           </div>
         </div>
-        <div class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500" x-show="metric !== 'revenue'">
-          <span class="inline-flex items-center gap-1.5"><i class="h-2.5 w-2.5 rounded-sm bg-brand-500"></i> Đơn hàng</span>
-          <span class="inline-flex items-center gap-1.5"><i class="h-2.5 w-2.5 rounded-sm bg-violet-500"></i> Yêu cầu custom</span>
-          <span class="inline-flex items-center gap-1.5"><i class="h-2.5 w-2.5 rounded-sm bg-amber-400"></i> Liên hệ</span>
-        </div>
+        <p class="mt-3 text-xs text-slate-500" x-show="metric !== 'revenue' && !showNumbers" x-cloak>Nhiều cột nên số được ẩn: rê chuột vào cột để xem số, hoặc mở “Xem số liệu chi tiết” bên dưới.</p>
         <details class="mt-4 text-sm">
           <summary class="cursor-pointer text-brand-600">Xem số liệu chi tiết từng cột</summary>
           <div class="mt-2 max-h-72 overflow-auto rounded-lg border border-slate-200">
             <table class="w-full text-left text-xs">
-              <thead class="sticky top-0 bg-slate-50 text-slate-500"><tr><th class="px-3 py-2">Thời gian</th><th class="px-3 py-2">Đơn</th><th class="px-3 py-2">Custom</th><th class="px-3 py-2">Liên hệ</th><th class="px-3 py-2 text-right">Doanh thu</th></tr></thead>
+              <thead class="sticky top-0 bg-slate-50 text-slate-500"><tr><th class="px-3 py-2">Thời gian</th><th class="px-3 py-2">Đơn</th><th class="px-3 py-2">Custom</th><th class="px-3 py-2">Khách liên hệ</th><th class="px-3 py-2 text-right">Doanh thu</th></tr></thead>
               <tbody><template x-for="bk in buckets" :key="bk.key"><tr class="border-t border-slate-100"><td class="px-3 py-1.5" x-text="bk.title"></td><td class="px-3 py-1.5" x-text="bk.order"></td><td class="px-3 py-1.5" x-text="bk.custom"></td><td class="px-3 py-1.5" x-text="bk.contact"></td><td class="px-3 py-1.5 text-right" x-text="bk.revenue ? money(bk.revenue) : '–'"></td></tr></template></tbody>
             </table>
           </div>

@@ -4,13 +4,13 @@
   <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-14">
     <article class="min-w-0">
       <header>
-        <nav class="text-xs text-muted" aria-label="Breadcrumb"><a href="/" class="hover:text-primary">Trang chủ</a><span class="mx-1.5">/</span><a href="/blog" class="hover:text-primary">Blog</a>{% if category %}<span class="mx-1.5">/</span><a href="/blog/chuyen-muc/{{ category.slug }}" class="hover:text-primary">{{ category.name }}</a>{% endif %}</nav>
-        {% if category %}<a href="/blog/chuyen-muc/{{ category.slug }}" class="eyebrow mt-5 inline-block hover:underline">{{ category.name }}</a>{% endif %}
+        <nav class="text-xs text-muted" aria-label="Breadcrumb"><a href="/" class="hover:text-primary">Trang chủ</a><span class="mx-1.5">/</span><a href="/blog" class="hover:text-primary">Blog</a>{% if category %}<span class="mx-1.5">/</span><a href="/blog/{{ category.slug }}" class="hover:text-primary">{{ category.name }}</a>{% endif %}</nav>
+        {% if category %}<a href="/blog/{{ category.slug }}" class="eyebrow mt-5 inline-block hover:underline">{{ category.name }}</a>{% endif %}
         <h1 class="mt-4 text-balance text-3xl font-medium leading-tight md:text-5xl">{{ post.title }}</h1>
         <p class="mt-4 text-sm text-muted">{{ post.published_at | date }}{% if post.author %} · {{ post.author }}{% endif %} · {{ post.reading_minutes }} phút đọc</p>
       </header>
       {% if post.cover %}
-      <img src="{{ post.cover.lg }}" srcset="{{ post.cover | srcset }}" sizes="(min-width:1024px) 760px, 100vw" alt="{{ post.cover.alt or post.title }}" class="mt-8 aspect-[16/9] w-full rounded-lg border border-line object-cover" fetchpriority="high">
+      <img src="{{ post.cover.lg }}" srcset="{{ post.cover | srcset }}" sizes="(min-width:1024px) 760px, 100vw" alt="{{ post.cover.alt or post.title }}" width="{{ post.cover.width }}" height="{{ post.cover.height }}" decoding="async" class="mt-8 aspect-[16/9] w-full rounded-lg border border-line object-cover" fetchpriority="high">
       {% endif %}
       {% if toc.length %}
       {# Điện thoại / máy tính bảng: mục lục gập lại phía trên bài; máy tính để cột phải #}
@@ -21,7 +21,7 @@
       {% endif %}
       <div class="mt-8 max-w-3xl">
         {% if post.excerpt %}<p class="mb-8 font-heading text-xl italic leading-relaxed text-ink/80">{{ post.excerpt }}</p>{% endif %}
-        <div class="prose-jade">{{ post.content | safe }}</div>
+        <div class="prose-jade">{{ post.content | headings(1) | imgdims | safe }}</div>
       </div>
     </article>
     <div class="lg:sticky lg:top-[calc(var(--header-h)+1rem)] lg:self-start">

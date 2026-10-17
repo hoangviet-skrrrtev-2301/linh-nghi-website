@@ -5,6 +5,12 @@
 {% block heading %}{{ label }}{% endblock %}
 {% block content %}
 <div x-data="inquiriesList({{ (query.type or '') | dump }})">
+  {% set helpKey = query.type or 'all' %}{% include "partials/sales-help.njk" %}
+  {% if query.type %}
+  <div class="mb-4 flex justify-end">
+    <button type="button" class="btn btn-primary" @click="openAdd()">{{ icon('plus', 'w-4 h-4') }} Thêm {{ {'order': 'đơn hàng', 'custom': 'yêu cầu custom', 'contact': 'liên hệ'}[query.type] }}</button>
+  </div>
+  {% endif %}
   <div class="mb-4 flex flex-wrap gap-1">
     <button class="tab" :class="filters.status === '' && 'active'" @click="filters.status = ''; search()">Tất cả</button>
     {% for k, v in (meta.statusByType[query.type] if query.type and meta.statusByType[query.type] else meta.statusByType.all) %}<button class="tab" :class="filters.status === '{{ k }}' && 'active'" @click="filters.status = '{{ k }}'; search()">{{ v }}</button>{% endfor %}
@@ -38,5 +44,51 @@
     </div>
     {% include "partials/pager.njk" %}
   </div>
+
+  {# ---- Popup shop tự thêm đơn / yêu cầu (khách nhắn Zalo, Facebook, đến cửa hàng...) ---- #}
+  {% if query.type %}
+  <div x-cloak x-show="add.open" class="fixed inset-0 z-[80] flex items-center justify-center p-4" @keydown.escape.window="add.open = false">
+    <div class="absolute inset-0 bg-slate-900/50" @click="add.open = false"></div>
+    <form @submit.prevent="createManual()" class="card relative max-h-full w-full max-w-lg overflow-y-auto">
+      <div class="card-head"><h3 class="card-title">Thêm {{ {'order': 'đơn hàng', 'custom': 'yêu cầu custom', 'contact': 'liên hệ'}[query.type] }} (ngoài website)</h3><button type="button" class="btn btn-ghost btn-sm" @click="add.open = false" aria-label="Đóng">{{ icon('close', 'w-4 h-4') }}</button></div>
+      <div class="card-body space-y-4">
+        <p class="help !mt-0">Dùng cho khách chốt qua Zalo, Facebook, điện thoại hoặc tại cửa hàng. Sau khi tạo, bạn nhập sản phẩm, giá và trạng thái trong trang chi tiết.</p>
+        <div class="inline-flex rounded-lg border border-slate-300 p-0.5 text-sm">
+          <button type="button" class="rounded-md px-3 py-1.5" :class="add.mode === 'existing' ? 'bg-brand-600 text-white' : 'text-slate-600'" @click="add.mode = 'existing'">Khách đã có</button>
+          <button type="button" class="rounded-md px-3 py-1.5" :class="add.mode === 'new' ? 'bg-brand-600 text-white' : 'text-slate-600'" @click="add.mode = 'new'">Khách mới</button>
+        </div>
+        <div x-show="add.mode === 'existing'" class="space-y-2">
+          <label class="label">Tìm khách (tên, số điện thoại) *</label>
+          <input type="search" class="input" x-model="add.q" @input.debounce.300ms="searchCustomers()" placeholder="Gõ tên hoặc số điện thoại..." autocomplete="off">
+          <div class="max-h-48 overflow-y-auto rounded-lg border border-slate-200" x-show="add.results.length">
+            <template x-for="c in add.results" :key="c.id">
+              <button type="button" class="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-slate-50" :class="add.customer?.id === c.id && 'bg-brand-50'" @click="add.customer = c">
+                <span class="font-medium" x-text="c.name"></span><span class="text-xs text-slate-500" x-text="c.phone"></span>
+              </button>
+            </template>
+          </div>
+          <p class="text-xs text-slate-500" x-show="add.q && !add.results.length && !add.searching">Không thấy khách nào. Chọn “Khách mới” để nhập.</p>
+          <p class="rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-700" x-show="add.customer">Đã chọn: <b x-text="add.customer?.name"></b> · <span x-text="add.customer?.phone"></span></p>
+        </div>
+        <div x-show="add.mode === 'new'" class="grid gap-4 sm:grid-cols-2">
+          <div><label class="label">Họ tên *</label><input class="input" x-model="add.form.name" maxlength="120"></div>
+          <div><label class="label">Số điện thoại *</label><input class="input" type="tel" x-model="add.form.phone" maxlength="20"><p class="help">Nếu số này đã có khách, hệ thống dùng lại khách đó.</p></div>
+          <div><label class="label">Email</label><input class="input" type="email" x-model="add.form.email" maxlength="160"></div>
+          <div><label class="label">Địa chỉ</label><input class="input" x-model="add.form.address" maxlength="400"></div>
+        </div>
+        <div>
+          <label class="label">Khách đến từ đâu</label>
+          <input class="input" list="add-via-list" x-model="add.via" maxlength="60" placeholder="Zalo, Facebook, Tại cửa hàng...">
+          <datalist id="add-via-list"><option>Zalo</option><option>Facebook</option><option>Instagram</option><option>TikTok</option><option>Điện thoại</option><option>Tại cửa hàng</option><option>Khách giới thiệu</option></datalist>
+        </div>
+        <p class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" x-show="add.error" x-text="add.error"></p>
+      </div>
+      <div class="flex justify-end gap-2 border-t border-slate-100 px-5 py-3">
+        <button type="button" class="btn btn-secondary" @click="add.open = false">Hủy</button>
+        <button class="btn btn-primary" :disabled="add.busy">Tạo và nhập chi tiết</button>
+      </div>
+    </form>
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

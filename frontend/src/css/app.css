@@ -142,9 +142,10 @@
   .product-card .media img { @apply h-full w-full object-cover transition duration-700 ease-out; }
   .product-card:hover .media img { transform: scale(1.06); }
   .product-card .media .hover-img { transition: opacity .5s ease, transform .7s ease-out; }
-  .product-card .quick { @apply absolute inset-x-3 bottom-3 translate-y-3 opacity-0 transition duration-300; }
-  .product-card:hover .quick, .product-card .quick:focus-visible { @apply translate-y-0 opacity-100; }
-  @media (hover: none) { .product-card .quick { @apply translate-y-0 opacity-100; } }
+  /* Nút Xem nhanh luôn hiện (nền màu chủ đạo + viền trắng + đổ bóng) để nổi trên mọi ảnh; di chuột thì nổi lên và sáng hơn */
+  .product-card .quick { @apply absolute bottom-3 left-1/2 z-10 inline-flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full bg-primary px-4 py-2 text-[13px] font-semibold text-on-primary shadow-lg shadow-black/30 ring-2 ring-white/80 transition duration-300; }
+  .product-card .quick:hover, .product-card .quick:focus-visible { @apply -translate-y-0.5 shadow-xl brightness-110; }
+  .product-card:hover .quick { @apply bg-accent text-on-accent; }
 
   /* Khung viền thẻ sản phẩm (Admin › Giao diện › Khung viền thẻ sản phẩm) */
   .frame-thin .product-card, .frame-inset .product-card {
@@ -182,6 +183,18 @@
   .prose-jade .ql-align-center { text-align: center; }
   .prose-jade .ql-align-right { text-align: right; }
   .prose-jade .ql-align-justify { text-align: justify; }
+  /* Nội dung từ trình soạn thảo: ảnh theo kích thước đã chọn, bảng cuộn ngang trên điện thoại, cỡ chữ, thụt lề, đường kẻ, mã */
+  .prose-jade img { max-width: 100%; height: auto; }
+  .prose-jade table { display: block; max-width: 100%; overflow-x: auto; }
+  .prose-jade td, .prose-jade th { min-width: 5rem; vertical-align: top; }
+  .prose-jade hr { @apply my-8 border-0 border-t border-line; }
+  .prose-jade .ql-size-small { font-size: .85em; }
+  .prose-jade .ql-size-large { font-size: 1.3em; }
+  .prose-jade .ql-indent-1 { padding-left: 2em; }
+  .prose-jade .ql-indent-2 { padding-left: 4em; }
+  .prose-jade .ql-indent-3 { padding-left: 6em; }
+  .prose-jade code { @apply rounded bg-ink/5 px-1.5 py-0.5 text-[.9em]; font-family: ui-monospace, Menlo, Consolas, monospace; }
+  .prose-jade sub, .prose-jade sup { font-size: .75em; line-height: 0; }
 
   /* Popup */
   /* Không đặt z-index: khung popup (đứng sau trong DOM) sẽ luôn nằm trên lớp nền */

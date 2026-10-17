@@ -113,7 +113,11 @@ router.get('/', (req, res) => {
 });
 
 // ---------------- Sản phẩm ----------------
-router.get('/san-pham', (req, res, next) => {
+// Phân cấp địa chỉ: /san-pham  →  /san-pham/<loại ngọc hoặc loại sản phẩm>  →  /san-pham/<loại>/<sản phẩm>
+const omit = (obj, ...keys) => Object.fromEntries(Object.entries(obj).filter(([k]) => !keys.includes(k)));
+
+// Danh sách sản phẩm. forced = { loai: slug } (trang một loại ngọc) hoặc { nhom: slug } (trang một loại sản phẩm như Pháp phục)
+function renderProductList(req, res, next, forced = {}) {
   const s = res.locals.s;
   const q = req.query;
   const filters = {
@@ -123,23 +127,38 @@ router.get('/san-pham', (req, res, next) => {
   for (const k of ['gia_tu', 'gia_den', 'ni', 'sap_xep', 'con_hang', 'custom', 'nhom']) {
     filters[k] = typeof q[k] === 'string' ? q[k].slice(0, 20) : '';
   }
-  // ?nhom=<slug>: xem riêng một loại sản phẩm (Pháp phục...). Loại chưa hoạt động coi như không tồn tại.
+  if (forced.loai) filters.loai = [forced.loai];
+  if (forced.nhom) filters.nhom = forced.nhom;
+  // Địa chỉ cũ ?loai=<slug> / ?nhom=<slug> (không kèm bộ lọc khác) chuyển 301 sang địa chỉ phân cấp mới
+  if (!forced.loai && !forced.nhom) {
+    const only = Object.keys(q).filter((k) => k !== 'trang');
+    if (only.length === 1 && only[0] === 'loai' && filters.loai.length === 1 && listTerms('jade_type', { activeOnly: true }).some((t) => t.slug === filters.loai[0])) {
+      return res.redirect(301, pageUrlBuilder(`/san-pham/${filters.loai[0]}`, omit(q, 'loai', 'nhom'))(Number(q.trang) || 1));
+    }
+    if (only.length === 1 && only[0] === 'nhom' && filters.nhom) {
+      const t = listProductTypes({ activeOnly: true }).find((x) => x.slug === filters.nhom);
+      if (t) return res.redirect(301, t.uses_jade_fields ? '/san-pham' : pageUrlBuilder(`/san-pham/${t.slug}`, omit(q, 'loai', 'nhom'))(Number(q.trang) || 1));
+    }
+  }
+  // Loại sản phẩm (Pháp phục...): loại chưa hoạt động coi như không tồn tại.
   const group = filters.nhom ? listProductTypes({ activeOnly: true }).find((t) => t.slug === filters.nhom) : null;
   if (filters.nhom && !group) return next(new HttpError(404, 'Không tìm thấy loại sản phẩm'));
   // Bộ lọc (loại ngọc, màu, ni...) chỉ dành cho ngọc: loại khác chỉ có tìm nhanh và sắp xếp
   const showFilters = !group || group.uses_jade_fields;
   const result = searchProducts(filters, { page: q.trang, perPage: Number(s.pages.products_per_page) || 12 });
-  const pageUrl = pageUrlBuilder('/san-pham', q);
-  if (redirectBadPage(res, q.trang, result, pageUrl)) return;
   const facets = productFacets();
   const activeType = filters.loai.length === 1 ? facets.terms.jade_type.find((t) => t.slug === filters.loai[0]) : null;
+  // Địa chỉ gốc của danh sách đang xem (đồng thời là canonical)
+  const basePath = activeType ? `/san-pham/${activeType.slug}` : group && !group.uses_jade_fields ? `/san-pham/${group.slug}` : '/san-pham';
+  const forcedPath = forced.loai || forced.nhom ? basePath : '/san-pham';
+  const pageUrl = pageUrlBuilder(forcedPath, forced.loai || forced.nhom ? omit(q, 'loai', 'nhom') : q);
+  if (redirectBadPage(res, q.trang, result, pageUrl)) return;
   const hasFilter = Object.entries(filters).some(([k, v]) => k !== 'sap_xep' && (Array.isArray(v) ? v.length : v));
   // Danh sách "sạch" (tất cả, hoặc đúng 1 loại ngọc, không sắp xếp riêng) mới tự có canonical theo từng trang
   const otherFilters = Object.entries(filters).some(([k, v]) => !['sap_xep', 'loai', 'nhom'].includes(k) && (Array.isArray(v) ? v.length : v))
     || filters.loai.length > 1 || (filters.loai.length === 1 && !activeType) || (!!group && filters.loai.length > 0);
   const clean = !otherFilters && !filters.sap_xep;
-  const basePath = '/san-pham';
-  const baseQuery = activeType ? { loai: activeType.slug } : group ? { nhom: group.slug } : {};
+  const categoryCrumb = activeType ? [{ name: activeType.name, url: basePath }] : group && !group.uses_jade_fields ? [{ name: group.name, url: basePath }] : [];
 
   // Mô tả cho Google: loại không phải ngọc dùng mô tả của loại đó, chưa có thì ghi tên loại + tên shop
   const metaDescription = activeType?.description
@@ -150,33 +169,56 @@ router.get('/san-pham', (req, res, next) => {
     description: metaDescription,
     // Trang tìm kiếm và trang lọc nhiều điều kiện không cần Google lập chỉ mục
     noindex: !!filters.q || otherFilters || (!clean && result.page > 1),
-    canonical: pageUrlBuilder(basePath, baseQuery)(1),
-    pagination: clean ? { page: result.page, pages: result.pages, url: pageUrlBuilder(basePath, baseQuery) } : undefined,
+    canonical: pageUrlBuilder(basePath)(1),
+    pagination: clean ? { page: result.page, pages: result.pages, url: pageUrlBuilder(basePath) } : undefined,
     jsonLd: [
       collectionJsonLd({
         name: activeType ? `Vòng ${activeType.name}` : group ? group.name : s.pages.products_title, description: metaDescription,
-        path: pageUrlBuilder(basePath, baseQuery)(clean ? result.page : 1), offset: (result.page - 1) * result.perPage,
-        items: result.items.map((p) => ({ name: p.name, url: `/san-pham/${p.slug}`, image: p.cover?.md })),
+        path: pageUrlBuilder(basePath)(clean ? result.page : 1), offset: (result.page - 1) * result.perPage,
+        items: result.items.map((p) => ({ name: p.name, url: p.url, image: p.cover?.md })),
       }),
-      breadcrumbJsonLd([{ name: 'Trang chủ', url: '/' }, { name: 'Sản phẩm', url: '/san-pham' }, ...(activeType ? [{ name: activeType.name, url: `/san-pham?loai=${activeType.slug}` }] : group ? [{ name: group.name, url: `/san-pham?nhom=${group.slug}` }] : [])]),
+      breadcrumbJsonLd([{ name: 'Trang chủ', url: '/' }, { name: 'Sản phẩm', url: '/san-pham' }, ...categoryCrumb]),
     ],
   });
   res.view('pages/products.njk', { result, pg: result, pageUrl, facets, filters, activeType, activeGroup: group, showFilters, hasFilter, sortOptions: SORT_OPTIONS, termTypes: TERM_TYPES, query: q });
-});
+}
 
-router.get('/san-pham/:slug', (req, res, next) => {
-  const product = getProduct(req.params.slug);
-  if (!product) return next(new HttpError(404, 'Không tìm thấy sản phẩm'));
+router.get('/san-pham', (req, res, next) => renderProductList(req, res, next));
+
+function renderProduct(req, res, product) {
+  const parent = product.jade_type || (product.product_type && !product.product_type.uses_jade_fields ? product.product_type : null);
   res.locals.seo = buildSeo(req, {
     title: product.seo_title || product.name,
     description: product.seo_description || product.summary,
     image: product.cover?.lg,
     type: 'product',
     jsonLd: [productJsonLd(product), breadcrumbJsonLd([
-      { name: 'Trang chủ', url: '/' }, { name: 'Sản phẩm', url: '/san-pham' }, { name: product.name, url: `/san-pham/${product.slug}` },
+      { name: 'Trang chủ', url: '/' }, { name: 'Sản phẩm', url: '/san-pham' },
+      ...(parent ? [{ name: parent.name, url: `/san-pham/${parent.slug}` }] : []),
+      { name: product.name, url: product.url },
     ])],
   });
-  res.view('pages/product-detail.njk', { product, related: relatedProducts(product) });
+  res.view('pages/product-detail.njk', { product, related: relatedProducts(product), parent });
+}
+
+// /san-pham/<a>: trang một loại ngọc, trang một loại sản phẩm, hoặc địa chỉ cũ của sản phẩm (chuyển 301 sang địa chỉ phân cấp)
+router.get('/san-pham/:a', (req, res, next) => {
+  const a = req.params.a;
+  if (listTerms('jade_type', { activeOnly: true }).some((t) => t.slug === a)) return renderProductList(req, res, next, { loai: a });
+  const type = listProductTypes({ activeOnly: true }).find((t) => t.slug === a);
+  if (type) return type.uses_jade_fields ? res.redirect(301, '/san-pham') : renderProductList(req, res, next, { nhom: a });
+  const product = getProduct(a);
+  if (!product) return next(new HttpError(404, 'Không tìm thấy sản phẩm'));
+  if (product.url !== `/san-pham/${a}`) return res.redirect(301, product.url);
+  renderProduct(req, res, product);
+});
+
+router.get('/san-pham/:a/:slug', (req, res, next) => {
+  const product = getProduct(req.params.slug);
+  if (!product) return next(new HttpError(404, 'Không tìm thấy sản phẩm'));
+  // Sai loại trong đường dẫn (hoặc sản phẩm đã đổi loại): chuyển 301 về đúng địa chỉ
+  if (product.url !== `/san-pham/${req.params.a}/${req.params.slug}`) return res.redirect(301, product.url);
+  renderProduct(req, res, product);
 });
 
 // ---------------- Gallery ----------------
@@ -218,7 +260,7 @@ const blogCategories = () => listPostCategories({ activeOnly: true }).filter((c)
 // Trang danh sách blog (category = null) hoặc một chuyên mục
 function renderBlogList(req, res, category) {
   const s = res.locals.s;
-  const basePath = category ? `/blog/chuyen-muc/${category.slug}` : '/blog';
+  const basePath = category ? `/blog/${category.slug}` : '/blog';
   const result = listPosts({
     page: req.query.trang, categoryId: category?.id,
     perPage: Math.min(Math.max(Number(s.pages.blog_per_page) || 9, 2), 30),
@@ -237,7 +279,7 @@ function renderBlogList(req, res, category) {
       collectionJsonLd({
         type: category ? 'CollectionPage' : 'Blog', name, description: intro, path: pageUrlBuilder(basePath)(result.page),
         offset: (result.page - 1) * Math.ceil(result.total / result.pages),
-        items: result.items.map((p) => ({ name: p.title, url: `/blog/${p.slug}`, image: p.cover?.md })),
+        items: result.items.map((p) => ({ name: p.title, url: p.url, image: p.cover?.md })),
       }),
       breadcrumbJsonLd([{ name: 'Trang chủ', url: '/' }, { name: 'Blog', url: '/blog' }, ...(category ? [{ name: category.name, url: basePath }] : [])]),
     ],
@@ -250,15 +292,14 @@ function renderBlogList(req, res, category) {
 
 router.get('/blog', requireFeature('blog'), (req, res) => renderBlogList(req, res, null));
 
+// Địa chỉ cũ của trang chuyên mục (/blog/chuyen-muc/<slug>) → địa chỉ phân cấp mới /blog/<slug>
 router.get('/blog/chuyen-muc/:slug', requireFeature('blog'), (req, res, next) => {
   const category = getPostCategory(req.params.slug);
   if (!category) return next(new HttpError(404, 'Không tìm thấy chuyên mục'));
-  renderBlogList(req, res, category);
+  res.redirect(301, pageUrlBuilder(`/blog/${category.slug}`, req.query)(Number(req.query.trang) || 1));
 });
 
-router.get('/blog/:slug', requireFeature('blog'), (req, res, next) => {
-  const post = getPost(req.params.slug);
-  if (!post) return next(new HttpError(404, 'Không tìm thấy bài viết'));
+function renderPost(req, res, post) {
   const category = post.category?.active ? post.category : null;
   res.locals.seo = buildSeo(req, {
     title: post.seo_title || post.title,
@@ -267,8 +308,8 @@ router.get('/blog/:slug', requireFeature('blog'), (req, res, next) => {
     type: 'article',
     jsonLd: [articleJsonLd(post), breadcrumbJsonLd([
       { name: 'Trang chủ', url: '/' }, { name: 'Blog', url: '/blog' },
-      ...(category ? [{ name: category.name, url: `/blog/chuyen-muc/${category.slug}` }] : []),
-      { name: post.title, url: `/blog/${post.slug}` },
+      ...(category ? [{ name: category.name, url: `/blog/${category.slug}` }] : []),
+      { name: post.title, url: post.url },
     ])],
   });
   const s = res.locals.s;
@@ -279,6 +320,23 @@ router.get('/blog/:slug', requireFeature('blog'), (req, res, next) => {
     blogCategories: blogCategories(),
     sidebarPosts: sidebarPosts(s, post.id, post.category_id),
   });
+}
+
+// /blog/<a>: trang một chuyên mục, hoặc bài viết chưa có chuyên mục (và địa chỉ cũ của bài → chuyển 301 sang địa chỉ phân cấp)
+router.get('/blog/:a', requireFeature('blog'), (req, res, next) => {
+  const category = getPostCategory(req.params.a);
+  if (category) return renderBlogList(req, res, category);
+  const post = getPost(req.params.a);
+  if (!post) return next(new HttpError(404, 'Không tìm thấy bài viết'));
+  if (post.url !== `/blog/${req.params.a}`) return res.redirect(301, post.url);
+  renderPost(req, res, post);
+});
+
+router.get('/blog/:a/:slug', requireFeature('blog'), (req, res, next) => {
+  const post = getPost(req.params.slug);
+  if (!post) return next(new HttpError(404, 'Không tìm thấy bài viết'));
+  if (post.url !== `/blog/${req.params.a}/${req.params.slug}`) return res.redirect(301, post.url);
+  renderPost(req, res, post);
 });
 
 // ---------------- Giỏ hàng & đặt hàng ----------------

@@ -10,7 +10,7 @@
       <div class="space-y-6">
         <div class="card card-body space-y-5">
           <input class="w-full border-0 bg-transparent text-2xl font-semibold outline-none placeholder:text-slate-300" placeholder="Tiêu đề bài viết" x-model="form.title" @input="onTitle()">
-          <div class="flex items-center rounded-lg border border-slate-300 bg-slate-50 text-sm"><span class="whitespace-nowrap pl-3 text-slate-400">/blog/</span><input class="w-full bg-transparent px-1 py-2 outline-none" x-model="form.slug" @input="slugTouched = true"></div>
+          <div class="flex items-center rounded-lg border border-slate-300 bg-slate-50 text-sm"><span class="whitespace-nowrap pl-3 text-slate-400" x-text="blogPrefix"></span><input class="w-full bg-transparent px-1 py-2 outline-none" x-model="form.slug" @input="slugTouched = true"></div>
           <div><label class="label">Tóm tắt</label><textarea class="input" rows="2" x-model="form.excerpt" placeholder="Hiển thị ở danh sách bài viết"></textarea></div>
           <div><label class="label">Nội dung</label>{{ richText('form.content') }}</div>
         </div>
@@ -26,7 +26,7 @@
           <div><label class="label">Ngày đăng</label><input type="datetime-local" class="input" x-model="form.published_at"><p class="help">Để trống = đăng ngay. Chọn ngày tương lai để hẹn giờ đăng.</p></div>
           <button type="button" class="btn btn-primary w-full" :disabled="saving" @click="save(true)" x-text="form.status === 'published' ? 'Lưu thay đổi' : 'Đăng bài'"></button>
           <button type="button" class="btn btn-secondary w-full" :disabled="saving" @click="save(false)" x-text="form.status === 'published' ? 'Chuyển về nháp' : 'Lưu nháp'"></button>
-          <a x-show="id && form.status === 'published'" :href="'/blog/' + form.slug" target="_blank" class="btn btn-ghost w-full">{{ icon('eye', 'w-4 h-4') }} Xem bài</a>
+          <a x-show="id && form.status === 'published'" :href="blogPrefix + form.slug" target="_blank" class="btn btn-ghost w-full">{{ icon('eye', 'w-4 h-4') }} Xem bài</a>
         </div>
         <div class="card card-body space-y-2">
           <label class="label">Chuyên mục</label>

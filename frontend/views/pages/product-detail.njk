@@ -10,7 +10,7 @@
   <nav class="text-xs text-muted" aria-label="Breadcrumb">
     <a href="/" class="hover:text-primary">Trang chủ</a><span class="mx-1.5">/</span>
     <a href="/san-pham" class="hover:text-primary">Sản phẩm</a><span class="mx-1.5">/</span>
-    {% if p.jade_type %}<a href="/san-pham?loai={{ p.jade_type.slug }}" class="hover:text-primary">{{ p.jade_type.name }}</a><span class="mx-1.5">/</span>{% endif %}
+    {% if parent %}<a href="/san-pham/{{ parent.slug }}" class="hover:text-primary">{{ parent.name }}</a><span class="mx-1.5">/</span>{% endif %}
     <span class="text-ink">{{ p.name }}</span>
   </nav>
 </div>
@@ -36,7 +36,7 @@
       <div class="swiper-wrapper">
         {% for im in p.images %}
         <div class="swiper-slide !w-20 cursor-pointer overflow-hidden rounded-md opacity-60 transition [&.swiper-slide-thumb-active]:opacity-100 [&.swiper-slide-thumb-active]:ring-2 [&.swiper-slide-thumb-active]:ring-primary">
-          <img src="{{ im.sm }}" alt="" class="aspect-square w-full object-cover" loading="lazy">
+          <img src="{{ im.sm }}" alt="" width="{{ im.width }}" height="{{ im.height }}" class="aspect-square w-full object-cover" loading="lazy" decoding="async">
         </div>
         {% endfor %}
       </div>
@@ -140,7 +140,7 @@
         <div class="card flex gap-4 p-4">
           {% if c.image %}
           <a href="{{ c.image.lg }}" data-pswp-width="{{ c.image.width }}" data-pswp-height="{{ c.image.height }}" class="block w-28 shrink-0 overflow-hidden rounded-md border border-line sm:w-36">
-            <img src="{{ c.image.sm }}" alt="Chứng chỉ {{ c.code }}" class="aspect-[4/3] w-full object-cover" loading="lazy">
+            <img src="{{ c.image.sm }}" alt="Chứng chỉ {{ c.code }}" width="{{ c.image.width }}" height="{{ c.image.height }}" class="aspect-[4/3] w-full object-cover" loading="lazy" decoding="async">
           </a>
           {% endif %}
           <dl class="grid flex-1 gap-1.5 text-sm">
@@ -158,7 +158,7 @@
     {% if p.description %}
     <div class="mt-10">
       <h2 class="text-2xl font-medium">Mô tả sản phẩm</h2>
-      <div class="prose-jade mt-4">{{ p.description | safe }}</div>
+      <div class="prose-jade mt-4">{{ p.description | headings(2) | imgdims | safe }}</div>
     </div>
     {% endif %}
 
@@ -173,7 +173,7 @@
     {% if s.pages.product_care %}
     <details class="group mt-6 rounded-lg border border-line bg-surface p-6" open>
       <summary class="flex cursor-pointer list-none items-center justify-between text-xl font-medium font-heading">Hướng dẫn bảo quản <span class="transition group-open:rotate-180">{{ icon('chevron-down', 'w-5 h-5') }}</span></summary>
-      <div class="prose-jade mt-4 text-[15px]">{{ s.pages.product_care | safe }}</div>
+      <div class="prose-jade mt-4 text-[15px]">{{ s.pages.product_care | headings(2) | imgdims | safe }}</div>
     </details>
     {% endif %}
   </div>

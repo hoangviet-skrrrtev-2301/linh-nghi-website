@@ -104,7 +104,39 @@
 .rt-full .ql-toolbar.ql-snow { flex: none; }
 .rt-full .ql-container.ql-snow { flex: 1; min-height: 0; overflow-y: auto; }
 .rt-full .ql-editor { min-height: 100%; max-width: 820px; margin: 0 auto; font-size: 16px; line-height: 1.8; }
-.ql-editor img { max-width: 100%; height: auto; }
+.ql-editor img { max-width: 100%; height: auto; cursor: pointer; }
+.ql-editor img.rt-img-active { outline: 3px solid var(--color-brand-500); outline-offset: 2px; }
+
+/* Thanh công cụ dính ở đầu khi cuộn bài dài (dưới thanh tiêu đề admin cao 4rem) */
+.rt-sticky { position: sticky; top: 4rem; z-index: 20; background: #fff; }
+.rt-full .rt-sticky { top: 0; }
+.ql-toolbar.ql-snow { display: flex; flex-wrap: wrap; align-items: center; row-gap: 4px; }
+.ql-toolbar.ql-snow .ql-formats { margin-right: 10px; }
+.rt-sticky .ql-toolbar.ql-snow { border-bottom-width: 1px; }
+.rt-sticky + .ql-container.ql-snow { border-top: 0; }
+:root[data-theme="dark"] .rt-sticky { background: var(--color-slate-100); }
+
+/* Bảng trong trình soạn thảo */
+.ql-editor table { margin: .75em 0; }
+.ql-editor td { border: 1px solid #94a3b8; padding: 6px 10px; min-width: 40px; }
+:root[data-theme="dark"] .ql-editor td { border-color: var(--color-slate-400); }
+.ql-editor hr { margin: 1.2em 0; border: 0; border-top: 2px solid #cbd5e1; }
+.ql-editor code { font-family: ui-monospace, Menlo, Consolas, monospace; }
+
+/* Nhãn tiếng Việt cho các hộp chọn cỡ chữ và ô nhập liên kết */
+.ql-toolbar.ql-snow .ql-picker.ql-size { width: 96px; }
+.ql-toolbar.ql-snow .ql-picker.ql-size .ql-picker-label::before,
+.ql-toolbar.ql-snow .ql-picker.ql-size .ql-picker-item::before { content: 'Cỡ vừa'; }
+.ql-toolbar.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="small"]::before,
+.ql-toolbar.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="small"]::before { content: 'Cỡ nhỏ'; }
+.ql-toolbar.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="large"]::before,
+.ql-toolbar.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="large"]::before { content: 'Cỡ lớn'; }
+.ql-snow .ql-tooltip::before { content: 'Địa chỉ liên kết:'; }
+.ql-snow .ql-tooltip[data-mode="link"]::before { content: 'Nhập liên kết:'; }
+.ql-snow .ql-tooltip a.ql-action::after { content: 'Sửa'; }
+.ql-snow .ql-tooltip.ql-editing a.ql-action::after { content: 'Lưu'; }
+.ql-snow .ql-tooltip a.ql-remove::before { content: 'Gỡ'; }
+.ql-snow .ql-tooltip { z-index: 30; }
 
 /* ==========================================================
    Chế độ tối (admin). Đảo thang màu slate / brand / màu trạng thái bằng biến Tailwind,

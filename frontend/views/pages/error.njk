@@ -1,12 +1,31 @@
 {% extends "layouts/base.njk" %}
+{% from "partials/icons.njk" import icon %}
+{# Chữ trên trang lỗi lấy từ Admin › Cài đặt › Trang Sản phẩm / Gallery / Blog › Trang lỗi 404 #}
 {% block content %}
-<section class="container-x flex flex-col items-center py-24 text-center md:py-32">
-  <p class="font-heading text-8xl font-medium text-primary/20 md:text-9xl">{{ status }}</p>
-  <h1 class="mt-4 text-3xl font-medium md:text-4xl">{{ 'Không tìm thấy trang' if status == 404 else 'Đã có lỗi xảy ra' }}</h1>
-  <p class="mt-3 max-w-md text-muted">{{ message }}</p>
+{% set pg = s.pages %}
+{% if status == 404 %}{% set errTitle = pg.error_404_title %}{% set errText = pg.error_404_text %}
+{% elif status == 410 %}{% set errTitle = pg.error_410_title %}{% set errText = pg.error_404_text %}
+{% elif status >= 500 %}{% set errTitle = pg.error_500_title %}{% set errText = pg.error_500_text %}
+{% else %}{% set errTitle = pg.error_500_title %}{% set errText = message %}{% endif %}
+<section class="container-x flex flex-col items-center py-20 text-center md:py-28">
+  <p class="font-heading text-8xl font-medium text-primary/20 md:text-9xl" aria-hidden="true">{{ status }}</p>
+  <h1 class="mt-4 text-3xl font-medium md:text-4xl">{{ errTitle }}</h1>
+  <p class="mt-3 max-w-md text-muted">{{ errText }}</p>
+  {% if pg.error_search_show and status < 500 %}
+  <form action="/san-pham" method="get" role="search" class="relative mt-8 w-full max-w-md">
+    <label for="err-q" class="sr-only">{{ pg.error_search_placeholder }}</label>
+    <input id="err-q" type="search" name="q" placeholder="{{ pg.error_search_placeholder }}" class="input pr-12">
+    <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-muted hover:text-primary" aria-label="Tìm">{{ icon('search', 'w-4 h-4') }}</button>
+  </form>
+  {% if jadeTypes.length %}
+  <ul class="mt-5 flex flex-wrap justify-center gap-2">
+    {% for t in jadeTypes %}<li><a href="/san-pham/{{ t.slug }}" class="chip">{{ t.name }}</a></li>{% endfor %}
+  </ul>
+  {% endif %}
+  {% endif %}
   <div class="mt-8 flex flex-wrap justify-center gap-3">
-    <a href="/" class="btn btn-primary">Về trang chủ</a>
-    <a href="/san-pham" class="btn btn-outline">Xem sản phẩm</a>
+    <a href="/" class="btn btn-primary">{{ pg.error_home_label }}</a>
+    <a href="/san-pham" class="btn btn-outline">{{ pg.error_products_label }}</a>
   </div>
 </section>
 {% endblock %}

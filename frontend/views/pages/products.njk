@@ -26,7 +26,7 @@
 {% block content %}
 <section class="border-b border-line bg-surface">
   <div class="container-x py-10 md:py-14">
-    <nav class="mb-4 text-xs text-muted" aria-label="Breadcrumb"><a href="/" class="hover:text-primary">Trang chủ</a> <span class="mx-1.5">/</span> {% if activeGroup %}<a href="/san-pham" class="hover:text-primary">Sản phẩm</a> <span class="mx-1.5">/</span> <span class="text-ink">{{ activeGroup.name }}</span>{% else %}<span class="text-ink">Sản phẩm</span>{% endif %}</nav>
+    <nav class="mb-4 text-xs text-muted" aria-label="Breadcrumb"><a href="/" class="hover:text-primary">Trang chủ</a> <span class="mx-1.5">/</span> {% if activeGroup and not activeGroup.uses_jade_fields %}<a href="/san-pham" class="hover:text-primary">Sản phẩm</a> <span class="mx-1.5">/</span> <span class="text-ink">{{ activeGroup.name }}</span>{% elif activeType %}<a href="/san-pham" class="hover:text-primary">Sản phẩm</a> <span class="mx-1.5">/</span> <span class="text-ink">{{ activeType.name }}</span>{% else %}<span class="text-ink">Sản phẩm</span>{% endif %}</nav>
     <h1 class="text-4xl font-medium md:text-5xl">{% if filters.q %}Kết quả cho “{{ filters.q }}”{% elif activeType %}Vòng {{ activeType.name }}{% elif activeGroup %}{{ activeGroup.name }}{% else %}{{ s.pages.products_title }}{% endif %}</h1>
     {% set introText = s.pages.products_intro %}
     {% if activeType and activeType.description %}{% set introText = activeType.description %}
@@ -119,7 +119,7 @@
 
       {% if result.items.length %}
       <div class="grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 md:gap-x-6 {{ 'xl:grid-cols-4' if s.theme.product_grid == '4' }}">
-        {% for p in result.items %}{{ productCard(p, features, loop.index0, false) }}{% endfor %}
+        {% for p in result.items %}{{ productCard(p, features, loop.index0, false, 'h2') }}{% endfor %}
       </div>
 
       {% set pg = result %}{% include "partials/pagination.njk" %}

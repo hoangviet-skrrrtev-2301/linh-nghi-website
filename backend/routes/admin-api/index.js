@@ -16,6 +16,7 @@ import * as inquiries from '../../services/inquiries.js';
 import * as customerImport from '../../services/customer-import.js';
 import { dashboardStats } from '../../services/dashboard.js';
 import * as users from '../../services/users.js';
+import * as redirects from '../../services/redirects.js';
 import * as settings from '../../services/settings.js';
 import { SETTINGS_SCHEMA, SCHEMA_BY_KEY } from '../../config/settings-schema.js';
 import { verifyConnection, sendMail, mailReady } from '../../services/mailer.js';
@@ -126,6 +127,27 @@ router.get('/products', h((req) => catalog.searchProducts(
   { q: req.query.q, status: req.query.status, type: req.query.type, loai: req.query.loai, sap_xep: req.query.sort || 'moi' },
   { page: req.query.page, perPage: Math.min(200, toInt(req.query.per_page, 30)), includeDrafts: true },
 )));
+// ---------------- Chuyển hướng 301 & nhật ký 404 (chỉ Chủ shop được sửa) ----------------
+router.get('/redirects', h((req) => redirects.listRedirects({ q: req.query.q, auto: req.query.auto, page: toInt(req.query.page, 1), perPage: Math.min(100, Math.max(1, toInt(req.query.per_page, 30))) })));
+router.get('/redirects/not-found', h(() => ({ items: redirects.listNotFound({ limit: 50 }) })));
+router.delete('/redirects/not-found', requireOwner, h((req) => { redirects.clearNotFound(req.query.path ? String(req.query.path) : ''); audit(req, 'delete', 'not_found_log', req.query.path || 'all'); return { ok: true }; }));
+router.post('/redirects/bulk', requireOwner, h((req) => {
+  const r = redirects.bulkRedirects(String(req.body?.text || ''), { status: toInt(req.body?.status, 301) });
+  audit(req, 'import', 'redirects', '', `${r.created} mới, ${r.updated} cập nhật, ${r.errors.length} lỗi`);
+  return r;
+}));
+router.post('/redirects', requireOwner, h((req) => {
+  const r = redirects.saveRedirect(null, req.body || {});
+  audit(req, 'create', 'redirect', r.id, `${r.from_path} → ${r.to_url || '410'}`);
+  return r;
+}));
+router.put('/redirects/:id', requireOwner, h((req) => {
+  const r = redirects.saveRedirect(id(req), req.body || {});
+  audit(req, 'update', 'redirect', r.id, `${r.from_path} → ${r.to_url || '410'}`);
+  return r;
+}));
+router.delete('/redirects/:id', requireOwner, h((req) => { redirects.deleteRedirect(id(req)); audit(req, 'delete', 'redirect', req.params.id); return { ok: true }; }));
+
 // Loại sản phẩm (nhóm hàng): Vòng tay ngọc, Pháp phục...
 router.get('/product-types', h(() => ({ items: catalog.listProductTypes() })));
 router.post('/product-types', h((req) => {
@@ -212,7 +234,7 @@ router.delete('/gallery/:id', h((req) => {
 }));
 
 // ---------------- Blog ----------------
-router.get('/posts', h((req) => content.listPosts({ includeDrafts: true, q: req.query.q, status: req.query.status, categoryId: req.query.category, page: req.query.page, perPage: 30 })));
+router.get('/posts', h((req) => content.listPosts({ includeDrafts: true, q: req.query.q, status: req.query.status, categoryId: req.query.category, page: req.query.page, perPage: Math.min(100, Math.max(1, toInt(req.query.per_page, 20))) })));
 // Chuyên mục blog
 router.get('/post-categories', h(() => ({ items: content.listPostCategories() })));
 router.post('/post-categories', h((req) => {
@@ -275,9 +297,10 @@ router.patch('/inquiries/:id', h(async (req) => {
   return { ...inquiries.getInquiry(inq.id), mail_ready: mailReady(), notified };
 }));
 router.post('/inquiries/:id/convert', h((req) => {
-  const order = inquiries.convertToOrder(id(req), req.user.id);
-  audit(req, 'create', 'inquiry', order.code, `lên đơn từ yêu cầu #${req.params.id}`);
-  return order;
+  const before = inquiries.getInquiry(id(req));
+  const order = inquiries.convertToOrder(id(req));
+  audit(req, 'update', 'inquiry', order.code, `lên đơn từ ${before?.code} (cùng một bản ghi)`);
+  return { ...order, mail_ready: mailReady() };
 }));
 router.post('/inquiries/:id/resend', h(async (req) => {
   await inquiries.resendNotification(id(req));

@@ -1,0 +1,113 @@
+{% extends "layout.njk" %}
+{% from "partials/icons.njk" import icon %}
+{% block title %}Chuyển hướng & 404{% endblock %}
+{% block heading %}Chuyển hướng & trang 404{% endblock %}
+{% block content %}
+<div x-data="redirectsPage">
+  {% set helpKey = 'redirects' %}{% include "partials/sales-help.njk" %}
+
+  <div class="mb-4 flex flex-wrap gap-1">
+    <button class="tab" :class="tab === 'redirects' && 'active'" @click="tab = 'redirects'">Chuyển hướng <span class="badge bg-slate-100 text-slate-600" x-text="total"></span></button>
+    <button class="tab" :class="tab === 'notfound' && 'active'" @click="tab = 'notfound'; loadNotFound()">Trang bị lỗi 404 <span class="badge bg-amber-50 text-amber-700" x-show="notFound.length" x-text="notFound.length"></span></button>
+  </div>
+
+  {# ================= Danh sách chuyển hướng ================= #}
+  <div x-show="tab === 'redirects'">
+    <div class="mb-4 flex flex-wrap items-center gap-3">
+      <div class="relative w-full max-w-xs"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{{ icon('search', 'w-4 h-4') }}</span>
+        <input type="search" class="input pl-9" placeholder="Tìm đường dẫn..." x-model="filters.q" @input.debounce.400ms="search()"></div>
+      <select class="input !w-auto" x-model="filters.auto" @change="search()"><option value="">Tất cả</option><option value="0">Tự thêm tay</option><option value="1">Hệ thống tự tạo</option></select>
+      <div class="ml-auto flex gap-2">
+        <button type="button" class="btn btn-secondary" @click="bulk.open = !bulk.open; form = null">{{ icon('plus', 'w-4 h-4') }} Nhập nhiều dòng</button>
+        <button type="button" class="btn btn-primary" @click="openForm(null)">{{ icon('plus', 'w-4 h-4') }} Thêm chuyển hướng</button>
+      </div>
+    </div>
+
+    {# Form thêm / sửa #}
+    <form x-cloak x-show="form" @submit.prevent="save()" class="card mb-5">
+      <template x-if="form">
+        <div class="card-body space-y-4">
+          <div class="grid gap-4 md:grid-cols-2">
+            <div><label class="label">Đường dẫn cũ *</label><input class="input font-mono" x-model="form.from_path" placeholder="/san-pham/vong-cu" required maxlength="300">
+              <p class="help">Chỉ phần đường dẫn, bắt đầu bằng “/”, không kèm tên miền. Không phân biệt chữ hoa / thường.</p></div>
+            <div x-show="form.status != 410"><label class="label">Chuyển tới *</label><input class="input font-mono" x-model="form.to_url" placeholder="/san-pham/phi-thuy/vong-moi hoặc https://..." maxlength="500">
+              <p class="help">Đường dẫn trong website hoặc địa chỉ đầy đủ.</p></div>
+            <div><label class="label">Loại</label>
+              <select class="input" x-model.number="form.status">
+                <option value="301">301 · Chuyển vĩnh viễn (đổi địa chỉ, giữ điểm SEO)</option>
+                <option value="302">302 · Chuyển tạm thời</option>
+                <option value="410">410 · Đã gỡ hẳn, không có trang thay thế</option>
+              </select></div>
+            <div><label class="label">Ghi chú</label><input class="input" x-model="form.note" maxlength="300" placeholder="Không bắt buộc"></div>
+          </div>
+          <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="h-4 w-4 accent-brand-600" x-model="form.active"> Đang bật</label>
+          <p class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" x-show="formError" x-text="formError"></p>
+          <div class="flex gap-2"><button class="btn btn-primary" :disabled="saving">Lưu</button><button type="button" class="btn btn-secondary" @click="form = null">Hủy</button></div>
+        </div>
+      </template>
+    </form>
+
+    {# Nhập nhiều dòng #}
+    <div x-cloak x-show="bulk.open" class="card mb-5">
+      <div class="card-body space-y-3">
+        <p class="text-sm text-slate-600">Mỗi dòng một chuyển hướng: <code>đường-dẫn-cũ, đường-dẫn-mới</code> (cách nhau dấu phẩy, tab hoặc <code>-&gt;</code>). Dòng bắt đầu bằng # được bỏ qua. Tối đa 500 dòng. Hữu ích khi chuyển từ website cũ sang.</p>
+        <textarea class="input font-mono text-sm" rows="6" x-model="bulk.text" placeholder="/vong-cu -> /san-pham/phi-thuy/vong-moi&#10;/tin-tuc/bai-1 -> /blog/bai-1"></textarea>
+        <div class="flex items-center gap-3">
+          <select class="input !w-auto" x-model.number="bulk.status"><option value="301">301 · Vĩnh viễn</option><option value="302">302 · Tạm thời</option></select>
+          <button type="button" class="btn btn-primary" :disabled="saving || !bulk.text.trim()" @click="runBulk()">Thêm các dòng này</button>
+        </div>
+        <ul class="list-disc space-y-1 pl-5 text-sm text-red-700" x-show="bulk.errors.length"><template x-for="e in bulk.errors" :key="e"><li x-text="e"></li></template></ul>
+      </div>
+    </div>
+
+    <div class="card overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="table table-stack">
+          <thead><tr><th class="stack-title">Đường dẫn cũ</th><th>Chuyển tới</th><th>Loại</th><th>Lượt dùng</th><th>Trạng thái</th><th class="w-24"></th></tr></thead>
+          <tbody>
+            <template x-for="r in items" :key="r.id">
+              <tr>
+                <td class="font-mono text-xs"><span x-text="r.from_path"></span><span class="badge ml-2 bg-slate-100 text-slate-500" x-show="r.auto" title="Hệ thống tự tạo khi đổi đường dẫn">tự động</span></td>
+                <td class="max-w-xs break-all font-mono text-xs text-slate-600" x-text="r.status === 410 ? '(đã gỡ)' : r.to_url"></td>
+                <td><span class="badge" :class="r.status === 301 ? 'bg-emerald-50 text-emerald-700' : r.status === 302 ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'" x-text="r.status"></span></td>
+                <td class="text-slate-500"><span x-text="r.hits"></span><span class="block text-[11px]" x-show="r.last_hit_at" x-text="$fmt.date(r.last_hit_at)"></span></td>
+                <td><button type="button" class="badge" :class="r.active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'" @click="toggle(r)" x-text="r.active ? 'Đang bật' : 'Đã tắt'"></button></td>
+                <td class="whitespace-nowrap"><button type="button" class="btn btn-ghost btn-sm" @click="openForm(r)" aria-label="Sửa">{{ icon('edit', 'w-4 h-4') }}</button><button type="button" class="btn btn-ghost btn-sm text-red-600" @click="remove(r)" aria-label="Xóa">{{ icon('trash', 'w-4 h-4') }}</button></td>
+              </tr>
+            </template>
+            <tr x-show="!loading && !items.length"><td colspan="6" class="py-12 text-center text-slate-500">Chưa có chuyển hướng nào.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      {% include "partials/pager.njk" %}
+    </div>
+  </div>
+
+  {# ================= Trang bị lỗi 404 ================= #}
+  <div x-cloak x-show="tab === 'notfound'">
+    <div class="mb-3 flex items-center justify-between gap-3">
+      <p class="text-sm text-slate-600">Các đường dẫn khách hoặc Google đã truy cập nhưng không có trang (nhiều lượt nhất ở trên). Nếu đó là trang cũ đã đổi địa chỉ, hãy tạo chuyển hướng 301 tới trang mới.</p>
+      <button type="button" class="btn btn-secondary btn-sm shrink-0" x-show="notFound.length" @click="clearNotFound('')">Xóa toàn bộ</button>
+    </div>
+    <div class="card overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="table table-stack">
+          <thead><tr><th class="stack-title">Đường dẫn bị 404</th><th>Lượt</th><th>Từ trang</th><th>Lần cuối</th><th class="w-44"></th></tr></thead>
+          <tbody>
+            <template x-for="n in notFound" :key="n.id">
+              <tr>
+                <td class="break-all font-mono text-xs" x-text="n.path"></td>
+                <td class="font-medium" x-text="n.hits"></td>
+                <td class="max-w-[14rem] break-all text-xs text-slate-500" x-text="n.referer || '—'"></td>
+                <td class="whitespace-nowrap text-slate-500" x-text="$fmt.date(n.last_seen)"></td>
+                <td class="whitespace-nowrap"><button type="button" class="btn btn-secondary btn-sm" @click="fromNotFound(n)">Tạo chuyển hướng</button><button type="button" class="btn btn-ghost btn-sm" @click="clearNotFound(n.path)" aria-label="Bỏ qua">{{ icon('close', 'w-4 h-4') }}</button></td>
+              </tr>
+            </template>
+            <tr x-show="!notFound.length"><td colspan="5" class="py-12 text-center text-slate-500">Chưa ghi nhận trang nào bị 404.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -13,7 +13,7 @@
     <h2 class="mb-3 font-heading text-xl font-medium">{{ s.pages.blog_categories_title }}</h2>
     <ul class="space-y-1 text-sm">
       {% for c in blogCategories %}
-      <li><a href="/blog/chuyen-muc/{{ c.slug }}" class="flex items-center justify-between rounded-md px-2 py-1.5 transition hover:bg-primary/[.06] hover:text-primary {{ 'font-medium text-primary' if (category and category.id == c.id) }}">{{ c.name }}<span class="text-xs text-muted">{{ c.post_count }}</span></a></li>
+      <li><a href="/blog/{{ c.slug }}" class="flex items-center justify-between rounded-md px-2 py-1.5 transition hover:bg-primary/[.06] hover:text-primary {{ 'font-medium text-primary' if (category and category.id == c.id) }}">{{ c.name }}<span class="text-xs text-muted">{{ c.post_count }}</span></a></li>
       {% endfor %}
     </ul>
   </section>
@@ -25,9 +25,9 @@
     <ul class="space-y-4">
       {% for p in sidebarPosts %}
       <li>
-        <a href="/blog/{{ p.slug }}" class="group flex gap-3">
+        <a href="{{ p.url }}" class="group flex gap-3">
           <span class="block h-16 w-20 shrink-0 overflow-hidden rounded-md bg-ink/5">
-            {% if p.cover %}<img src="{{ p.cover.sm }}" alt="" loading="lazy" class="h-full w-full object-cover transition duration-500 group-hover:scale-105">{% endif %}
+            {% if p.cover %}<img src="{{ p.cover.sm }}" alt="" width="{{ p.cover.width }}" height="{{ p.cover.height }}" loading="lazy" decoding="async" class="h-full w-full object-cover transition duration-500 group-hover:scale-105">{% endif %}
           </span>
           <span class="min-w-0">
             <span class="line-clamp-2 text-sm font-medium leading-snug transition group-hover:text-primary">{{ p.title }}</span>

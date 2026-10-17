@@ -21,15 +21,15 @@ export function navChildren(item, { jadeTypes = [], limit = 8 } = {}) {
   const kind = dropdownOf(item);
   if (kind === 'none') return [];
   if (kind === 'custom') return customLinks(item.dropdown_custom);
-  const groupLink = (g) => ({ label: g.name, url: `/san-pham?nhom=${encodeURIComponent(g.slug)}` });
+  const groupLink = (g) => ({ label: g.name, url: g.uses_jade_fields ? '/san-pham' : `/san-pham/${encodeURIComponent(g.slug)}` });
   // Theo loại sản phẩm: Vòng tay ngọc, Pháp phục... (chỉ loại đang hoạt động và có sản phẩm)
   if (kind === 'product_type') return listPublicProductGroups().map(groupLink);
-  if (kind === 'blog_category') return listPostCategories({ activeOnly: true }).map((c) => ({ label: c.name, url: `/blog/chuyen-muc/${c.slug}` }));
-  if (kind === 'posts') return listPosts({ perPage: limit }).items.map((p) => ({ label: p.title, url: `/blog/${p.slug}` }));
+  if (kind === 'blog_category') return listPostCategories({ activeOnly: true }).map((c) => ({ label: c.name, url: `/blog/${encodeURIComponent(c.slug)}` }));
+  if (kind === 'posts') return listPosts({ perPage: limit }).items.map((p) => ({ label: p.title, url: p.url }));
   const param = NAV_TERM_PARAM[kind];
   if (!param) return [];
   const terms = kind === 'jade_type' ? jadeTypes : listTerms(kind, { activeOnly: true });
-  const links = terms.map((t) => ({ label: t.name, url: `/san-pham?${param}=${encodeURIComponent(t.slug)}` }));
+  const links = terms.map((t) => ({ label: t.name, url: kind === 'jade_type' ? `/san-pham/${encodeURIComponent(t.slug)}` : `/san-pham?${param}=${encodeURIComponent(t.slug)}` }));
   // Menu Sản phẩm sổ theo ngọc thì thêm các loại hàng khác đang hoạt động (ví dụ Pháp phục) ở cuối danh sách
   if (String(item.url).startsWith('/san-pham')) links.push(...listPublicProductGroups({ onlyNonJade: true }).map(groupLink));
   return links;

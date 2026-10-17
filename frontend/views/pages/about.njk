@@ -13,7 +13,7 @@
     </div>
     <div class="reveal relative">
       {% if a.image %}
-        <img src="{{ a.image.lg }}" srcset="{{ a.image | srcset }}" sizes="(min-width:1024px) 50vw, 100vw" alt="{{ a.title }}" class="aspect-[4/5] w-full rounded-lg object-cover lg:aspect-[5/6]">
+        <img src="{{ a.image.lg }}" srcset="{{ a.image | srcset }}" sizes="(min-width:1024px) 50vw, 100vw" alt="{{ a.title }}" width="{{ a.image.width }}" height="{{ a.image.height }}" fetchpriority="high" decoding="async" class="aspect-[4/5] w-full rounded-lg object-cover lg:aspect-[5/6]">
       {% else %}
         <div class="aspect-[4/5] w-full rounded-lg bg-grain lg:aspect-[5/6]" style="background-color: color-mix(in srgb, var(--c-primary) 12%, var(--c-bg))"></div>
       {% endif %}
@@ -24,7 +24,7 @@
 
 {% if a.content %}
 <section class="section">
-  <div class="container-x max-w-3xl"><div class="prose-jade reveal">{{ a.content | safe }}</div></div>
+  <div class="container-x max-w-3xl"><div class="prose-jade reveal">{{ a.content | headings(1) | imgdims | safe }}</div></div>
 </section>
 {% endif %}
 

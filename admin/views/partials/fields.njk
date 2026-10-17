@@ -34,6 +34,48 @@
 {% macro richText(model) %}
 <div x-data="richText" x-modelable="value" x-model="{{ model }}" :class="full && 'rt-full'">
   <div x-ref="editor"></div>
+  {# Các thanh phụ (JS chuyển vào ngay dưới thanh công cụ): chèn bảng, sửa bảng, chỉnh ảnh #}
+  <div x-ref="panels" class="rt-panels text-sm">
+    <div x-cloak x-show="tableForm.open && !inTable" class="flex flex-wrap items-center gap-2 border-x border-slate-300 bg-brand-50 px-3 py-2">
+      <b>Chèn bảng</b>
+      <label class="flex items-center gap-1">Số hàng <input type="number" min="1" max="20" class="input !w-16 !py-1" x-model.number="tableForm.rows" @keydown.enter.prevent="insertTable()"></label>
+      <label class="flex items-center gap-1">Số cột <input type="number" min="1" max="8" class="input !w-16 !py-1" x-model.number="tableForm.cols" @keydown.enter.prevent="insertTable()"></label>
+      <button type="button" class="btn btn-primary btn-sm" @click="insertTable()">Chèn bảng</button>
+      <button type="button" class="btn btn-ghost btn-sm" @click="tableForm.open = false">Đóng</button>
+      <span class="text-xs text-slate-500">Chèn tại vị trí con trỏ. Bấm vào ô của bảng để thêm / xóa hàng, cột.</span>
+    </div>
+    <div x-cloak x-show="inTable" class="flex flex-wrap items-center gap-1.5 border-x border-slate-300 bg-brand-50 px-3 py-2">
+      <b class="mr-1">Bảng</b>
+      <button type="button" class="btn btn-secondary btn-sm" @click="tableCmd('insertRowAbove')">+ Hàng trên</button>
+      <button type="button" class="btn btn-secondary btn-sm" @click="tableCmd('insertRowBelow')">+ Hàng dưới</button>
+      <button type="button" class="btn btn-secondary btn-sm" @click="tableCmd('insertColumnLeft')">+ Cột trái</button>
+      <button type="button" class="btn btn-secondary btn-sm" @click="tableCmd('insertColumnRight')">+ Cột phải</button>
+      <button type="button" class="btn btn-secondary btn-sm text-red-600" @click="tableCmd('deleteRow')">Xóa hàng</button>
+      <button type="button" class="btn btn-secondary btn-sm text-red-600" @click="tableCmd('deleteColumn')">Xóa cột</button>
+      <button type="button" class="btn btn-secondary btn-sm text-red-600" @click="tableCmd('deleteTable')">Xóa bảng</button>
+    </div>
+    <div x-cloak x-show="img" class="flex flex-wrap items-center gap-x-4 gap-y-2 border-x border-slate-300 bg-brand-50 px-3 py-2">
+      <b>Ảnh</b>
+      <label class="flex min-w-[220px] flex-1 items-center gap-2">Mô tả (alt)
+        <input name="rt-alt" class="input !py-1" maxlength="200" placeholder="Mô tả ngắn nội dung ảnh (tốt cho SEO)" :value="img?.alt" @input.debounce.300ms="formatImage('alt', $event.target.value.trim())"></label>
+      <span class="flex items-center gap-1">Kích thước
+        <template x-for="w in widths" :key="w[0]"><button type="button" class="btn btn-sm" :class="img?.width === w[0] ? 'btn-primary' : 'btn-secondary'" @click="setImageWidth(w[0])" x-text="w[1]"></button></template>
+        <input class="input !w-24 !py-1" placeholder="VD: 480" :value="img && !widths.some(w => w[0] === img.width) ? img.width : ''" @change="setImageWidth($event.target.value)" title="Số điểm ảnh (480) hoặc phần trăm (60%)">
+      </span>
+      <span class="flex items-center gap-1">Căn lề
+        <button type="button" class="btn btn-sm" :class="!img?.align ? 'btn-primary' : 'btn-secondary'" @click="setImageAlign('')">Trái</button>
+        <button type="button" class="btn btn-sm" :class="img?.align === 'center' ? 'btn-primary' : 'btn-secondary'" @click="setImageAlign('center')">Giữa</button>
+        <button type="button" class="btn btn-sm" :class="img?.align === 'right' ? 'btn-primary' : 'btn-secondary'" @click="setImageAlign('right')">Phải</button>
+      </span>
+      <button type="button" class="btn btn-secondary btn-sm text-red-600" @click="removeImage()">Xóa ảnh</button>
+      <button type="button" class="btn btn-ghost btn-sm" @click="clearImage()">Xong</button>
+    </div>
+  </div>
+  <div class="mt-1 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+    <span><span x-text="stats.words"></span> từ</span>
+    <button type="button" x-cloak x-show="stats.noAlt" class="text-amber-600 hover:underline" @click="gotoNoAlt()" x-text="stats.noAlt + ' ảnh chưa có mô tả (alt), bấm để thêm'"></button>
+    <span>Bấm vào ảnh hoặc ô bảng để chỉnh</span>
+  </div>
 </div>
 {% endmacro %}
 

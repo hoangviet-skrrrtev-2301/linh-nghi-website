@@ -75,6 +75,7 @@ Chạy `npm run migrate` (trên VPS, `deploy/update.sh` tự chạy). Mỗi file
 | `audit_logs` | Nhật ký thao tác |
 | `product_types` | Loại sản phẩm (Vòng tay ngọc, Pháp phục...): tên, thông số tự đặt `spec_fields` (JSON), `active`, `uses_jade_fields` |
 | `post_categories` | Chuyên mục blog (`posts.category_id`) |
+| `redirects`, `not_found_log` | Chuyển hướng 301 / 302 / 410 (`auto = 1` do hệ thống tự tạo khi đổi slug) và nhật ký đường dẫn bị 404 |
 
 ## Luồng dữ liệu bán hàng (khách hàng, liên hệ, custom, đơn hàng)
 
@@ -105,6 +106,13 @@ KHÁCH TRÊN WEBSITE                       SHOP TỰ NHẬP (admin)
 - Thông số có 3 kiểu: `text`, `number`, `select`. Giá trị mới ở thông số `select` tự được thêm vào danh sách khi lưu sản phẩm (`sanitizeAttrs` trong `catalog.js`).
 - **Loại `active = 0` (chưa hoạt động) bị ẩn hoàn toàn phía khách.** Mọi truy vấn phía khách phải có điều kiện `TYPE_ACTIVE` (xuất từ `catalog.js`): danh sách, tìm kiếm, chi tiết, gợi ý, giỏ hàng (`productsByIds`), sitemap, link sản phẩm trong Gallery. Truy vấn mới về sản phẩm phía khách nhớ thêm điều kiện này.
 - Việc còn lại khi muốn mở bán một loại mới (ví dụ Pháp phục): trang danh sách riêng (có sẵn bộ lọc `?nhom=<slug>` trong `buildFilter`), mục menu, bộ lọc theo thông số tự đặt, chọn kích cỡ khi đặt hàng (giỏ hàng hiện chỉ hiểu "ni" dạng số), schema SEO cho loại không phải ngọc.
+
+## Địa chỉ trang (URL) và chuyển hướng
+
+- Đường dẫn luôn lấy từ `p.url` (sản phẩm) / `post.url` (bài viết) do `catalog.hydrate` và `content.hydratePosts` gắn sẵn (hàm `productPath`, `postPath` trong `lib/urls.js`), không tự ghép chuỗi trong template, JSON-LD hay sitemap.
+- `/san-pham/:a`: trang loại ngọc, trang loại sản phẩm, hoặc sản phẩm chưa có loại; `/san-pham/:a/:slug`: sản phẩm (sai `:a` thì 301 về đúng). Tương tự `/blog/:a`, `/blog/:a/:slug`.
+- Đổi slug / loại / chuyên mục trong `catalog.js` và `content.js` phải gọi `addAutoRedirect` (đã làm sẵn trong các hàm lưu). Thêm kiểu trang mới có đường dẫn đổi được thì làm tương tự.
+- Thứ tự middleware trong `app.js`: file tĩnh → `applyRedirects` → `canonicalUrl` → route.
 
 ## Kiểm tra trước khi bàn giao bản sửa
 

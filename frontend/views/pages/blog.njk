@@ -8,7 +8,7 @@
     {% if blogCategories.length %}
     <nav class="mt-8 flex flex-wrap justify-center gap-2" aria-label="{{ s.pages.blog_categories_title }}">
       <a href="/blog" class="chip {{ '!border-primary !bg-primary !text-on-primary' if not category }}">Tất cả</a>
-      {% for c in blogCategories %}<a href="/blog/chuyen-muc/{{ c.slug }}" class="chip {{ '!border-primary !bg-primary !text-on-primary' if category and category.id == c.id }}">{{ c.name }} <span class="text-[11px] opacity-60">{{ c.post_count }}</span></a>{% endfor %}
+      {% for c in blogCategories %}<a href="/blog/{{ c.slug }}" class="chip {{ '!border-primary !bg-primary !text-on-primary' if category and category.id == c.id }}">{{ c.name }} <span class="text-[11px] opacity-60">{{ c.post_count }}</span></a>{% endfor %}
     </nav>
     {% endif %}
   </div>
@@ -18,7 +18,7 @@
     <div class="min-w-0">
       {% if result.items.length %}
       <div class="grid gap-x-8 gap-y-12 sm:grid-cols-2">
-        {% for p in result.items %}{% include "partials/post-card.njk" %}{% endfor %}
+        {% set hTag = 'h2' %}{% for p in result.items %}{% include "partials/post-card.njk" %}{% endfor %}
       </div>
       {% set pg = result %}{% include "partials/pagination.njk" %}
       {% else %}

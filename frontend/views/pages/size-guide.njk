@@ -10,7 +10,7 @@
       <h1 class="mt-3 text-4xl font-medium md:text-5xl">{{ g.title }}</h1>
       <p class="mt-4 max-w-lg text-muted">{{ g.intro }}</p>
     </div>
-    {% if g.image %}<img src="{{ g.image.md }}" alt="{{ g.title }}" class="w-full rounded-lg object-cover">{% endif %}
+    {% if g.image %}<img src="{{ g.image.md }}" alt="{{ g.title }}" width="{{ g.image.width }}" height="{{ g.image.height }}" decoding="async" class="w-full rounded-lg object-cover">{% endif %}
   </div>
 </section>
 
@@ -71,7 +71,7 @@
     {% if g.tips %}
     <div class="reveal mx-auto mt-14 max-w-3xl rounded-lg border border-accent/30 bg-accent/5 p-7 md:p-9">
       <h2 class="flex items-center gap-2 text-2xl font-medium">{{ icon('sparkle', 'w-5 h-5 text-accent') }} Lưu ý</h2>
-      <div class="prose-jade mt-4">{{ g.tips | safe }}</div>
+      <div class="prose-jade mt-4">{{ g.tips | headings(2) | imgdims | safe }}</div>
     </div>
     {% endif %}
 

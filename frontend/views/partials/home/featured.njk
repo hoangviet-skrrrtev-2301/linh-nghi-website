@@ -11,7 +11,7 @@
       <div class="divider-ornament"></div>
     </div>
     <div class="grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 md:gap-x-6 {{ 'lg:grid-cols-4' if s.theme.product_grid == '4' else 'lg:grid-cols-3' }}">
-      {% for p in featured %}{{ productCard(p, features, loop.index0) }}{% endfor %}
+      {% for p in featured %}{{ productCard(p, features, loop.index0 + 50) }}{% endfor %}
     </div>
     <div class="mt-14 text-center"><a href="/san-pham" class="btn btn-outline">Xem tất cả sản phẩm {{ icon('arrow-right', 'w-4 h-4') }}</a></div>
   </div>

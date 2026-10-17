@@ -26,7 +26,7 @@
         <template x-if="catForm">
           <div class="contents">
             <div><label class="label">Tên chuyên mục *</label><input class="input" x-model="catForm.name" required maxlength="80"></div>
-            <div><label class="label">Đường dẫn (slug)</label><input class="input" x-model="catForm.slug" placeholder="Tự tạo từ tên"><p class="help">Trang chuyên mục: /blog/chuyen-muc/<span x-text="catForm.slug || '...'"></span></p></div>
+            <div><label class="label">Đường dẫn (slug)</label><input class="input" x-model="catForm.slug" placeholder="Tự tạo từ tên"><p class="help">Trang chuyên mục: /blog/<span x-text="catForm.slug || '...'"></span></p></div>
             <div class="md:col-span-2"><label class="label">Mô tả ngắn (hiện ở đầu trang chuyên mục)</label><textarea class="input" rows="2" x-model="catForm.description" maxlength="400"></textarea></div>
             <div><label class="label">Thứ tự hiển thị</label><input type="number" class="input" x-model.number="catForm.sort_order"></div>
             <label class="flex items-center gap-2 self-end pb-2 text-sm"><input type="checkbox" class="h-4 w-4 accent-brand-600" x-model="catForm.active"> Hiển thị trên website</label>
@@ -37,7 +37,7 @@
       <ul class="divide-y divide-slate-100">
         <template x-for="c in categories" :key="c.id">
           <li class="flex flex-wrap items-center gap-3 px-5 py-3">
-            <div class="min-w-0 flex-1"><p class="font-medium" :class="!c.active && 'text-slate-400'" x-text="c.name"></p><p class="text-xs text-slate-500" x-text="'/blog/chuyen-muc/' + c.slug + ' · ' + c.post_count + ' bài đã đăng' + (c.active ? '' : ' · đang ẩn')"></p></div>
+            <div class="min-w-0 flex-1"><p class="font-medium" :class="!c.active && 'text-slate-400'" x-text="c.name"></p><p class="text-xs text-slate-500" x-text="'/blog/' + c.slug + ' · ' + c.post_count + ' bài đã đăng' + (c.active ? '' : ' · đang ẩn')"></p></div>
             <button class="btn btn-ghost btn-sm" @click="openCat(c)" title="Sửa">{{ icon('edit', 'w-4 h-4') }}</button>
             <button class="btn btn-ghost btn-sm text-red-600" @click="removeCat(c)" title="Xóa">{{ icon('trash', 'w-4 h-4') }}</button>
           </li>
@@ -59,7 +59,7 @@
             <td><span class="badge" :class="p.status === 'published' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'" x-text="p.status === 'published' ? 'Đã đăng' : 'Nháp'"></span></td>
             <td class="text-slate-500" x-text="$fmt.date(p.published_at, false)"></td>
             <td class="whitespace-nowrap text-right">
-              <a :href="'/blog/' + p.slug" target="_blank" class="btn btn-ghost btn-sm" x-show="p.status === 'published'">{{ icon('eye', 'w-4 h-4') }}</a>
+              <a :href="p.url" target="_blank" class="btn btn-ghost btn-sm" x-show="p.status === 'published'">{{ icon('eye', 'w-4 h-4') }}</a>
               <button class="btn btn-ghost btn-sm text-red-600" @click="remove(p)">{{ icon('trash', 'w-4 h-4') }}</button>
             </td>
           </tr>

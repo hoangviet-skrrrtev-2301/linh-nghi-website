@@ -15,8 +15,8 @@
 
     <a href="/" class="flex shrink-0 items-center gap-3" aria-label="{{ s.site.name }} - Trang chủ">
       {% if s.site.logo %}
-        <img src="{{ s.site.logo.sm }}" alt="{{ s.site.name }}" class="h-[68px] w-auto {{ 'logo-light-only' if s.site.logo_light }}" width="54" height="68">
-        {% if s.site.logo_light %}<img src="{{ s.site.logo_light.sm }}" alt="" aria-hidden="true" class="logo-dark-only h-[68px] w-auto" width="54" height="68">{% endif %}
+        <img src="{{ s.site.logo.sm }}" alt="{{ s.site.name }}" class="h-[68px] w-auto {{ 'logo-light-only' if s.site.logo_light }}" width="{{ s.site.logo.width }}" height="{{ s.site.logo.height }}">
+        {% if s.site.logo_light %}<img src="{{ s.site.logo_light.sm }}" alt="" aria-hidden="true" class="logo-dark-only h-[68px] w-auto" width="{{ s.site.logo_light.width }}" height="{{ s.site.logo_light.height }}">{% endif %}
       {% else %}
         <span class="font-heading text-2xl font-semibold tracking-tight text-primary">{{ s.site.name }}</span>
       {% endif %}
@@ -75,7 +75,7 @@
       {% if jadeTypes.length %}
       <div class="container-x flex flex-wrap items-center gap-2 pb-5 text-sm">
         <span class="text-muted">Gợi ý:</span>
-        {% for t in jadeTypes %}<a href="/san-pham?loai={{ t.slug }}" class="chip">{{ t.name }}</a>{% endfor %}
+        {% for t in jadeTypes %}<a href="/san-pham/{{ t.slug }}" class="chip">{{ t.name }}</a>{% endfor %}
       </div>
       {% endif %}
     </div>

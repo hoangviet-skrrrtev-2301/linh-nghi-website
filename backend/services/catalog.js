@@ -1,5 +1,7 @@
 // Danh mục phân loại (terms) và sản phẩm.
 import { db, tx, likeVn } from '../lib/db.js';
+import { productPath } from '../lib/urls.js';
+import { addAutoRedirect } from './redirects.js';
 import { slugify, safeJson, HttpError, toInt, bool, stripHtml, truncate } from '../lib/utils.js';
 import { cleanHtml, cleanText } from '../lib/sanitize.js';
 import { getMediaMap } from './media.js';
@@ -38,12 +40,39 @@ function uniqueSlug(table, base, id, extraWhere = '', extraParams = []) {
   return slug;
 }
 
+// /san-pham/<a> có thể là loại ngọc, loại sản phẩm hoặc (sản phẩm chưa có loại): ba nhóm này không được trùng tên đường dẫn
+function categorySlugTaken(slug, { exceptTermId = 0, exceptTypeId = 0 } = {}) {
+  return !!(db.prepare("SELECT 1 FROM terms WHERE type = 'jade_type' AND slug = ? AND id != ?").get(slug, exceptTermId)
+    || db.prepare('SELECT 1 FROM product_types WHERE slug = ? AND id != ?').get(slug, exceptTypeId));
+}
+function freeCategorySlug(slug, except) {
+  let s = slug;
+  let i = 2;
+  while (categorySlugTaken(s, except) || db.prepare('SELECT 1 FROM products WHERE slug = ?').get(s)) s = `${slug}-${i++}`;
+  return s;
+}
+
+// Ghi lại địa chỉ hiện tại của các sản phẩm đã đăng; sau khi đổi dữ liệu gọi redirectMoved để tự chuyển 301 địa chỉ cũ → mới
+function snapUrls(ids) {
+  const list = [...new Set(ids)].filter(Boolean);
+  if (!list.length) return {};
+  const rows = db.prepare(`SELECT * FROM products p WHERE status = 'published' AND id IN (${list.map(() => '?').join(',')})`).all(...list);
+  return Object.fromEntries(hydrate(rows).map((p) => [p.id, p.url]));
+}
+function redirectMoved(before) {
+  const now = snapUrls(Object.keys(before).map(Number));
+  for (const [id, old] of Object.entries(before)) if (now[id] && now[id] !== old) addAutoRedirect(old, now[id]);
+}
+const productIdsOf = (col, id) => db.prepare(`SELECT id FROM products WHERE ${col} = ?`).pluck().all(id);
+
 export function saveTerm(id, data) {
   const type = id ? db.prepare('SELECT type FROM terms WHERE id = ?').pluck().get(id) : data.type;
   if (!TERM_TYPES[type]) throw new HttpError(400, 'Loại danh mục không hợp lệ');
   const name = cleanText(data.name, 120);
   if (!name) throw new HttpError(400, 'Vui lòng nhập tên');
-  const slug = uniqueSlug('terms', slugify(data.slug || name), id, 'AND type = ?', [type]);
+  let slug = uniqueSlug('terms', slugify(data.slug || name), id, 'AND type = ?', [type]);
+  const old = id ? db.prepare('SELECT slug FROM terms WHERE id = ?').get(id) : null;
+  if (type === 'jade_type') slug = freeCategorySlug(slug, { exceptTermId: id || 0 });
   const values = {
     type, name, slug,
     description: cleanText(data.description, 2000),
@@ -53,8 +82,11 @@ export function saveTerm(id, data) {
     active: bool(data.active ?? true) ? 1 : 0,
   };
   if (id) {
+    // Đổi đường dẫn loại ngọc thì địa chỉ trang loại và mọi sản phẩm thuộc loại đó đổi theo: tự chuyển 301
+    const before = type === 'jade_type' && old && old.slug !== slug ? snapUrls(productIdsOf('jade_type_id', id)) : null;
     db.prepare(`UPDATE terms SET name=@name, slug=@slug, description=@description, color_hex=@color_hex,
       media_id=@media_id, sort_order=@sort_order, active=@active WHERE id=@id`).run({ ...values, id });
+    if (before) { addAutoRedirect(`/san-pham/${old.slug}`, `/san-pham/${slug}`); redirectMoved(before); }
     return id;
   }
   return db.prepare(`INSERT INTO terms (type, name, slug, description, color_hex, media_id, sort_order, active)
@@ -62,7 +94,11 @@ export function saveTerm(id, data) {
 }
 
 export function deleteTerm(id) {
+  const t = db.prepare('SELECT type, slug FROM terms WHERE id = ?').get(id);
+  // Xóa loại ngọc: sản phẩm của loại đó mất tầng cha nên đổi địa chỉ, và trang loại không còn: chuyển 301 về trang Sản phẩm
+  const before = t?.type === 'jade_type' ? snapUrls(productIdsOf('jade_type_id', id)) : null;
   db.prepare('DELETE FROM terms WHERE id = ?').run(id);
+  if (before) { addAutoRedirect(`/san-pham/${t.slug}`, '/san-pham'); redirectMoved(before); }
 }
 
 // ---------------- Products ----------------
@@ -90,7 +126,7 @@ function hydrate(rows, { withImages = false } = {}) {
     const cover = media[r.cover_media_id] || gallery[0] || null;
     const type = types[r.product_type_id] || null;
     const attrs = safeJson(r.attrs, {});
-    return {
+    const item = {
       ...r,
       product_type: type ? { id: type.id, name: type.name, slug: type.slug, uses_jade_fields: !!type.uses_jade_fields, active: !!type.active } : null,
       type_active: type ? !!type.active : true,
@@ -112,6 +148,9 @@ function hydrate(rows, { withImages = false } = {}) {
       stock_label: STOCK_LABEL[r.stock_status],
       show_new: !!r.is_new || (newDays > 0 && Date.now() - new Date(String(r.created_at).replace(' ', 'T') + 'Z').getTime() < newDays * 864e5),
     };
+    // Đường dẫn chuẩn theo phân cấp: /san-pham/<loại>/<sản phẩm>
+    item.url = productPath(item);
+    return item;
   });
 }
 
@@ -319,7 +358,7 @@ export function saveProductType(id, data) {
   if (current?.uses_jade_fields && !active) throw new HttpError(400, 'Không thể tắt loại sản phẩm chính của shop (Vòng tay ngọc)');
   const values = {
     name,
-    slug: uniqueSlug('product_types', slugify(data.slug || name), id),
+    slug: freeCategorySlug(uniqueSlug('product_types', slugify(data.slug || name), id), { exceptTypeId: id || 0 }),
     description: cleanText(data.description, 300),
     active: active ? 1 : 0,
     // Loại chính (ngọc) luôn hiện trong "Tất cả sản phẩm"; loại khác tùy chủ shop, mặc định không
@@ -329,7 +368,9 @@ export function saveProductType(id, data) {
     spec_fields: JSON.stringify(current?.uses_jade_fields ? [] : cleanSpecFields(data.spec_fields)),
   };
   if (id) {
+    const before = current && current.slug !== values.slug && !current.uses_jade_fields ? snapUrls(productIdsOf('product_type_id', id)) : null;
     db.prepare('UPDATE product_types SET name=@name, slug=@slug, description=@description, active=@active, in_main_list=@in_main_list, sort_order=@sort_order, spec_fields=@spec_fields WHERE id=@id').run({ ...values, id });
+    if (before) { addAutoRedirect(`/san-pham/${current.slug}`, `/san-pham/${values.slug}`); redirectMoved(before); }
     return id;
   }
   return db.prepare(`INSERT INTO product_types (name, slug, description, uses_jade_fields, spec_fields, active, in_main_list, sort_order)
@@ -390,7 +431,10 @@ export function updateProductPrice(id, data) {
 export function saveProduct(id, data) {
   const name = cleanText(data.name, 200);
   if (!name) throw new HttpError(400, 'Vui lòng nhập tên sản phẩm');
-  const slug = uniqueSlug('products', slugify(data.slug || name), id);
+  let slug = uniqueSlug('products', slugify(data.slug || name), id);
+  // Không trùng tên với trang loại ngọc / loại sản phẩm (cùng nằm dưới /san-pham/)
+  { let i = 2; const base = slug; while (categorySlugTaken(slug)) slug = `${base}-${i++}`; }
+  const urlBefore = id ? snapUrls([id]) : {};
   const sizes = [].concat(data.sizes || [])
     .flatMap((s) => String(s).split(/[,;\s]+/))
     .map((s) => toInt(s)).filter((s) => s > 0 && s < 200);
@@ -433,7 +477,7 @@ export function saveProduct(id, data) {
     seo_description: cleanText(data.seo_description, 400),
   };
 
-  return tx(() => {
+  const result = tx(() => {
     let pid = id;
     if (id) {
       const sets = Object.keys(values).map((k) => `${k} = @${k}`).join(', ');
@@ -464,6 +508,8 @@ export function saveProduct(id, data) {
     });
     return pid;
   });
+  if (id) redirectMoved(urlBefore);
+  return id || result;
 }
 
 export function deleteProduct(id) {

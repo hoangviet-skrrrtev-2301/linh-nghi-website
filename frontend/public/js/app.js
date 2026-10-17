@@ -125,7 +125,7 @@ document.addEventListener('alpine:init', () => {
         this.items.forEach((it) => {
           const p = map[it.id];
           if (!p || p.stock_status === 'sold_out') { it.unavailable = true; return; }
-          Object.assign(it, { name: p.name, final_price: p.final_price, cover: p.cover, sizes: p.sizes, unavailable: false });
+          Object.assign(it, { url: p.url, name: p.name, final_price: p.final_price, cover: p.cover, sizes: p.sizes, unavailable: false });
         });
         this.save();
       } catch { /* bỏ qua lỗi mạng */ }
@@ -146,7 +146,7 @@ document.addEventListener('alpine:init', () => {
         if (!this.p.images.length && this.p.cover) this.p.images = [this.p.cover];
       } catch {
         this.open = false;
-        window.location.href = `/san-pham/${slug}`;
+        window.location.href = `/san-pham/${slug}`; // địa chỉ cũ, máy chủ tự chuyển 301 sang địa chỉ phân cấp
       } finally {
         this.loading = false;
       }

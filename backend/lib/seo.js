@@ -63,8 +63,8 @@ export function productJsonLd(p) {
   const data = {
     '@context': 'https://schema.org',
     '@type': 'Product',
-    '@id': `${config.baseUrl}/san-pham/${p.slug}#product`,
-    url: `${config.baseUrl}/san-pham/${p.slug}`,
+    '@id': `${config.baseUrl}${p.url}#product`,
+    url: `${config.baseUrl}${p.url}`,
     name: p.name,
     sku: p.sku || undefined,
     description: truncate(stripHtml(p.short_description || p.description), 300),
@@ -77,7 +77,7 @@ export function productJsonLd(p) {
   if (p.final_price != null) {
     data.offers = {
       '@type': 'Offer',
-      url: `${config.baseUrl}/san-pham/${p.slug}`,
+      url: `${config.baseUrl}${p.url}`,
       priceCurrency: 'VND',
       itemCondition: 'https://schema.org/NewCondition',
       price: p.final_price,
@@ -102,7 +102,7 @@ export function articleJsonLd(post) {
   return {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
-    url: `${config.baseUrl}/blog/${post.slug}`,
+    url: `${config.baseUrl}${post.url}`,
     inLanguage: 'vi',
     articleSection: post.category?.name,
     wordCount: stripHtml(post.content).split(' ').length,
@@ -114,7 +114,7 @@ export function articleJsonLd(post) {
     dateModified: new Date(post.updated_at.replace(' ', 'T') + 'Z').toISOString(),
     author: { '@type': 'Person', name: post.author || s.site.name },
     publisher: { '@type': 'Organization', name: s.site.name, logo: s.site.logo ? { '@type': 'ImageObject', url: abs(s.site.logo.md) } : undefined },
-    mainEntityOfPage: `${config.baseUrl}/blog/${post.slug}`,
+    mainEntityOfPage: `${config.baseUrl}${post.url}`,
   };
 }
 

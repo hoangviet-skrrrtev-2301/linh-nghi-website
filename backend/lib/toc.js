@@ -21,3 +21,18 @@ export function buildToc(html) {
   });
   return { html: out, toc };
 }
+
+// Không để tiêu đề nhảy cấp (ví dụ H2 rồi H4): tiêu đề sâu hơn cấp liền trước quá 1 bậc được hạ về đúng bậc kế tiếp.
+// start = cấp tiêu đề đang có ngay trước nội dung (bài viết: H1 là tên bài; mô tả sản phẩm: H2 "Mô tả sản phẩm")
+export function fixHeadingLevels(html, start = 1) {
+  let prev = start;
+  return String(html || '').replace(/<(\/?)h([2-6])(\s[^>]*)?>/gi, (m, close, lv, attrs = '') => {
+    let n = Number(lv);
+    if (!close) {
+      if (n > prev + 1) n = prev + 1;
+      prev = n;
+      return `<h${n}${attrs}>`;
+    }
+    return `</h${n > prev ? prev : n}>`;
+  });
+}

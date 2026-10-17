@@ -74,24 +74,26 @@ export function sitemapEntries() {
   }
   if (sm.sitemap_categories) {
     for (const t of db.prepare(`SELECT slug FROM terms WHERE type = 'jade_type' AND active = 1`).all()) {
-      add({ loc: `/san-pham?loai=${t.slug}`, priority: '0.8' });
+      add({ loc: `/san-pham/${t.slug}`, priority: '0.8' });
     }
     // Trang theo loại sản phẩm đang hoạt động (ví dụ Pháp phục)
-    for (const g of listPublicProductGroups({ onlyNonJade: true })) add({ loc: `/san-pham?nhom=${g.slug}`, priority: '0.8' });
+    for (const g of listPublicProductGroups({ onlyNonJade: true })) add({ loc: `/san-pham/${g.slug}`, priority: '0.8' });
   }
   if (sm.sitemap_products) {
-    const rows = db.prepare(`SELECT p.slug, p.name, p.updated_at, m.variants FROM products p
-      LEFT JOIN media m ON m.id = p.cover_media_id WHERE p.status = 'published'
+    const rows = db.prepare(`SELECT p.slug, p.name, p.updated_at, m.variants, jt.slug AS jade_slug,
+        CASE WHEN pt.uses_jade_fields = 0 THEN pt.slug END AS type_slug FROM products p
+      LEFT JOIN media m ON m.id = p.cover_media_id LEFT JOIN terms jt ON jt.id = p.jade_type_id LEFT JOIN product_types pt ON pt.id = p.product_type_id
+      WHERE p.status = 'published'
       AND p.product_type_id IN (SELECT id FROM product_types WHERE active = 1) ORDER BY p.id`).all();
     for (const p of rows) {
-      add({ loc: `/san-pham/${p.slug}`, lastmod: iso(p.updated_at), priority: '0.8', image: sm.sitemap_images ? coverUrl(p.variants) : '', title: p.name });
+      add({ loc: (p.jade_slug || p.type_slug) ? `/san-pham/${p.jade_slug || p.type_slug}/${p.slug}` : `/san-pham/${p.slug}`, lastmod: iso(p.updated_at), priority: '0.8', image: sm.sitemap_images ? coverUrl(p.variants) : '', title: p.name });
     }
   }
   if (sm.sitemap_posts && f.blog) {
-    const rows = db.prepare(`SELECT p.slug, p.title, p.updated_at, m.variants FROM posts p
-      LEFT JOIN media m ON m.id = p.cover_media_id WHERE p.status = 'published' AND p.published_at <= datetime('now') ORDER BY p.id`).all();
+    const rows = db.prepare(`SELECT p.slug, p.title, p.updated_at, m.variants, CASE WHEN pc.active = 1 THEN pc.slug END AS cat_slug FROM posts p
+      LEFT JOIN media m ON m.id = p.cover_media_id LEFT JOIN post_categories pc ON pc.id = p.category_id WHERE p.status = 'published' AND p.published_at <= datetime('now') ORDER BY p.id`).all();
     for (const p of rows) {
-      add({ loc: `/blog/${p.slug}`, lastmod: iso(p.updated_at), priority: '0.6', image: sm.sitemap_images ? coverUrl(p.variants) : '', title: p.title });
+      add({ loc: p.cat_slug ? `/blog/${p.cat_slug}/${p.slug}` : `/blog/${p.slug}`, lastmod: iso(p.updated_at), priority: '0.6', image: sm.sitemap_images ? coverUrl(p.variants) : '', title: p.title });
     }
   }
   // URL thêm tay: chỉ nhận đường dẫn của chính website này

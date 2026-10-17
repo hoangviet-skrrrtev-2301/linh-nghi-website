@@ -148,6 +148,7 @@ router.get('/settings/:key', (req, res, next) => {
   const groups = SETTINGS_SCHEMA.filter((g) => !g.ownerOnly || req.user.role === 'owner').map((g) => ({ key: g.key, label: g.label }));
   res.adminView('pages/settings.njk', { group, groups });
 });
+router.get('/redirects', requireOwner, page('pages/redirects.njk'));
 router.get('/users', requireOwner, page('pages/users.njk'));
 router.get('/audit', requireOwner, page('pages/audit.njk'));
 

@@ -10,15 +10,49 @@ document.addEventListener('alpine:init', () => {
   const qs = (obj) => new URLSearchParams(Object.entries(obj).filter(([, v]) => v !== '' && v != null)).toString();
 
   // Bộ khung cho trang danh sách có tìm kiếm + phân trang
-  const listPage = (endpoint, defaults = {}) => ({
+  // perPageOptions (VD: [20, 30, 50]) bật ô chọn số dòng mỗi trang; lựa chọn được nhớ trên trình duyệt.
+  // Bộ lọc + trang hiện tại được ghi vào địa chỉ trang để nút Quay lại trả về đúng danh sách vừa xem.
+  const listPage = (endpoint, defaults = {}, perPageOptions = []) => ({
     items: [], total: 0, pages: 1, page: 1, loading: true, filters: { q: '', ...defaults },
+    perPageOptions, perPage: perPageOptions[0] || 0, restored: false,
+    restoreState() {
+      this.restored = true;
+      const u = new URLSearchParams(location.search);
+      for (const k of Object.keys(this.filters)) if (u.has(k)) this.filters[k] = u.get(k);
+      const pg = Number(u.get('page'));
+      if (pg >= 1) this.page = Math.floor(pg);
+      if (this.perPageOptions.length) {
+        let saved = 0;
+        try { saved = Number(localStorage.getItem('ln_admin_perpage')); } catch { /* chế độ riêng tư */ }
+        const want = Number(u.get('per_page')) || saved;
+        if (this.perPageOptions.includes(want)) this.perPage = want;
+      }
+    },
+    syncUrl() {
+      try {
+        const u = new URLSearchParams();
+        for (const [k, v] of Object.entries(this.filters)) u.set(k, v ?? '');
+        if (this.page > 1) u.set('page', this.page);
+        if (this.perPageOptions.length && this.perPage !== this.perPageOptions[0]) u.set('per_page', this.perPage);
+        history.replaceState(history.state, '', location.pathname + '?' + u.toString());
+        window.Admin.trailReplace();
+      } catch { /* bỏ qua */ }
+    },
+    setPerPage(n) {
+      this.perPage = Number(n);
+      try { localStorage.setItem('ln_admin_perpage', String(this.perPage)); } catch { /* chế độ riêng tư */ }
+      this.search();
+    },
     async load() {
+      if (!this.restored) this.restoreState();
       this.loading = true;
       try {
-        const r = await api(`${endpoint}?${qs({ ...this.filters, page: this.page })}`);
+        const r = await api(`${endpoint}?${qs({ ...this.filters, page: this.page, per_page: this.perPage || '' })}`);
         this.items = r.items;
         this.total = r.total;
         this.pages = r.pages || Math.max(1, Math.ceil(r.total / (r.perPage || 30)));
+        if (this.page > this.pages) { this.page = this.pages; this.syncUrl(); return this.load(); }
+        this.syncUrl();
       } catch (e) { toast().error(e); }
       this.loading = false;
     },
@@ -65,21 +99,38 @@ document.addEventListener('alpine:init', () => {
       if (n >= 1e3) return Math.round(n / 1e3) + 'k';
       return String(n);
     },
-    cell(bk) { return this.metric === 'revenue' ? bk.revenue : bk.order + bk.custom + bk.contact; },
+    // Biểu đồ số lượng: mỗi loại một cột riêng đặt cạnh nhau (không chồng) để so sánh được; bấm chú thích để ẩn / hiện từng loại
+    seriesDefs: [
+      { key: 'order', label: 'Đơn hàng', bar: 'bg-brand-500', dot: 'bg-brand-500', text: 'text-brand-700' },
+      { key: 'custom', label: 'Yêu cầu custom', bar: 'bg-violet-500', dot: 'bg-violet-500', text: 'text-violet-700' },
+      { key: 'contact', label: 'Khách liên hệ', bar: 'bg-amber-400', dot: 'bg-amber-400', text: 'text-amber-700' },
+    ],
+    hidden: {},
+    get series() { return this.seriesDefs.filter((s) => !this.hidden[s.key]); },
+    toggleSeries(k) {
+      const left = this.seriesDefs.filter((s) => !this.hidden[s.key] && s.key !== k).length;
+      if (!this.hidden[k] && !left) return; // luôn giữ lại ít nhất một loại
+      this.hidden = { ...this.hidden, [k]: !this.hidden[k] };
+    },
+    seriesTotal(k) { return this.d?.totals[{ order: 'orders', custom: 'custom', contact: 'contact' }[k]] ?? 0; },
+    cell(bk) { return this.metric === 'revenue' ? bk.revenue : this.series.reduce((s, x) => s + bk[x.key], 0); },
     get buckets() { return this.d?.series.buckets || []; },
-    get max() { return Math.max(1, ...this.buckets.map((bk) => this.cell(bk))); },
+    get max() { return Math.max(1, ...this.buckets.map((bk) => (this.metric === 'revenue' ? bk.revenue : Math.max(0, ...this.series.map((x) => bk[x.key]))))); },
     get axis() { const m = this.max; return [m, Math.round(m / 2), 0].map((v) => (this.metric === 'revenue' ? this.compact(v) : String(v))); },
     pct(v) { return (v / this.max) * 100; },
-    lab(bk) { const v = this.cell(bk); return v ? (this.metric === 'revenue' ? this.compact(v) : String(v)) : ''; },
+    barH(v) { return Math.max(this.pct(v), v ? 3 : 0); },
+    lab(v) { return v ? (this.metric === 'revenue' ? this.compact(v) : String(v)) : ''; },
+    // Số trên đầu cột chỉ hiện khi đủ chỗ (ít cột); nhiều cột thì xem trong bảng chi tiết hoặc rê chuột
+    get showNumbers() { return this.buckets.length * (this.metric === 'revenue' ? 1 : this.series.length) <= 24; },
     // Chỉ ghi nhãn ngày ở một số cột cho khỏi chồng chữ
     showTick(i) { const n = this.buckets.length; const step = Math.max(1, Math.ceil(n / 8)); return i % step === 0 || i === n - 1; },
-    get chartTotal() { return this.metric === 'revenue' ? this.money(this.d?.totals.revenue) : this.buckets.reduce((s, bk) => s + this.cell(bk), 0) + ' yêu cầu'; },
+    get chartTotal() { return this.metric === 'revenue' ? this.money(this.d?.totals.revenue) : this.series.map((s) => this.seriesTotal(s.key) + ' ' + s.label.toLowerCase()).join(' · '); },
     get statusTotal() { return Math.max(1, (this.d?.statusBreakdown || []).reduce((s, r) => s + r.n, 0)); },
   }));
 
   // ---------------- Sản phẩm ----------------
   Alpine.data('productsList', (status = '') => ({
-    ...listPage('/products', { status, sort: 'noi_bat', type: '' }),
+    ...listPage('/products', { status, sort: 'noi_bat', type: '' }, [20, 30, 50]),
     selected: [],
     // Sửa nhanh giá ngay ở danh sách (bấm vào giá)
     editing: null, pf: { price: '', sale_price: '' }, priceBusy: false, priceError: '',
@@ -190,6 +241,12 @@ document.addEventListener('alpine:init', () => {
     // Loại sản phẩm đang chọn: loại dùng bộ thuộc tính ngọc hay thông số tự đặt
     get type() { return this.types.find((t) => t.id === Number(this.form?.product_type_id)) || this.types[0] || null; },
     get isJade() { return !this.type || !!this.type.uses_jade_fields; },
+    // Địa chỉ trên website theo phân cấp: /san-pham/<loại ngọc hoặc loại sản phẩm>/<đường dẫn sản phẩm>
+    get publicPath() {
+      const f = this.form || {};
+      const parent = this.isJade ? (this.terms.jade_type || []).find((t) => t.id === Number(f.jade_type_id))?.slug : this.type?.slug;
+      return parent ? `/san-pham/${parent}/${f.slug || ''}` : `/san-pham/${f.slug || ''}`;
+    },
     async init() {
       try {
         this.terms = await api('/terms');
@@ -339,7 +396,7 @@ document.addEventListener('alpine:init', () => {
 
   // ---------------- Blog ----------------
   Alpine.data('postsList', () => ({
-    ...listPage('/posts', { status: '', category: '' }),
+    ...listPage('/posts', { status: '', category: '' }, [20, 30, 50]),
     categories: [], catOpen: false, catForm: null, catSaving: false,
     init() { this.load(); this.loadCategories(); },
     async loadCategories() { try { this.categories = (await api('/post-categories')).items; } catch (e) { toast().error(e); } },
@@ -375,6 +432,8 @@ document.addEventListener('alpine:init', () => {
 
   Alpine.data('postEdit', (id) => ({
     id: id ? Number(id) : null, form: null, saving: false, slugTouched: !!id, categories: [], newCat: '', addingCat: false,
+    // Địa chỉ bài viết theo phân cấp: /blog/<chuyên mục>/<bài viết> (chưa có chuyên mục thì /blog/<bài viết>)
+    get blogPrefix() { const c = this.categories.find((x) => x.id === Number(this.form?.category_id)); return c && c.active ? `/blog/${c.slug}/` : '/blog/'; },
     async addCategory() {
       if (!this.newCat.trim()) return;
       this.addingCat = true;
@@ -495,6 +554,30 @@ document.addEventListener('alpine:init', () => {
   // ---------------- Đơn hàng / yêu cầu ----------------
   Alpine.data('inquiriesList', (type) => ({
     ...listPage('/inquiries', { type: type || '', status: new URLSearchParams(location.search).get('status') || '', from: '', to: '' }),
+    // Shop tự thêm đơn / yêu cầu từ kênh ngoài website
+    add: { open: false, mode: 'existing', q: '', results: [], searching: false, customer: null, form: { name: '', phone: '', email: '', address: '' }, via: '', busy: false, error: '' },
+    openAdd() {
+      this.add = { open: true, mode: 'existing', q: '', results: [], searching: false, customer: null, form: { name: '', phone: '', email: '', address: '' }, via: '', busy: false, error: '' };
+    },
+    async searchCustomers() {
+      const q = this.add.q.trim();
+      if (!q) { this.add.results = []; return; }
+      this.add.searching = true;
+      try { this.add.results = (await api(`/customers?${qs({ q, by: 'created' })}`)).items.slice(0, 8); } catch (e) { toast().error(e); }
+      this.add.searching = false;
+    },
+    async createManual() {
+      const a = this.add;
+      a.error = '';
+      if (a.mode === 'existing' && !a.customer) { a.error = 'Vui lòng chọn một khách, hoặc chuyển sang “Khách mới”.'; return; }
+      a.busy = true;
+      try {
+        const body = { type: this.filters.type || 'order', contact_via: a.via };
+        if (a.mode === 'existing') body.customer_id = a.customer.id; else body.customer = { ...a.form, source: a.via };
+        const r = await api('/inquiries', { method: 'POST', body });
+        window.location.href = `${A}/inquiries/${r.id}`;
+      } catch (e) { a.error = Object.values(e.data?.errors || {}).filter((v) => typeof v === 'string').join(' ') || e.message; a.busy = false; }
+    },
   }));
 
   Alpine.data('inquiryDetail', (id) => ({
@@ -563,12 +646,13 @@ document.addEventListener('alpine:init', () => {
       this.saving = false;
     },
     async convert() {
-      if (!(await confirmBox({ title: 'Lên đơn hàng từ yêu cầu này?', message: 'Hệ thống tạo một đơn hàng mới cho khách này. Yêu cầu hiện tại vẫn được giữ.', okLabel: 'Lên đơn', danger: false }))) return;
+      if (!(await confirmBox({ title: 'Lên đơn hàng từ yêu cầu này?', message: 'Yêu cầu này sẽ chuyển thành đơn hàng ngay trên cùng một bản ghi (mã DH mới, không tạo thêm bản ghi thứ hai). Khách vẫn tra cứu được bằng mã cũ.', okLabel: 'Lên đơn', danger: false }))) return;
       this.saving = true;
       try {
-        const order = await api(`/inquiries/${id}/convert`, { method: 'POST' });
-        window.location.href = `${A}/inquiries/${order.id}`;
-      } catch (e) { toast().error(e); this.saving = false; }
+        this.setData(await api(`/inquiries/${id}/convert`, { method: 'POST' }));
+        toast().show('Đã chuyển thành đơn hàng');
+      } catch (e) { toast().error(e); }
+      this.saving = false;
     },
     async update(patch) {
       this.saving = true;
@@ -591,6 +675,55 @@ document.addEventListener('alpine:init', () => {
     get detailRows() {
       const x = this.d?.details || {};
       return [['Sản phẩm quan tâm', x.product], ['Dây / mặt / phụ kiện', x.accessory], ['Loại ngọc', x.jade_type], ['Màu sắc', x.color], ['Kiểu dáng', x.style], ['Ni / số đo', x.size], ['Mệnh', x.element], ['Ngân sách', x.budget], ['Mục đích', x.purpose], ['Thời gian cần', x.deadline]].filter((r) => r[1]);
+    },
+  }));
+
+  // ---------------- Chuyển hướng & 404 ----------------
+  Alpine.data('redirectsPage', () => ({
+    ...listPage('/redirects', { auto: '' }),
+    tab: 'redirects', form: null, formError: '', saving: false, notFound: [],
+    bulk: { open: false, text: '', status: 301, errors: [] },
+    init() { this.load(); this.loadNotFound(); },
+    async loadNotFound() { try { this.notFound = (await api('/redirects/not-found')).items; } catch (e) { toast().error(e); } },
+    openForm(r) {
+      this.formError = '';
+      this.bulk.open = false;
+      this.form = r ? { ...r, active: !!r.active } : { from_path: '', to_url: '', status: 301, note: '', active: true };
+      this.tab = 'redirects';
+      this.$nextTick(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    },
+    fromNotFound(n) { this.openForm(null); this.form.from_path = n.path; },
+    async save() {
+      this.saving = true; this.formError = '';
+      try {
+        const f = this.form;
+        await api(f.id ? `/redirects/${f.id}` : '/redirects', { method: f.id ? 'PUT' : 'POST', body: f });
+        toast().show('Đã lưu chuyển hướng');
+        this.form = null;
+        this.load(); this.loadNotFound();
+      } catch (e) { this.formError = e.message; }
+      this.saving = false;
+    },
+    async toggle(r) {
+      try { await api(`/redirects/${r.id}`, { method: 'PUT', body: { ...r, active: !r.active } }); r.active = r.active ? 0 : 1; } catch (e) { toast().error(e); }
+    },
+    async remove(r) {
+      if (!(await confirmBox({ title: 'Xóa chuyển hướng?', message: `Đường dẫn ${r.from_path} sẽ không còn được chuyển hướng.`, okLabel: 'Xóa' }))) return;
+      try { await api(`/redirects/${r.id}`, { method: 'DELETE' }); toast().show('Đã xóa'); this.load(); } catch (e) { toast().error(e); }
+    },
+    async runBulk() {
+      this.saving = true; this.bulk.errors = [];
+      try {
+        const r = await api('/redirects/bulk', { method: 'POST', body: { text: this.bulk.text, status: this.bulk.status } });
+        this.bulk.errors = r.errors;
+        toast().show(`Đã thêm ${r.created}, cập nhật ${r.updated}${r.errors.length ? `, ${r.errors.length} dòng lỗi` : ''}`, r.errors.length ? 'error' : undefined);
+        if (!r.errors.length) { this.bulk.text = ''; this.bulk.open = false; }
+        this.load(); this.loadNotFound();
+      } catch (e) { toast().error(e); }
+      this.saving = false;
+    },
+    async clearNotFound(path) {
+      try { await api(`/redirects/not-found${path ? '?path=' + encodeURIComponent(path) : ''}`, { method: 'DELETE' }); this.loadNotFound(); } catch (e) { toast().error(e); }
     },
   }));
 

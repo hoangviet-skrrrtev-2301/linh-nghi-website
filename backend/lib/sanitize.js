@@ -2,11 +2,13 @@
 import sanitizeHtml from 'sanitize-html';
 
 const ALIGN = /^ql-(align|indent|size|font)-[a-z0-9-]+$/;
+const COLOR = /^#[0-9a-f]{3,8}$/i;
+const RGB = /^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(,\s*(0|1|0?\.\d+)\s*)?\)$/;
 
 const OPTIONS = {
   allowedTags: [
     'p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'a', 'ul', 'ol', 'li', 'h2', 'h3', 'h4',
-    'blockquote', 'img', 'figure', 'figcaption', 'span', 'hr', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'pre', 'code',
+    'blockquote', 'img', 'figure', 'figcaption', 'span', 'hr', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'pre', 'code', 'sub', 'sup',
   ],
   allowedAttributes: {
     a: ['href', 'target', 'rel', 'title'],
@@ -14,8 +16,12 @@ const OPTIONS = {
     li: ['data-list', 'class'],
     p: ['class'],
     h2: ['class'], h3: ['class'], h4: ['class'],
-    span: ['class'],
+    span: ['class', 'style'],
     td: ['colspan', 'rowspan'], th: ['colspan', 'rowspan'],
+  },
+  // Chỉ cho phép màu chữ / màu nền (từ bộ chọn màu của trình soạn thảo), không cho kiểu dáng khác
+  allowedStyles: {
+    span: { color: [COLOR, RGB], 'background-color': [COLOR, RGB] },
   },
   allowedClasses: { '*': [ALIGN] },
   allowedSchemes: ['http', 'https', 'mailto', 'tel'],

@@ -27,7 +27,7 @@
         {% if c.image %}
         <a href="{{ c.image.lg }}" data-pswp-width="{{ c.image.width }}" data-pswp-height="{{ c.image.height }}" data-caption="{{ c.title }}"
           class="group relative block aspect-[3/4] overflow-hidden rounded-md bg-white shadow-xl shadow-black/20 ring-1 ring-white/20">
-          <img src="{{ c.image.md }}" alt="{{ c.title }}" loading="lazy" class="h-full w-full object-cover transition duration-500 group-hover:scale-105">
+          <img src="{{ c.image.md }}" alt="{{ c.title }}" width="{{ c.image.width }}" height="{{ c.image.height }}" loading="lazy" decoding="async" class="h-full w-full object-cover transition duration-500 group-hover:scale-105">
           <span class="absolute inset-0 flex items-center justify-center bg-black/0 text-white opacity-0 transition group-hover:bg-black/30 group-hover:opacity-100">{{ icon('zoom', 'w-7 h-7') }}</span>
         </a>
         {% else %}

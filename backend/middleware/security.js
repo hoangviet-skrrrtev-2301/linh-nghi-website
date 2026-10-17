@@ -38,6 +38,12 @@ export const securityHeaders = helmet({
   hsts: config.isProd ? { maxAge: 31536000, includeSubDomains: true } : false,
 });
 
+// Tắt các quyền trình duyệt website không dùng (camera, micro, vị trí, thanh toán...)
+export function permissionsPolicy(req, res, next) {
+  res.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()');
+  next();
+}
+
 // ---------- CSRF cho trang quản trị (token lưu trong session) ----------
 export function csrf(req, res, next) {
   if (!req.session.csrf) req.session.csrf = randomToken(24);

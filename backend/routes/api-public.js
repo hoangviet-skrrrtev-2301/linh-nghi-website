@@ -16,7 +16,7 @@ router.use((req, res, next) => {
 // Ẩn giá nếu admin tắt "Hiển thị giá"
 function card(p, showPrice) {
   return {
-    id: p.id, name: p.name, slug: p.slug, sku: p.sku,
+    id: p.id, name: p.name, slug: p.slug, url: p.url, sku: p.sku,
     price: showPrice ? p.price : null,
     final_price: showPrice ? p.final_price : null,
     on_sale: showPrice && p.on_sale,
@@ -34,6 +34,8 @@ router.get('/products/:slug', (req, res, next) => {
   const p = getProduct(req.params.slug);
   if (!p) return next(new HttpError(404, 'Không tìm thấy sản phẩm'));
   const showPrice = getPublicSettings().features.show_prices;
+  // Cửa sổ xem nhanh: cho trình duyệt giữ 1 phút để mở lại tức thì, sau đó vẫn hiện nhanh trong lúc tải bản mới
+  res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
   res.json({
     ...card(p, showPrice),
     summary: p.summary,
