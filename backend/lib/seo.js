@@ -7,7 +7,7 @@ const abs = (url) => (!url ? null : /^https?:\/\//.test(url) ? url : `${config.b
 
 // page: khóa trang trong nhóm "SEO từng trang" (home, products, gallery...). Giá trị nhập ở đó được ưu tiên.
 // pagination: { page, pages, url: (n) => đường dẫn trang n } → canonical riêng từng trang, rel prev/next, hậu tố "Trang N"
-export function buildSeo(req, { page, title, description, image, type = 'website', noindex = false, jsonLd = [], canonical, pagination } = {}) {
+export function buildSeo(req, { page, title, description, image, type = 'website', noindex = false, followLinks = false, jsonLd = [], canonical, pagination } = {}) {
   const s = getPublicSettings();
   const isHome = req.path === '/';
   const ps = page ? s.seo_pages || {} : {};
@@ -47,7 +47,8 @@ export function buildSeo(req, { page, title, description, image, type = 'website
     type,
     prev: pagination && pagination.page > 1 ? abs(pagination.url(pagination.page - 1)) : null,
     next: pagination && pagination.page < pagination.pages ? abs(pagination.url(pagination.page + 1)) : null,
-    robots: noindex || !s.seo.allow_indexing ? 'noindex, nofollow' : 'index, follow, max-image-preview:large',
+    // followLinks: trang noindex nhưng vẫn cho Google đi theo các liên kết bên trong (trang chuyên mục)
+    robots: !s.seo.allow_indexing ? 'noindex, nofollow' : noindex ? (followLinks ? 'noindex, follow' : 'noindex, nofollow') : 'index, follow, max-image-preview:large',
     siteName: s.site.name,
     // Tổ chức + website có mặt ở mọi trang để các trang con tham chiếu bằng @id
     jsonLd: [...([org, { '@context': 'https://schema.org', '@type': 'WebSite', '@id': `${config.baseUrl}/#website`, name: s.site.name, url: config.baseUrl, inLanguage: 'vi', publisher: { '@id': `${config.baseUrl}/#organization` },
@@ -102,6 +103,7 @@ export function articleJsonLd(post) {
     '@type': 'BlogPosting',
     url: `${config.baseUrl}/blog/${post.slug}`,
     inLanguage: 'vi',
+    articleSection: post.category?.name,
     wordCount: stripHtml(post.content).split(' ').length,
     isPartOf: { '@type': 'Blog', name: s.pages.blog_title, url: `${config.baseUrl}/blog` },
     headline: post.title,

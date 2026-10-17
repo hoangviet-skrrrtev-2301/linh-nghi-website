@@ -1,6 +1,6 @@
 // Menu sổ dọc (dropdown): nguồn danh sách con do chủ shop chọn ở Admin › Cài đặt › Menu.
 import { listTerms } from '../services/catalog.js';
-import { listPosts } from '../services/content.js';
+import { listPosts, listPostCategories } from '../services/content.js';
 
 export const NAV_TERM_PARAM = { jade_type: 'loai', color: 'mau', style: 'kieu', element: 'menh' };
 
@@ -21,6 +21,7 @@ export function navChildren(item, { jadeTypes = [], limit = 8 } = {}) {
   const kind = dropdownOf(item);
   if (kind === 'none') return [];
   if (kind === 'custom') return customLinks(item.dropdown_custom);
+  if (kind === 'blog_category') return listPostCategories({ activeOnly: true }).map((c) => ({ label: c.name, url: `/blog/chuyen-muc/${c.slug}` }));
   if (kind === 'posts') return listPosts({ perPage: limit }).items.map((p) => ({ label: p.title, url: `/blog/${p.slug}` }));
   const param = NAV_TERM_PARAM[kind];
   if (!param) return [];

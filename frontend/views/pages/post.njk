@@ -4,7 +4,8 @@
   <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-14">
     <article class="min-w-0">
       <header>
-        <nav class="text-xs text-muted" aria-label="Breadcrumb"><a href="/" class="hover:text-primary">Trang chủ</a><span class="mx-1.5">/</span><a href="/blog" class="hover:text-primary">Blog</a></nav>
+        <nav class="text-xs text-muted" aria-label="Breadcrumb"><a href="/" class="hover:text-primary">Trang chủ</a><span class="mx-1.5">/</span><a href="/blog" class="hover:text-primary">Blog</a>{% if category %}<span class="mx-1.5">/</span><a href="/blog/chuyen-muc/{{ category.slug }}" class="hover:text-primary">{{ category.name }}</a>{% endif %}</nav>
+        {% if category %}<a href="/blog/chuyen-muc/{{ category.slug }}" class="eyebrow mt-5 inline-block hover:underline">{{ category.name }}</a>{% endif %}
         <h1 class="mt-4 text-balance text-3xl font-medium leading-tight md:text-5xl">{{ post.title }}</h1>
         <p class="mt-4 text-sm text-muted">{{ post.published_at | date }}{% if post.author %} · {{ post.author }}{% endif %} · {{ post.reading_minutes }} phút đọc</p>
       </header>

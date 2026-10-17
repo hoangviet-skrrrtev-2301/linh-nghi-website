@@ -28,6 +28,14 @@
           <button type="button" class="btn btn-secondary w-full" :disabled="saving" @click="save(false)" x-text="form.status === 'published' ? 'Chuyển về nháp' : 'Lưu nháp'"></button>
           <a x-show="id && form.status === 'published'" :href="'/blog/' + form.slug" target="_blank" class="btn btn-ghost w-full">{{ icon('eye', 'w-4 h-4') }} Xem bài</a>
         </div>
+        <div class="card card-body space-y-2">
+          <label class="label">Chuyên mục</label>
+          <select class="input" x-model="form.category_id">
+            <option value="">Chưa phân loại</option>
+            <template x-for="c in categories" :key="c.id"><option :value="c.id" x-text="c.name" :selected="String(c.id) === String(form.category_id)"></option></template>
+          </select>
+          <div class="flex gap-1.5"><input class="input" x-model="newCat" placeholder="Hoặc tạo chuyên mục mới..." maxlength="80" @keydown.enter.prevent="addCategory()"><button type="button" class="btn btn-secondary" :disabled="addingCat || !newCat.trim()" @click="addCategory()">Thêm</button></div>
+        </div>
         <div class="card card-body"><label class="label">Ảnh bìa</label>{{ imageField('form.cover_media_id', 'form.cover') }}</div>
       </aside>
     </form>

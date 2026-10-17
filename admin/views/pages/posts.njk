@@ -7,17 +7,55 @@
   <div class="mb-5 flex flex-wrap items-center gap-3">
     <input type="search" class="input max-w-xs" placeholder="Tìm bài viết..." x-model="filters.q" @input.debounce.400ms="search()">
     <select class="input !w-auto" x-model="filters.status" @change="search()"><option value="">Tất cả</option><option value="published">Đã đăng</option><option value="draft">Nháp</option></select>
+    <select class="input !w-auto" x-model="filters.category" @change="search()" aria-label="Lọc theo chuyên mục">
+      <option value="">Mọi chuyên mục</option><option value="none">Chưa phân loại</option>
+      <template x-for="c in categories" :key="c.id"><option :value="c.id" x-text="c.name + ' (' + c.total_count + ')'"></option></template>
+    </select>
+    <button type="button" class="btn btn-secondary" @click="catOpen = !catOpen" :aria-expanded="catOpen">{{ icon('tag', 'w-4 h-4') }} Quản lý chuyên mục</button>
     <span class="text-xs text-slate-500">Bật/tắt trang Blog tại <a href="{{ A }}/settings/features" class="text-brand-600 underline">Cài đặt › Bật/tắt tính năng</a></span>
     <a href="{{ A }}/posts/new" class="btn btn-primary ml-auto">{{ icon('plus', 'w-4 h-4') }} Viết bài mới</a>
   </div>
+  {# Quản lý chuyên mục: thêm / sửa / xóa ngay tại trang Blog #}
+  <div x-cloak x-show="catOpen" x-collapse class="mb-5">
+    <div class="card">
+      <div class="card-head">
+        <div><h2 class="card-title">Chuyên mục blog</h2><p class="mt-0.5 text-xs text-slate-500">Trang chuyên mục trên website tự được đặt “không lập chỉ mục” (noindex) để tránh trùng nội dung với bài viết; bài viết vẫn được Google lập chỉ mục bình thường.</p></div>
+        <button type="button" class="btn btn-primary btn-sm" @click="openCat(null)">{{ icon('plus', 'w-3.5 h-3.5') }} Thêm chuyên mục</button>
+      </div>
+      <form x-show="catForm" x-cloak @submit.prevent="saveCat()" class="grid gap-4 border-b border-slate-100 bg-slate-50/60 p-5 md:grid-cols-2">
+        <template x-if="catForm">
+          <div class="contents">
+            <div><label class="label">Tên chuyên mục *</label><input class="input" x-model="catForm.name" required maxlength="80"></div>
+            <div><label class="label">Đường dẫn (slug)</label><input class="input" x-model="catForm.slug" placeholder="Tự tạo từ tên"><p class="help">Trang chuyên mục: /blog/chuyen-muc/<span x-text="catForm.slug || '...'"></span></p></div>
+            <div class="md:col-span-2"><label class="label">Mô tả ngắn (hiện ở đầu trang chuyên mục)</label><textarea class="input" rows="2" x-model="catForm.description" maxlength="400"></textarea></div>
+            <div><label class="label">Thứ tự hiển thị</label><input type="number" class="input" x-model.number="catForm.sort_order"></div>
+            <label class="flex items-center gap-2 self-end pb-2 text-sm"><input type="checkbox" class="h-4 w-4 accent-brand-600" x-model="catForm.active"> Hiển thị trên website</label>
+            <div class="flex gap-2 md:col-span-2"><button class="btn btn-primary" :disabled="catSaving">Lưu chuyên mục</button><button type="button" class="btn btn-ghost" @click="catForm = null">Hủy</button></div>
+          </div>
+        </template>
+      </form>
+      <ul class="divide-y divide-slate-100">
+        <template x-for="c in categories" :key="c.id">
+          <li class="flex flex-wrap items-center gap-3 px-5 py-3">
+            <div class="min-w-0 flex-1"><p class="font-medium" :class="!c.active && 'text-slate-400'" x-text="c.name"></p><p class="text-xs text-slate-500" x-text="'/blog/chuyen-muc/' + c.slug + ' · ' + c.post_count + ' bài đã đăng' + (c.active ? '' : ' · đang ẩn')"></p></div>
+            <button class="btn btn-ghost btn-sm" @click="openCat(c)" title="Sửa">{{ icon('edit', 'w-4 h-4') }}</button>
+            <button class="btn btn-ghost btn-sm text-red-600" @click="removeCat(c)" title="Xóa">{{ icon('trash', 'w-4 h-4') }}</button>
+          </li>
+        </template>
+        <li x-show="!categories.length" class="px-5 py-8 text-center text-sm text-slate-500">Chưa có chuyên mục. Bấm “Thêm chuyên mục” để tạo (ví dụ: Kiến thức ngọc, Phong thủy, Chăm sóc vòng).</li>
+      </ul>
+    </div>
+  </div>
+
   <div class="card overflow-hidden">
     <table class="table table-stack">
-      <thead><tr><th class="w-20"></th><th class="stack-title">Tiêu đề</th><th>Trạng thái</th><th>Ngày đăng</th><th class="w-24"></th></tr></thead>
+      <thead><tr><th class="w-20"></th><th class="stack-title">Tiêu đề</th><th>Chuyên mục</th><th>Trạng thái</th><th>Ngày đăng</th><th class="w-24"></th></tr></thead>
       <tbody>
         <template x-for="p in items" :key="p.id">
           <tr>
             <td><img :src="p.cover?.sm" class="h-12 w-16 rounded-lg bg-slate-100 object-cover" alt=""></td>
             <td><a :href="'{{ A }}/posts/' + p.id" class="font-medium hover:text-brand-600" x-text="p.title"></a><p class="line-clamp-1 text-xs text-slate-500" x-text="p.summary"></p></td>
+            <td x-text="p.category?.name || '—'" class="text-slate-500"></td>
             <td><span class="badge" :class="p.status === 'published' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'" x-text="p.status === 'published' ? 'Đã đăng' : 'Nháp'"></span></td>
             <td class="text-slate-500" x-text="$fmt.date(p.published_at, false)"></td>
             <td class="whitespace-nowrap text-right">
@@ -26,7 +64,7 @@
             </td>
           </tr>
         </template>
-        <tr x-show="!loading && !items.length"><td colspan="5" class="py-14 text-center text-slate-500">Chưa có bài viết.</td></tr>
+        <tr x-show="!loading && !items.length"><td colspan="6" class="py-14 text-center text-slate-500">Chưa có bài viết.</td></tr>
       </tbody>
     </table>
     {% include "partials/pager.njk" %}

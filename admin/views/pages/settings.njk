@@ -50,26 +50,40 @@
               <div class="md:col-span-2">
                 <div class="mb-2 flex items-center justify-between">
                   <label class="label !mb-0">{{ f.label }}</label>
+                  {% if f.collapsible %}<span class="ml-auto mr-2 flex gap-1"><button type="button" class="btn btn-ghost btn-sm" @click="toggleItems('{{ f.name }}', true)">Mở tất cả</button><button type="button" class="btn btn-ghost btn-sm" @click="toggleItems('{{ f.name }}', false)">Thu gọn</button></span>{% endif %}
                   {% if not f.fixed %}<button type="button" class="btn btn-secondary btn-sm" @click="addItem('{{ f.name }}', {{ f.fields | blankItem | attrjson }})">{{ icon('plus', 'w-3.5 h-3.5') }} Thêm</button>{% endif %}
                 </div>
                 <div class="space-y-3">
                   <template x-for="(item, i) in values.{{ f.name }}" :key="i">
                     <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4" :class="{% if f.fixed %}item.enabled === false && 'opacity-60'{% else %}''{% endif %}">
-                      <div class="mb-3 flex items-center gap-2 text-xs text-slate-500">
+                      <div class="flex items-center gap-2 text-xs text-slate-500 {{ '' if f.collapsible else 'mb-3' }}">
+                        {% if f.collapsible %}
+                        {# Danh sách nhiều mục: bấm tên mục để mở / thu gọn nội dung #}
+                        <button type="button" class="flex min-w-0 flex-1 items-center gap-2 text-left" @click="toggleItem('{{ f.name }}', i)" :aria-expanded="itemOpen('{{ f.name }}', i)">
+                          <span class="font-semibold" x-text="'#' + (i + 1)"></span>
+                          <span class="truncate text-sm font-semibold text-slate-800" x-text="item.{{ f.itemTitle or 'label' }} || 'Chưa đặt tên'"></span>
+                          {% if f.fixed %}<span class="badge shrink-0" :class="item.enabled === false ? 'bg-slate-100 text-slate-500' : 'bg-emerald-50 text-emerald-700'" x-text="item.enabled === false ? 'Đang ẩn' : 'Đang hiện'"></span>
+                          <span class="badge shrink-0 bg-violet-50 text-violet-700" x-show="item.bg_mode && item.bg_mode !== 'none'">Có nền riêng</span>{% endif %}
+                          <span class="ml-auto shrink-0 text-slate-400 transition-transform duration-200" :class="itemOpen('{{ f.name }}', i) && 'rotate-180'">{{ icon('chevron-down', 'w-4 h-4') }}</span>
+                        </button>
+                        {% else %}
                         <span class="font-semibold" x-text="'#' + (i + 1)"></span>
                         {% if f.fixed %}<span class="text-sm font-semibold text-slate-800" x-text="item.label"></span>{% endif %}
                         <span class="ml-auto"></span>
+                        {% endif %}
                         <button type="button" class="btn btn-ghost btn-sm" @click="move('{{ f.name }}', i, -1)" :disabled="i === 0">↑</button>
                         <button type="button" class="btn btn-ghost btn-sm" @click="move('{{ f.name }}', i, 1)" :disabled="i === values.{{ f.name }}.length - 1">↓</button>
                         {% if not f.fixed %}<button type="button" class="btn btn-ghost btn-sm text-red-600" @click="removeItem('{{ f.name }}', i)">{{ icon('trash', 'w-3.5 h-3.5') }}</button>{% endif %}
                       </div>
-                      <div class="grid gap-4 {{ 'md:grid-cols-2' if f.fields.length > 1 }} {{ 'lg:grid-cols-4' if f.fields.length == 4 and (f.fields | allText) }}">
+                      <div {% if f.collapsible %}x-cloak x-show="itemOpen('{{ f.name }}', i)" x-collapse{% endif %}>
+                      <div class="grid gap-4 {{ 'mt-3' if f.collapsible }} {{ 'md:grid-cols-2' if f.fields.length > 1 }} {{ 'lg:grid-cols-4' if f.fields.length == 4 and (f.fields | allText) }}">
                         {% for sub in f.fields %}{% if not sub.hidden %}
                         <div class="{{ 'md:col-span-2 lg:col-span-full' if sub.type in ['richtext', 'textarea'] }}"
                           {% if sub.showIf %}x-show="{{ sub.showIf }}"{% elif sub.noBgFor %}x-show="!{{ sub.noBgFor | attrjson }}.includes(item.key)"{% endif %}>
                           {{ schemaField(sub, 'item.' + sub.name, 'media[item.' + sub.name + ']') }}
                         </div>
                         {% endif %}{% endfor %}
+                      </div>
                       </div>
                     </div>
                   </template>

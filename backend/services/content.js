@@ -8,8 +8,10 @@ import { getMediaMap } from './media.js';
 function hydratePosts(rows) {
   const media = getMediaMap(rows.map((r) => r.cover_media_id));
   const authors = Object.fromEntries(db.prepare('SELECT id, name FROM users').all().map((u) => [u.id, u.name]));
+  const cats = Object.fromEntries(db.prepare('SELECT id, name, slug, active FROM post_categories').all().map((x) => [x.id, x]));
   return rows.map((r) => ({
     ...r,
+    category: cats[r.category_id] || null,
     cover: media[r.cover_media_id] || null,
     author: authors[r.author_id] || '',
     summary: r.excerpt || truncate(stripHtml(r.content), 180),
@@ -17,12 +19,14 @@ function hydratePosts(rows) {
   }));
 }
 
-export function listPosts({ page = 1, perPage = 9, includeDrafts = false, q, status } = {}) {
+export function listPosts({ page = 1, perPage = 9, includeDrafts = false, q, status, categoryId } = {}) {
   const where = [];
   const params = [];
   if (!includeDrafts) where.push(`status = 'published' AND published_at <= datetime('now')`);
   else if (status) { where.push('status = ?'); params.push(status); }
   if (q) { where.push('(title LIKE ? OR excerpt LIKE ?)'); params.push(`%${q}%`, `%${q}%`); }
+  if (categoryId === 'none') where.push('category_id IS NULL');
+  else if (categoryId) { where.push('category_id = ?'); params.push(Number(categoryId)); }
   const sql = where.length ? `WHERE ${where.join(' AND ')}` : '';
   const total = db.prepare(`SELECT COUNT(*) FROM posts ${sql}`).pluck().get(...params);
   const pages = Math.max(1, Math.ceil(total / perPage));
@@ -61,24 +65,59 @@ export function savePost(id, data, userId) {
     excerpt: cleanText(data.excerpt, 600),
     content: cleanHtml(data.content),
     cover_media_id: toInt(data.cover_media_id),
+    category_id: db.prepare('SELECT id FROM post_categories WHERE id = ?').pluck().get(toInt(data.category_id)) || null,
     published_at: publishedAt,
     seo_title: cleanText(data.seo_title, 200),
     seo_description: cleanText(data.seo_description, 400),
   };
   if (id) {
     const res = db.prepare(`UPDATE posts SET title=@title, slug=@slug, status=@status, excerpt=@excerpt, content=@content,
-      cover_media_id=@cover_media_id, published_at=@published_at, seo_title=@seo_title, seo_description=@seo_description,
+      cover_media_id=@cover_media_id, category_id=@category_id, published_at=@published_at, seo_title=@seo_title, seo_description=@seo_description,
       updated_at=datetime('now') WHERE id=@id`).run({ ...v, id });
     if (!res.changes) throw new HttpError(404, 'Không tìm thấy bài viết');
     return id;
   }
-  return db.prepare(`INSERT INTO posts (title, slug, status, excerpt, content, cover_media_id, published_at, seo_title, seo_description, author_id)
-    VALUES (@title, @slug, @status, @excerpt, @content, @cover_media_id, @published_at, @seo_title, @seo_description, @author_id)`)
+  return db.prepare(`INSERT INTO posts (title, slug, status, excerpt, content, cover_media_id, category_id, published_at, seo_title, seo_description, author_id)
+    VALUES (@title, @slug, @status, @excerpt, @content, @cover_media_id, @category_id, @published_at, @seo_title, @seo_description, @author_id)`)
     .run({ ...v, author_id: userId }).lastInsertRowid;
 }
 
 export function deletePost(id) {
   db.prepare('DELETE FROM posts WHERE id = ?').run(id);
+}
+
+// ---------------- Chuyên mục blog ----------------
+// postCount: số bài đã đăng (công khai) trong chuyên mục; adminCount: tính cả nháp
+export function listPostCategories({ activeOnly = false } = {}) {
+  return db.prepare(`SELECT c.*,
+      (SELECT COUNT(*) FROM posts p WHERE p.category_id = c.id AND p.status = 'published' AND p.published_at <= datetime('now')) AS post_count,
+      (SELECT COUNT(*) FROM posts p WHERE p.category_id = c.id) AS total_count
+    FROM post_categories c ${activeOnly ? 'WHERE c.active = 1' : ''} ORDER BY c.sort_order, c.name`).all();
+}
+
+export function getPostCategory(slug) {
+  return db.prepare('SELECT * FROM post_categories WHERE slug = ? AND active = 1').get(slug) || null;
+}
+
+export function savePostCategory(id, data) {
+  const name = cleanText(data.name, 80);
+  if (!name) throw new HttpError(400, 'Vui lòng nhập tên chuyên mục');
+  const base = slugify(data.slug || name) || 'chuyen-muc';
+  let slug = base;
+  let i = 2;
+  while (db.prepare('SELECT 1 FROM post_categories WHERE slug = ? AND id != ?').get(slug, id || 0)) slug = `${base}-${i++}`;
+  const v = { name, slug, description: cleanText(data.description, 400), sort_order: toInt(data.sort_order, 0), active: bool(data.active ?? true) ? 1 : 0 };
+  if (id) {
+    const res = db.prepare('UPDATE post_categories SET name=@name, slug=@slug, description=@description, sort_order=@sort_order, active=@active WHERE id=@id').run({ ...v, id });
+    if (!res.changes) throw new HttpError(404, 'Không tìm thấy chuyên mục');
+    return id;
+  }
+  return db.prepare('INSERT INTO post_categories (name, slug, description, sort_order, active) VALUES (@name, @slug, @description, @sort_order, @active)').run(v).lastInsertRowid;
+}
+
+// Xóa chuyên mục: các bài thuộc chuyên mục đó chuyển về "chưa phân loại" (không bị xóa)
+export function deletePostCategory(id) {
+  db.prepare('DELETE FROM post_categories WHERE id = ?').run(id);
 }
 
 // ---------------- Gallery ----------------

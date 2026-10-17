@@ -151,7 +151,7 @@ export const SETTINGS_SCHEMA = [
             options: [
               { value: 'none', label: 'Không có' }, { value: 'jade_type', label: 'Theo loại ngọc' }, { value: 'color', label: 'Theo màu sắc' },
               { value: 'style', label: 'Theo kiểu dáng' }, { value: 'element', label: 'Theo mệnh phong thủy' },
-              { value: 'posts', label: 'Bài viết blog mới nhất' }, { value: 'custom', label: 'Tự nhập danh sách' },
+              { value: 'blog_category', label: 'Chuyên mục blog' }, { value: 'posts', label: 'Bài viết blog mới nhất' }, { value: 'custom', label: 'Tự nhập danh sách' },
             ],
           },
           { name: 'dropdown_custom', label: 'Danh sách tự nhập (mỗi dòng: Tên | /đường-dẫn)', type: 'textarea', showIf: "item.dropdown == 'custom'" },
@@ -188,7 +188,7 @@ export const SETTINGS_SCHEMA = [
     ],
     fields: [
       {
-        name: 'hero_slides', section: 'banner', label: 'Banner đầu trang (slide)', type: 'list',
+        name: 'hero_slides', section: 'banner', collapsible: true, itemTitle: 'title', label: 'Banner đầu trang (slide)', type: 'list',
         fields: [
           { name: 'image', label: 'Ảnh (ngang, tối thiểu 1920px)', type: 'image' },
           { name: 'eyebrow', label: 'Dòng chữ nhỏ phía trên', type: 'text' },
@@ -202,7 +202,7 @@ export const SETTINGS_SCHEMA = [
         ],
       },
       {
-        name: 'info_blocks', section: 'info', label: 'Khối thông tin nổi bật (bấm vào để xem chi tiết)', type: 'list',
+        name: 'info_blocks', section: 'info', collapsible: true, itemTitle: 'title', label: 'Khối thông tin nổi bật (bấm vào để xem chi tiết)', type: 'list',
         fields: [
           { name: 'icon', label: 'Biểu tượng', type: 'select', options: ['gem', 'shield', 'ruler', 'truck', 'gift', 'sparkle', 'heart', 'leaf'].map((v) => ({ value: v, label: v })) },
           { name: 'title', label: 'Tiêu đề', type: 'text' },
@@ -229,7 +229,7 @@ export const SETTINGS_SCHEMA = [
         ],
       },
       {
-        name: 'cert_items', section: 'certs', label: 'Mẫu giấy kiểm định (trung tâm uy tín)', type: 'list',
+        name: 'cert_items', section: 'certs', collapsible: true, itemTitle: 'title', label: 'Mẫu giấy kiểm định (trung tâm uy tín)', type: 'list',
         fields: [
           { name: 'image', label: 'Ảnh giấy kiểm định', type: 'image' },
           { name: 'title', label: 'Tên trung tâm', type: 'text' },
@@ -247,7 +247,7 @@ export const SETTINGS_SCHEMA = [
       { name: 'fengshui_subtitle', section: 'fengshui', label: 'Mô tả khối phong thủy', type: 'textarea', default: 'Từ ngàn xưa, ngọc được xem là vật phẩm mang lại bình an, sức khỏe và may mắn cho người đeo.' },
       { name: 'fengshui_image', section: 'fengshui', label: 'Ảnh khối phong thủy', type: 'image' },
       {
-        name: 'fengshui_items', section: 'fengshui', label: 'Các ý nghĩa', type: 'list',
+        name: 'fengshui_items', section: 'fengshui', collapsible: true, itemTitle: 'title', label: 'Các ý nghĩa', type: 'list',
         fields: [
           { name: 'title', label: 'Tiêu đề', type: 'text' },
           { name: 'content', label: 'Nội dung', type: 'textarea' },
@@ -274,7 +274,7 @@ export const SETTINGS_SCHEMA = [
       { name: 'gallery_scroll_seconds', section: 'gallery', label: 'Thời gian lướt hết một vòng (giây)', type: 'number', default: 45, help: 'Số càng lớn thì lướt càng chậm.' },
       { name: 'show_blog', section: 'blog', label: 'Hiện khối bài viết mới trên trang chủ', type: 'toggle', default: true },
       {
-        name: 'testimonials', section: 'testimonials', label: 'Cảm nhận khách hàng', type: 'list',
+        name: 'testimonials', section: 'testimonials', collapsible: true, itemTitle: 'name', label: 'Cảm nhận khách hàng', type: 'list',
         fields: [
           { name: 'name', label: 'Tên khách', type: 'text' },
           { name: 'content', label: 'Nội dung', type: 'textarea' },
@@ -290,7 +290,7 @@ export const SETTINGS_SCHEMA = [
     description: 'Bật/tắt, đổi thứ tự (↑ ↓) và đổi nền cho từng khối của trang chủ. Nội dung chữ, ảnh của mỗi khối sửa ở nhóm "Trang chủ".',
     fields: [
       {
-        name: 'sections', label: 'Các khối trang chủ (từ trên xuống dưới)', type: 'list', fixed: true,
+        name: 'sections', label: 'Các khối trang chủ (từ trên xuống dưới)', type: 'list', fixed: true, collapsible: true,
         default: HOME_SECTIONS.map((x) => ({
           key: x.key, label: x.label, enabled: true, bg_mode: 'none', bg_color: '#f1ece1', bg_pattern: 'dots', bg_pattern_color: '#2e6b94',
           bg_pattern_strength: 18, bg_image: null, bg_overlay: 35, bg_overlay_color: '#000000', text_tone: 'auto',
@@ -482,14 +482,19 @@ export const SETTINGS_SCHEMA = [
   },
   {
     key: 'pages',
-    label: 'Tiêu đề các trang',
-    description: 'Tiêu đề, mô tả và SEO cho trang Sản phẩm, Gallery, Blog.',
+    label: 'Trang Sản phẩm / Gallery / Blog',
+    description: 'Nội dung hiển thị và cách hoạt động của 3 trang danh sách. Tiêu đề và mô tả ở đây hiện ngay đầu trang. Cách trang hiện trên Google / Facebook chỉnh riêng ở nhóm "SEO Google & chia sẻ".',
+    sections: [
+      { key: 'products', label: 'Trang Sản phẩm', hint: 'Tiêu đề, số sản phẩm mỗi trang, khoảng giá, nhãn Mới, hướng dẫn bảo quản' },
+      { key: 'gallery', label: 'Trang Gallery', hint: 'Tiêu đề và mô tả' },
+      { key: 'blog', label: 'Trang Blog', hint: 'Tiêu đề, phân trang, mục lục, gợi ý bài viết, banner dọc' },
+    ],
     fields: [
-      { name: 'products_title', label: 'Tiêu đề trang Sản phẩm', type: 'text', default: 'Tất cả sản phẩm' },
-      { name: 'products_intro', label: 'Mô tả trang Sản phẩm', type: 'textarea', default: 'Vòng ngọc tự nhiên được tuyển chọn, đầy đủ chứng chỉ kiểm định.' },
-      { name: 'products_per_page', label: 'Số sản phẩm mỗi trang', type: 'number', default: 12 },
+      { name: 'products_title', section: 'products', label: 'Tiêu đề trang Sản phẩm', type: 'text', default: 'Tất cả sản phẩm', help: 'Hiện ở đầu trang và cũng là tiêu đề trên Google, trừ khi bạn nhập tiêu đề riêng ở "SEO Google & chia sẻ".' },
+      { name: 'products_intro', section: 'products', label: 'Mô tả ngắn trang Sản phẩm', type: 'textarea', default: 'Vòng ngọc tự nhiên được tuyển chọn, đầy đủ chứng chỉ kiểm định.' },
+      { name: 'products_per_page', section: 'products', label: 'Số sản phẩm mỗi trang', type: 'number', default: 12 },
       {
-        name: 'price_ranges', label: 'Khoảng giá trong bộ lọc', type: 'list',
+        name: 'price_ranges', section: 'products', label: 'Khoảng giá trong bộ lọc', type: 'list',
         fields: [
           { name: 'label', label: 'Tên hiển thị', type: 'text' },
           { name: 'min', label: 'Từ (VNĐ, để trống = 0)', type: 'number' },
@@ -502,21 +507,23 @@ export const SETTINGS_SCHEMA = [
           { label: 'Trên 15 triệu', min: 15000000, max: 0 },
         ],
       },
-      { name: 'new_days', label: 'Tự gắn nhãn "Mới" cho sản phẩm đăng trong vòng (ngày)', type: 'number', default: 30, help: 'Đặt 0 để chỉ dùng ô "Sản phẩm mới" trong từng sản phẩm' },
-      { name: 'product_care', label: 'Hướng dẫn bảo quản (hiện ở mọi trang chi tiết sản phẩm)', type: 'richtext', default: '<ul><li>Tránh va đập mạnh, tháo vòng khi chơi thể thao hoặc làm việc nặng.</li><li>Không để vòng tiếp xúc với hóa chất, nước hoa, chất tẩy rửa.</li><li>Lau bằng khăn mềm và nước sạch, để khô tự nhiên.</li><li>Cất riêng trong túi nhung khi không đeo.</li></ul>' },
-      { name: 'gallery_title', label: 'Tiêu đề trang Gallery', type: 'text', default: 'Gallery' },
-      { name: 'gallery_intro', label: 'Mô tả trang Gallery', type: 'textarea', default: 'Những mẫu vòng đã đồng hành cùng khách hàng của shop.' },
-      { name: 'blog_title', label: 'Tiêu đề trang Blog', type: 'text', default: 'Góc chia sẻ' },
-      { name: 'blog_intro', label: 'Mô tả trang Blog', type: 'textarea', default: 'Kiến thức về ngọc, cách chọn và bảo quản vòng.' },
-      { name: 'blog_per_page', label: 'Số bài viết mỗi trang Blog', type: 'number', default: 9 },
-      { name: 'blog_show_toc', label: 'Hiện mục lục trong bài viết', type: 'toggle', default: true, help: 'Mục lục tự tạo từ các tiêu đề H2, H3 trong bài.' },
-      { name: 'blog_toc_title', label: 'Tiêu đề khối mục lục', type: 'text', default: 'Mục lục' },
-      { name: 'blog_related_title', label: 'Tiêu đề khối gợi ý bài viết', type: 'text', default: 'Bài viết gợi ý' },
-      { name: 'blog_related_count', label: 'Số bài viết gợi ý ở cột phải', type: 'number', default: 4 },
-      { name: 'blog_banner_show', label: 'Hiện banner dọc ở cột phải blog', type: 'toggle', default: true, help: 'Chỉ hiện khi đã tải ảnh banner bên dưới.' },
-      { name: 'blog_banner', label: 'Ảnh banner dọc', type: 'image', help: 'Ảnh dọc, tỉ lệ khoảng 3:5 (ví dụ 600×1000px).' },
-      { name: 'blog_banner_url', label: 'Link khi bấm vào banner', type: 'url', help: 'Để trống nếu banner chỉ để xem.' },
-      { name: 'blog_banner_alt', label: 'Mô tả ảnh banner (cho người khiếm thị và SEO)', type: 'text' },
+      { name: 'new_days', section: 'products', label: 'Tự gắn nhãn "Mới" cho sản phẩm đăng trong vòng (ngày)', type: 'number', default: 30, help: 'Đặt 0 để chỉ dùng ô "Sản phẩm mới" trong từng sản phẩm' },
+      { name: 'product_care', section: 'products', label: 'Hướng dẫn bảo quản (hiện ở mọi trang chi tiết sản phẩm)', type: 'richtext', default: '<ul><li>Tránh va đập mạnh, tháo vòng khi chơi thể thao hoặc làm việc nặng.</li><li>Không để vòng tiếp xúc với hóa chất, nước hoa, chất tẩy rửa.</li><li>Lau bằng khăn mềm và nước sạch, để khô tự nhiên.</li><li>Cất riêng trong túi nhung khi không đeo.</li></ul>' },
+      { name: 'gallery_title', section: 'gallery', label: 'Tiêu đề trang Gallery', type: 'text', default: 'Gallery', help: 'Hiện ở đầu trang và cũng là tiêu đề trên Google, trừ khi bạn nhập tiêu đề riêng ở "SEO Google & chia sẻ".' },
+      { name: 'gallery_intro', section: 'gallery', label: 'Mô tả ngắn trang Gallery', type: 'textarea', default: 'Những mẫu vòng đã đồng hành cùng khách hàng của shop.' },
+      { name: 'blog_title', section: 'blog', label: 'Tiêu đề trang Blog', type: 'text', default: 'Góc chia sẻ', help: 'Hiện ở đầu trang và cũng là tiêu đề trên Google, trừ khi bạn nhập tiêu đề riêng ở "SEO Google & chia sẻ".' },
+      { name: 'blog_intro', section: 'blog', label: 'Mô tả ngắn trang Blog', type: 'textarea', default: 'Kiến thức về ngọc, cách chọn và bảo quản vòng.' },
+      { name: 'blog_per_page', section: 'blog', label: 'Số bài viết mỗi trang Blog', type: 'number', default: 9 },
+      { name: 'blog_categories_title', section: 'blog', label: 'Tiêu đề khối chuyên mục ở cột phải', type: 'text', default: 'Chuyên mục' },
+      { name: 'blog_category_noindex', section: 'blog', label: 'Không cho Google lập chỉ mục các trang chuyên mục (noindex)', type: 'toggle', default: true, help: 'Nên bật khi viết bài SEO nhiều chủ đề: trang chuyên mục chỉ là danh sách, Google vẫn lập chỉ mục từng bài viết bình thường. Trang chuyên mục cũng không có trong sitemap.' },
+      { name: 'blog_show_toc', section: 'blog', label: 'Hiện mục lục trong bài viết', type: 'toggle', default: true, help: 'Mục lục tự tạo từ các tiêu đề H2, H3 trong bài.' },
+      { name: 'blog_toc_title', section: 'blog', label: 'Tiêu đề khối mục lục', type: 'text', default: 'Mục lục' },
+      { name: 'blog_related_title', section: 'blog', label: 'Tiêu đề khối gợi ý bài viết', type: 'text', default: 'Bài viết gợi ý' },
+      { name: 'blog_related_count', section: 'blog', label: 'Số bài viết gợi ý ở cột phải', type: 'number', default: 4 },
+      { name: 'blog_banner_show', section: 'blog', label: 'Hiện banner dọc ở cột phải blog', type: 'toggle', default: true, help: 'Chỉ hiện khi đã tải ảnh banner bên dưới.' },
+      { name: 'blog_banner', section: 'blog', label: 'Ảnh banner dọc', type: 'image', help: 'Ảnh dọc, tỉ lệ khoảng 3:5 (ví dụ 600×1000px).' },
+      { name: 'blog_banner_url', section: 'blog', label: 'Link khi bấm vào banner', type: 'url', help: 'Để trống nếu banner chỉ để xem.' },
+      { name: 'blog_banner_alt', section: 'blog', label: 'Mô tả ảnh banner (cho người khiếm thị và SEO)', type: 'text' },
     ],
   },
   {
@@ -592,15 +599,88 @@ export const SEO_PAGES = [
   ['home', 'Trang chủ'], ['products', 'Sản phẩm'], ['gallery', 'Gallery'], ['size_guide', 'Hướng dẫn size'],
   ['custom', 'Thiết kế riêng'], ['blog', 'Blog'], ['about', 'Về shop'], ['contact', 'Liên hệ'],
 ];
+// Ô tiêu đề SEO để trống thì trang lấy tiêu đề hiển thị ở nhóm nào (ghi để chủ shop biết)
+const SEO_FALLBACK = {
+  home: 'tiêu đề trang chủ ở nhóm "SEO & mã theo dõi"',
+  products: 'tiêu đề ở nhóm "Trang Sản phẩm / Gallery / Blog"',
+  gallery: 'tiêu đề ở nhóm "Trang Sản phẩm / Gallery / Blog"',
+  blog: 'tiêu đề ở nhóm "Trang Sản phẩm / Gallery / Blog"',
+  size_guide: 'tiêu đề ở nhóm "Trang Hướng dẫn size"',
+  custom: 'tiêu đề trang thiết kế riêng ở nhóm "Biểu mẫu & đặt hàng"',
+  about: 'tiêu đề ở nhóm "Trang Về shop"',
+  contact: 'tiêu đề ở nhóm "Trang Liên hệ"',
+};
 SETTINGS_SCHEMA.splice(SETTINGS_SCHEMA.findIndex((g) => g.key === 'mail'), 0, {
   key: 'seo_pages',
-  label: 'SEO từng trang',
-  description: 'Tiêu đề, mô tả, từ khóa và ảnh chia sẻ Facebook/Zalo cho từng trang. Để trống sẽ dùng giá trị mặc định. Sản phẩm và bài viết có SEO riêng trong trang sửa của chúng.',
+  label: 'SEO Google & chia sẻ',
+  description: 'Chỉ dùng khi muốn trang hiện KHÁC trên Google và khi chia sẻ Facebook/Zalo so với nội dung hiển thị trên website. Ô nào để trống thì tự lấy tiêu đề và mô tả của chính trang đó (ghi ở từng phần bên dưới). Sản phẩm và bài viết có SEO riêng trong trang sửa của chúng.',
+  sections: SEO_PAGES.map(([k, label]) => ({ key: k, label, hint: `Để trống: dùng ${SEO_FALLBACK[k]}` })),
   fields: SEO_PAGES.flatMap(([k, label]) => [
-    { name: `${k}_title`, label: `[${label}] Tiêu đề (meta title)`, type: 'text' },
-    { name: `${k}_keywords`, label: `[${label}] Từ khóa (meta keywords)`, type: 'text' },
-    { name: `${k}_description`, label: `[${label}] Mô tả (meta description)`, type: 'textarea' },
-    { name: `${k}_og_image`, label: `[${label}] Ảnh chia sẻ (Open Graph, 1200×630)`, type: 'image' },
+    { name: `${k}_title`, section: k, label: 'Tiêu đề trên Google (meta title)', type: 'text', help: `Để trống: dùng ${SEO_FALLBACK[k]}. Nên dưới 60 ký tự.` },
+    { name: `${k}_description`, section: k, label: 'Mô tả trên Google (meta description)', type: 'textarea', help: 'Để trống: dùng mô tả ngắn của trang. Nên dưới 160 ký tự.' },
+    { name: `${k}_og_image`, section: k, label: 'Ảnh khi chia sẻ Facebook/Zalo (1200×630)', type: 'image', help: 'Để trống: dùng ảnh chia sẻ mặc định ở nhóm "SEO & mã theo dõi".' },
+    { name: `${k}_keywords`, section: k, label: 'Từ khóa (meta keywords, không bắt buộc)', type: 'text', help: 'Google không dùng mục này nữa, chỉ để tham khảo.' },
   ]),
 });
+// Chia các nhóm cài đặt dài thành phần thu gọn / mở ra trong trang admin.
+// Mỗi phần: { key, label, hint, toggle (tên trường bật/tắt để hiện nhãn Đang hiện/Đang ẩn), fields: [tên trường] }.
+// Trường chưa được xếp vào phần nào sẽ báo lỗi ngay khi khởi động, để không bị lọt mất khỏi form.
+function sectionize(groupKey, defs) {
+  const group = SETTINGS_SCHEMA.find((g) => g.key === groupKey);
+  const owner = new Map(defs.flatMap((d) => d.fields.map((n) => [n, d.key])));
+  const missing = group.fields.map((f) => f.name).filter((n) => !owner.has(n));
+  if (missing.length) throw new Error('sectionize(' + groupKey + '): chưa xếp trường ' + missing.join(', ') + ' vào phần nào');
+  group.sections = defs.map(({ fields, ...rest }) => rest);
+  for (const f of group.fields) f.section = owner.get(f.name);
+}
+
+sectionize('site', [
+  { key: 'basic', label: 'Thông tin cơ bản', hint: 'Tên shop, slogan, logo, favicon', fields: ['name', 'slogan', 'logo', 'logo_light', 'favicon'] },
+  { key: 'contact', label: 'Liên hệ & địa chỉ', hint: 'Điện thoại, Zalo, email, địa chỉ, giờ làm việc, bản đồ', fields: ['phone', 'zalo', 'email', 'address', 'working_hours', 'map_embed_url'] },
+  { key: 'social', label: 'Mạng xã hội & sàn', hint: 'Facebook, Instagram, Threads, TikTok, YouTube, Shopee', fields: ['facebook', 'instagram', 'threads', 'tiktok', 'youtube', 'shopee'] },
+  { key: 'footer', label: 'Chân trang', hint: 'Ảnh Bộ Công Thương, đoạn giới thiệu, bản quyền', fields: ['bct_image', 'bct_url', 'footer_text', 'copyright'] },
+]);
+
+sectionize('theme', [
+  { key: 'colors', label: 'Màu sắc (giao diện sáng)', hint: 'Màu chủ đạo, màu nhấn, nền, chữ, viền', fields: ['color_primary', 'color_primary_contrast', 'color_accent', 'color_bg', 'color_surface', 'color_text', 'color_muted', 'color_border', 'color_footer_bg'] },
+  { key: 'dark', label: 'Chế độ tối', hint: 'Bật/tắt và bộ màu riêng cho giao diện tối', fields: ['dark_mode', 'dark_color_primary', 'dark_color_primary_contrast', 'dark_color_accent', 'dark_color_bg', 'dark_color_surface', 'dark_color_text', 'dark_color_muted', 'dark_color_border', 'dark_color_footer_bg'] },
+  { key: 'fonts', label: 'Font chữ & bo góc', hint: 'Font tiêu đề, font nội dung, độ bo góc', fields: ['font_heading', 'font_body', 'radius'] },
+  { key: 'products', label: 'Thẻ sản phẩm & hiệu ứng', hint: 'Số cột, khung viền, hiệu ứng khi cuộn', fields: ['product_grid', 'product_frame', 'enable_animations'] },
+  { key: 'css', label: 'CSS tùy chỉnh (nâng cao)', hint: 'Dành cho người biết CSS', fields: ['custom_css'] },
+]);
+
+sectionize('features', [
+  { key: 'pages', label: 'Bật/tắt trang và tính năng', hint: 'Đặt hàng, custom, Blog, Gallery, Hướng dẫn size, hiện giá, nút liên hệ nổi', fields: ['checkout', 'custom_request', 'blog', 'gallery', 'size_guide', 'show_prices', 'floating_contact'] },
+  { key: 'popup', label: 'Popup chào mừng', hint: 'Nội dung và thời điểm hiện popup khi khách vào trang', toggle: 'welcome_popup', fields: ['welcome_popup', 'welcome_popup_title', 'welcome_popup_content', 'welcome_popup_image', 'welcome_popup_delay'] },
+  { key: 'announce', label: 'Thanh thông báo đầu trang', hint: 'Dòng chữ hiện trên cùng website', fields: ['announcement'] },
+]);
+
+sectionize('about', [
+  { key: 'intro', label: 'Mở đầu & ảnh chính', hint: 'Tiêu đề, đoạn mở đầu, ảnh', fields: ['title', 'intro', 'image'] },
+  { key: 'content', label: 'Nội dung chi tiết', hint: 'Bài giới thiệu về shop', fields: ['content'] },
+  { key: 'values', label: 'Giá trị cốt lõi', hint: 'Các khối giá trị của shop', fields: ['values'] },
+]);
+
+sectionize('size_guide', [
+  { key: 'intro', label: 'Mở đầu & ảnh minh họa', hint: 'Tiêu đề, mô tả, ảnh cách đo', fields: ['title', 'intro', 'image'] },
+  { key: 'how', label: 'Các bước đo & bảng quy đổi', hint: 'Hướng dẫn từng bước và bảng ni', fields: ['steps', 'table'] },
+  { key: 'extra', label: 'Lưu ý & video', hint: 'Lưu ý thêm, video TikTok / YouTube', fields: ['tips', 'video_url', 'video_title'] },
+]);
+
+sectionize('forms', [
+  { key: 'order', label: 'Đặt hàng', hint: 'Tiêu đề, ghi chú, thông báo thành công, vận chuyển', fields: ['order_title', 'order_note', 'order_success', 'shipping_note'] },
+  { key: 'orderimage', label: 'Ảnh đơn hàng cho khách tải', hint: 'Chữ trên ảnh và nút tải ảnh', toggle: 'order_image_enabled', fields: ['order_image_enabled', 'order_image_title', 'order_image_note', 'order_image_track', 'order_image_button', 'order_image_share'] },
+  { key: 'track', label: 'Tra cứu đơn hàng', hint: 'Tiêu đề và lời nhắn theo từng trạng thái đơn', fields: ['track_title', 'track_intro', 'track_msg_new', 'track_msg_contacted', 'track_msg_confirmed', 'track_msg_completed', 'track_msg_cancelled'] },
+  { key: 'custom', label: 'Thiết kế riêng (custom)', hint: 'Tiêu đề, thông báo và các lựa chọn trong form custom', fields: ['custom_title', 'custom_intro', 'custom_success', 'budget_options', 'contact_via_options', 'accessory_options'] },
+  { key: 'other', label: 'Liên hệ, tư vấn & bảo mật', hint: 'Thông báo gửi lời nhắn, yêu cầu tư vấn, ghi chú dưới form', fields: ['contact_success', 'consult_success', 'privacy_note'] },
+]);
+
+sectionize('footer', [
+  { key: 'cols', label: 'Các cột chân trang', hint: 'Bật/tắt và đổi thứ tự các cột', fields: ['columns'] },
+  { key: 'brand', label: 'Cột giới thiệu & menu', hint: 'Logo, slogan, mô tả, mạng xã hội, link tra cứu đơn', fields: ['show_logo', 'show_slogan', 'show_text', 'show_social', 'show_track'] },
+  { key: 'links', label: 'Liên kết tự thêm', hint: 'Các đường dẫn riêng ở cột "Liên kết tự thêm"', fields: ['extra_links'] },
+  { key: 'contact', label: 'Cột liên hệ', hint: 'Địa chỉ, điện thoại, email, giờ làm việc', fields: ['show_address', 'show_phone', 'show_email', 'show_hours'] },
+  { key: 'bottom', label: 'Thanh dưới cùng', hint: 'Bản quyền, ảnh Bộ Công Thương, slogan', toggle: 'show_bottom', fields: ['show_bottom', 'show_copyright', 'show_bct', 'show_bottom_slogan'] },
+]);
+
 export const SCHEMA_BY_KEY = Object.fromEntries(SETTINGS_SCHEMA.map((g) => [g.key, g]));

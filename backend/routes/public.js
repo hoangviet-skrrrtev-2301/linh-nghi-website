@@ -4,7 +4,7 @@ import { getPublicSettings, getRaw } from '../services/settings.js';
 import {
   searchProducts, productFacets, featuredProducts, getProduct, relatedProducts, listTerms, SORT_OPTIONS, TERM_TYPES,
 } from '../services/catalog.js';
-import { listPosts, getPost, listGallery, galleryAlbums } from '../services/content.js';
+import { listPosts, getPost, listGallery, galleryAlbums, listPostCategories, getPostCategory } from '../services/content.js';
 import { buildSeo, productJsonLd, breadcrumbJsonLd, articleJsonLd, collectionJsonLd, webPageJsonLd } from '../lib/seo.js';
 import { pageUrlBuilder } from '../lib/pagination.js';
 import { formToken } from '../middleware/security.js';
@@ -193,48 +193,83 @@ router.get('/huong-dan-size', requireFeature('size_guide'), (req, res) => {
 });
 
 // ---------------- Blog ----------------
-// Bài viết gợi ý ở cột phải (bài mới nhất, bỏ bài đang xem)
-function sidebarPosts(s, excludeId) {
+// Bài viết gợi ý ở cột phải: ưu tiên cùng chuyên mục, thiếu thì bù bằng bài mới nhất (bỏ bài đang xem)
+function sidebarPosts(s, excludeId, categoryId) {
   const n = Math.min(Math.max(Number(s.pages.blog_related_count) || 4, 1), 10);
-  return listPosts({ perPage: n + 1 }).items.filter((p) => p.id !== excludeId).slice(0, n);
+  const picked = categoryId ? listPosts({ perPage: n + 1, categoryId }).items.filter((p) => p.id !== excludeId) : [];
+  if (picked.length < n) {
+    const have = new Set(picked.map((p) => p.id));
+    for (const p of listPosts({ perPage: n + picked.length + 1 }).items) if (p.id !== excludeId && !have.has(p.id)) picked.push(p);
+  }
+  return picked.slice(0, n);
 }
 
-router.get('/blog', requireFeature('blog'), (req, res) => {
+// Chuyên mục có bài đã đăng, dùng cho thanh chọn và cột phải
+const blogCategories = () => listPostCategories({ activeOnly: true }).filter((c) => c.post_count > 0);
+
+// Trang danh sách blog (category = null) hoặc một chuyên mục
+function renderBlogList(req, res, category) {
   const s = res.locals.s;
-  const result = listPosts({ page: req.query.trang, perPage: Math.min(Math.max(Number(s.pages.blog_per_page) || 9, 2), 30) });
-  const pageUrl = pageUrlBuilder('/blog', req.query);
+  const basePath = category ? `/blog/chuyen-muc/${category.slug}` : '/blog';
+  const result = listPosts({
+    page: req.query.trang, categoryId: category?.id,
+    perPage: Math.min(Math.max(Number(s.pages.blog_per_page) || 9, 2), 30),
+  });
+  const pageUrl = pageUrlBuilder(basePath, req.query);
   if (redirectBadPage(res, req.query.trang, result, pageUrl)) return;
+  const name = category ? category.name : s.pages.blog_title;
+  const intro = category ? category.description || s.pages.blog_intro : s.pages.blog_intro;
+  // Chuyên mục chỉ là danh sách gom bài: mặc định noindex (vẫn cho Google đi theo liên kết tới từng bài)
+  const hideCategory = !!category && !!s.pages.blog_category_noindex;
   res.locals.seo = buildSeo(req, {
-    page: 'blog', title: s.pages.blog_title, description: s.pages.blog_intro,
-    pagination: { page: result.page, pages: result.pages, url: pageUrlBuilder('/blog') },
+    page: category ? undefined : 'blog', title: name, description: intro,
+    noindex: hideCategory, followLinks: hideCategory,
+    pagination: hideCategory ? undefined : { page: result.page, pages: result.pages, url: pageUrlBuilder(basePath) },
     jsonLd: [
       collectionJsonLd({
-        type: 'Blog', name: s.pages.blog_title, description: s.pages.blog_intro, path: pageUrlBuilder('/blog')(result.page),
+        type: category ? 'CollectionPage' : 'Blog', name, description: intro, path: pageUrlBuilder(basePath)(result.page),
         offset: (result.page - 1) * Math.ceil(result.total / result.pages),
         items: result.items.map((p) => ({ name: p.title, url: `/blog/${p.slug}`, image: p.cover?.md })),
       }),
-      breadcrumbJsonLd([{ name: 'Trang chủ', url: '/' }, { name: 'Blog', url: '/blog' }]),
+      breadcrumbJsonLd([{ name: 'Trang chủ', url: '/' }, { name: 'Blog', url: '/blog' }, ...(category ? [{ name: category.name, url: basePath }] : [])]),
     ],
   });
-  res.view('pages/blog.njk', { result, pg: result, pageUrl, sidebarPosts: sidebarPosts(s) });
+  res.view('pages/blog.njk', {
+    result, pg: result, pageUrl, category, blogCategories: blogCategories(), blogName: name, blogIntro: intro,
+    sidebarPosts: sidebarPosts(s, null, category?.id),
+  });
+}
+
+router.get('/blog', requireFeature('blog'), (req, res) => renderBlogList(req, res, null));
+
+router.get('/blog/chuyen-muc/:slug', requireFeature('blog'), (req, res, next) => {
+  const category = getPostCategory(req.params.slug);
+  if (!category) return next(new HttpError(404, 'Không tìm thấy chuyên mục'));
+  renderBlogList(req, res, category);
 });
 
 router.get('/blog/:slug', requireFeature('blog'), (req, res, next) => {
   const post = getPost(req.params.slug);
   if (!post) return next(new HttpError(404, 'Không tìm thấy bài viết'));
+  const category = post.category?.active ? post.category : null;
   res.locals.seo = buildSeo(req, {
     title: post.seo_title || post.title,
     description: post.seo_description || post.summary,
     image: post.cover?.lg,
     type: 'article',
-    jsonLd: [articleJsonLd(post), breadcrumbJsonLd([{ name: 'Trang chủ', url: '/' }, { name: 'Blog', url: '/blog' }, { name: post.title, url: `/blog/${post.slug}` }])],
+    jsonLd: [articleJsonLd(post), breadcrumbJsonLd([
+      { name: 'Trang chủ', url: '/' }, { name: 'Blog', url: '/blog' },
+      ...(category ? [{ name: category.name, url: `/blog/chuyen-muc/${category.slug}` }] : []),
+      { name: post.title, url: `/blog/${post.slug}` },
+    ])],
   });
   const s = res.locals.s;
   const { html, toc } = buildToc(post.content);
   res.view('pages/post.njk', {
-    post: { ...post, content: html },
+    post: { ...post, content: html }, category,
     toc: s.pages.blog_show_toc && toc.length >= 2 ? toc : [],
-    sidebarPosts: sidebarPosts(s, post.id),
+    blogCategories: blogCategories(),
+    sidebarPosts: sidebarPosts(s, post.id, post.category_id),
   });
 });
 

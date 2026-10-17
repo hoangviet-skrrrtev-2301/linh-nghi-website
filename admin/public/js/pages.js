@@ -230,7 +230,25 @@ document.addEventListener('alpine:init', () => {
 
   // ---------------- Blog ----------------
   Alpine.data('postsList', () => ({
-    ...listPage('/posts', { status: '' }),
+    ...listPage('/posts', { status: '', category: '' }),
+    categories: [], catOpen: false, catForm: null, catSaving: false,
+    init() { this.load(); this.loadCategories(); },
+    async loadCategories() { try { this.categories = (await api('/post-categories')).items; } catch (e) { toast().error(e); } },
+    openCat(cat) { this.catForm = cat ? { ...cat, active: !!cat.active } : { name: '', slug: '', description: '', sort_order: this.categories.length, active: true }; },
+    async saveCat() {
+      this.catSaving = true;
+      try {
+        const f = this.catForm;
+        const r = await api(f.id ? `/post-categories/${f.id}` : '/post-categories', { method: f.id ? 'PUT' : 'POST', body: f });
+        this.categories = r.items; this.catForm = null;
+        toast().show('Đã lưu chuyên mục');
+      } catch (e) { toast().error(e); }
+      this.catSaving = false;
+    },
+    async removeCat(cat) {
+      if (!(await confirmBox({ title: `Xóa chuyên mục “${cat.name}”?`, message: cat.total_count ? `${cat.total_count} bài viết trong chuyên mục sẽ chuyển về “Chưa phân loại”, bài viết không bị xóa.` : 'Chuyên mục này chưa có bài viết.', okLabel: 'Xóa' }))) return;
+      try { this.categories = (await api(`/post-categories/${cat.id}`, { method: 'DELETE' })).items; this.load(); toast().show('Đã xóa chuyên mục'); } catch (e) { toast().error(e); }
+    },
     async remove(p) {
       if (!(await confirmBox({ title: 'Xóa bài viết?', message: `“${p.title}” sẽ bị xóa vĩnh viễn.` }))) return;
       await api(`/posts/${p.id}`, { method: 'DELETE' });
@@ -247,11 +265,23 @@ document.addEventListener('alpine:init', () => {
   };
 
   Alpine.data('postEdit', (id) => ({
-    id: id ? Number(id) : null, form: null, saving: false, slugTouched: !!id,
-    async init() {
-      const empty = { title: '', slug: '', excerpt: '', content: '', cover_media_id: null, cover: null, status: 'draft', published_at: '', seo_title: '', seo_description: '' };
+    id: id ? Number(id) : null, form: null, saving: false, slugTouched: !!id, categories: [], newCat: '', addingCat: false,
+    async addCategory() {
+      if (!this.newCat.trim()) return;
+      this.addingCat = true;
       try {
+        const r = await api('/post-categories', { method: 'POST', body: { name: this.newCat } });
+        this.categories = r.items; this.form.category_id = r.id; this.newCat = '';
+        toast().show('Đã thêm chuyên mục');
+      } catch (e) { toast().error(e); }
+      this.addingCat = false;
+    },
+    async init() {
+      const empty = { title: '', slug: '', excerpt: '', content: '', cover_media_id: null, cover: null, category_id: '', status: 'draft', published_at: '', seo_title: '', seo_description: '' };
+      try {
+        this.categories = (await api('/post-categories')).items;
         this.form = this.id ? { ...empty, ...(await api(`/posts/${this.id}`)) } : empty;
+        this.form.category_id = this.form.category_id || '';
         this.form.published_at = toLocalInput(this.form.published_at);
       } catch (e) { toast().error(e); }
     },
@@ -514,6 +544,11 @@ document.addEventListener('alpine:init', () => {
   Alpine.data('settingsPage', (key, secKeys = []) => ({
     key, values: null, media: {}, saving: false, testing: false, openSec: {}, secKeys,
     // Các phần thu gọn / mở ra (nhóm cài đặt có "sections"); lưu lựa chọn trên trình duyệt này
+    // Từng mục trong danh sách có thể gập (hero_slides, info_blocks, các khối trang chủ...); mặc định thu gọn
+    openItems: {},
+    itemOpen(field, i) { return !!this.openItems[field + ':' + i]; },
+    toggleItem(field, i) { this.openItems[field + ':' + i] = !this.openItems[field + ':' + i]; },
+    toggleItems(field, on) { (this.values[field] || []).forEach((_, i) => { this.openItems[field + ':' + i] = on; }); },
     isOpen(k) { return !!this.openSec[k]; },
     toggle(k) { this.openSec[k] = !this.openSec[k]; this.saveSec(); },
     toggleAll(on) { this.secKeys.forEach((k) => { this.openSec[k] = on; }); this.saveSec(); },

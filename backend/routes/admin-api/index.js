@@ -179,7 +179,24 @@ router.delete('/gallery/:id', h((req) => {
 }));
 
 // ---------------- Blog ----------------
-router.get('/posts', h((req) => content.listPosts({ includeDrafts: true, q: req.query.q, status: req.query.status, page: req.query.page, perPage: 30 })));
+router.get('/posts', h((req) => content.listPosts({ includeDrafts: true, q: req.query.q, status: req.query.status, categoryId: req.query.category, page: req.query.page, perPage: 30 })));
+// Chuyên mục blog
+router.get('/post-categories', h(() => ({ items: content.listPostCategories() })));
+router.post('/post-categories', h((req) => {
+  const cid = content.savePostCategory(null, req.body);
+  audit(req, 'create', 'post_category', cid, req.body.name);
+  return { id: cid, items: content.listPostCategories() };
+}));
+router.put('/post-categories/:id', h((req) => {
+  content.savePostCategory(id(req), req.body);
+  audit(req, 'update', 'post_category', req.params.id, req.body.name);
+  return { items: content.listPostCategories() };
+}));
+router.delete('/post-categories/:id', h((req) => {
+  content.deletePostCategory(id(req));
+  audit(req, 'delete', 'post_category', req.params.id);
+  return { items: content.listPostCategories() };
+}));
 router.get('/posts/:id', h((req) => {
   const p = content.getPost(id(req), { publicOnly: false });
   if (!p) throw new HttpError(404, 'Không tìm thấy bài viết');

@@ -8,6 +8,17 @@
   </section>
   {% endif %}
 
+  {% if blogCategories and blogCategories.length %}
+  <section class="card p-5" aria-label="{{ s.pages.blog_categories_title }}">
+    <h2 class="mb-3 font-heading text-xl font-medium">{{ s.pages.blog_categories_title }}</h2>
+    <ul class="space-y-1 text-sm">
+      {% for c in blogCategories %}
+      <li><a href="/blog/chuyen-muc/{{ c.slug }}" class="flex items-center justify-between rounded-md px-2 py-1.5 transition hover:bg-primary/[.06] hover:text-primary {{ 'font-medium text-primary' if (category and category.id == c.id) }}">{{ c.name }}<span class="text-xs text-muted">{{ c.post_count }}</span></a></li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
   {% if sidebarPosts and sidebarPosts.length %}
   <section class="card p-5" aria-label="{{ s.pages.blog_related_title }}">
     <h2 class="mb-4 font-heading text-xl font-medium">{{ s.pages.blog_related_title }}</h2>
