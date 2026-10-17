@@ -13,7 +13,7 @@
       <option value="">Tất cả trạng thái</option><option value="published">Đang hiển thị</option><option value="draft">Bản nháp</option>
     </select>
     <select class="input !w-auto" x-model="filters.sort" @change="search()">
-      <option value="moi">Mới nhất</option><option value="noi_bat">Thứ tự hiển thị</option><option value="ten">Tên A–Z</option><option value="gia_tang">Giá tăng</option><option value="gia_giam">Giá giảm</option>
+      <option value="noi_bat">Thứ tự hiển thị (kéo thả)</option><option value="moi">Mới nhất</option><option value="ten">Tên A–Z</option><option value="gia_tang">Giá tăng</option><option value="gia_giam">Giá giảm</option>
     </select>
     <select class="input !w-auto" x-model="filters.type" @change="search()" aria-label="Lọc theo loại sản phẩm" x-show="types.length > 1">
       <option value="">Mọi loại sản phẩm</option>
@@ -33,6 +33,9 @@
       </div>
     </div>
   </div>
+
+  <p class="mb-3 text-xs text-slate-500" x-show="canDrag" x-cloak>Kéo biểu tượng {{ icon('drag', 'inline w-3.5 h-3.5') }} ở đầu mỗi dòng để <b>đổi vị trí sản phẩm</b>. Thứ tự này cũng là thứ tự khách thấy ở mục "Nổi bật" của trang Sản phẩm và khối sản phẩm nổi bật ở trang chủ (kéo trong từng trang của danh sách).</p>
+  <p class="mb-3 text-xs text-amber-600" x-show="!canDrag" x-cloak>Muốn kéo thả đổi vị trí, hãy chọn sắp xếp <b>“Thứ tự hiển thị (kéo thả)”</b>.</p>
 
   {# Quản lý loại sản phẩm: Vòng tay ngọc, Pháp phục... mỗi loại tự khai báo thông số #}
   <div x-cloak x-show="typesOpen" x-collapse class="mb-5">
@@ -111,10 +114,11 @@
   <div class="card overflow-hidden">
     <div class="overflow-x-auto">
       <table class="table table-stack">
-        <thead><tr><th class="w-10"><input type="checkbox" class="h-4 w-4 accent-brand-600" :checked="allSelected" @change="toggleAll($event.target.checked)" aria-label="Chọn tất cả"></th><th class="w-16"></th><th class="stack-title">Sản phẩm</th><th>Loại</th><th>Giá</th><th>Tình trạng</th><th>Hiển thị</th><th class="w-32"></th></tr></thead>
-        <tbody>
+        <thead><tr><th class="w-8"></th><th class="w-10"><input type="checkbox" class="h-4 w-4 accent-brand-600" :checked="allSelected" @change="toggleAll($event.target.checked)" aria-label="Chọn tất cả"></th><th class="w-16"></th><th class="stack-title">Sản phẩm</th><th>Loại</th><th>Giá</th><th>Tình trạng</th><th>Hiển thị</th><th class="w-32"></th></tr></thead>
+        <tbody x-sort="reorder($item, $position)">
           <template x-for="p in items" :key="p.id">
-            <tr :class="p.status !== 'published' && 'opacity-70'">
+            <tr x-sort:item="p.id" :class="p.status !== 'published' && 'opacity-70'">
+              <td class="w-8"><span x-sort:handle x-show="canDrag" class="inline-flex cursor-move touch-none text-slate-400 hover:text-slate-600" title="Kéo để đổi vị trí">{{ icon('drag', 'w-4 h-4') }}</span></td>
               <td><input type="checkbox" class="h-4 w-4 accent-brand-600" :value="p.id" x-model.number="selected" :aria-label="'Chọn ' + p.name"></td>
               <td><img :src="p.cover?.sm" alt="" class="h-12 w-12 rounded-lg bg-slate-100 object-cover"></td>
               <td>
@@ -122,7 +126,25 @@
                 <div class="mt-0.5 flex gap-1.5 text-xs text-slate-500"><span x-text="p.sku"></span><span x-show="p.is_bestseller" class="badge bg-slate-900 text-white">Best Seller</span><span x-show="p.is_featured" class="badge bg-amber-50 text-amber-700">Nổi bật</span><span x-show="p.show_new" class="badge bg-emerald-50 text-emerald-700">Mới</span></div>
               </td>
               <td><span x-text="p.product_type?.uses_jade_fields === false ? p.product_type.name : (p.jade_type?.name || '—')"></span></td>
-              <td><span x-text="p.final_price != null ? $fmt.vnd(p.final_price) : 'Liên hệ'"></span><span x-show="p.on_sale" class="ml-1 text-xs text-slate-400 line-through" x-text="$fmt.vnd(p.price)"></span></td>
+              <td>
+                <template x-if="editing !== p.id">
+                  <button type="button" class="group inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-left hover:bg-slate-100" @click="startPrice(p)" title="Bấm để sửa giá nhanh">
+                    <span><span x-text="p.final_price != null ? $fmt.vnd(p.final_price) : 'Liên hệ'"></span><span x-show="p.on_sale" class="ml-1 text-xs text-slate-400 line-through" x-text="$fmt.vnd(p.price)"></span></span>
+                    <span class="text-slate-300 group-hover:text-brand-600">{{ icon('edit', 'w-3.5 h-3.5') }}</span>
+                  </button>
+                </template>
+                <template x-if="editing === p.id">
+                  <div class="w-44 space-y-1.5 text-left" @keydown.escape="editing = null">
+                    <div><label class="text-[11px] text-slate-500" :for="'pf-price-' + p.id">Giá bán (₫) <span class="text-slate-400">· để trống = Liên hệ</span></label>
+                      <input :id="'pf-price-' + p.id" type="number" min="0" step="1000" class="input !py-1.5" x-model="pf.price" @keydown.enter.prevent="savePrice(p)"></div>
+                    <div><label class="text-[11px] text-slate-500">Giá khuyến mãi (₫) <span class="text-slate-400">· không bắt buộc</span></label>
+                      <input type="number" min="0" step="1000" class="input !py-1.5" x-model="pf.sale_price" @keydown.enter.prevent="savePrice(p)"></div>
+                    <p class="text-[11px] text-slate-500" x-show="pf.price !== '' && pf.price != null" x-text="'= ' + $fmt.vnd(Number(pf.price)) + (pf.sale_price !== '' && pf.sale_price != null ? ' → ' + $fmt.vnd(Number(pf.sale_price)) : '')"></p>
+                    <p class="text-[11px] text-red-600" x-show="priceError" x-text="priceError"></p>
+                    <div class="flex gap-1.5"><button type="button" class="btn btn-primary btn-sm" :disabled="priceBusy" @click="savePrice(p)">Lưu</button><button type="button" class="btn btn-ghost btn-sm" @click="editing = null">Hủy</button></div>
+                  </div>
+                </template>
+              </td>
               <td x-text="p.stock_label"></td>
               <td><span class="badge" :class="p.status !== 'published' ? 'bg-slate-100 text-slate-500' : p.type_active ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'" x-text="p.status !== 'published' ? 'Bản nháp' : p.type_active ? 'Đang hiển thị' : 'Thử nghiệm (khách chưa thấy)'"></span></td>
               <td class="text-right whitespace-nowrap">
@@ -133,7 +155,7 @@
               </td>
             </tr>
           </template>
-          <tr x-show="!loading && !items.length"><td colspan="8" class="py-14 text-center text-slate-500">Chưa có sản phẩm nào.</td></tr>
+          <tr x-show="!loading && !items.length"><td colspan="9" class="py-14 text-center text-slate-500">Chưa có sản phẩm nào.</td></tr>
         </tbody>
       </table>
     </div>

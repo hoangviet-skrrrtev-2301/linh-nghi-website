@@ -1,4 +1,4 @@
-# Website vòng tay ngọc – Linh Nghi Jade
+# Website vòng tay ngọc – Linh Nghi
 
 Website bán vòng tay ngọc gồm giao diện khách, trang quản trị tiếng Việt, API và cơ sở dữ liệu. Mọi nội dung, hình ảnh, màu sắc đều chỉnh sửa được trong trang quản trị, không cần sửa code.
 

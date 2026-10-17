@@ -169,7 +169,7 @@
           {{ switch('form.is_new', 'Sản phẩm mới', 'Gắn nhãn "Mới" (ngoài nhãn tự động theo ngày đăng)') }}
           {{ switch('form.is_featured', 'Sản phẩm nổi bật', 'Hiển thị ở trang chủ') }}
           {{ switch('form.is_customizable', 'Cho phép custom', 'Hiện nút gửi yêu cầu custom mẫu này') }}
-          <div><label class="label">Thứ tự hiển thị</label><input type="number" class="input" x-model.number="form.sort_order"><p class="help">Số nhỏ hiển thị trước</p></div>
+          <div><label class="label">Thứ tự hiển thị</label><input type="number" class="input" x-model.number="form.sort_order"><p class="help">Số nhỏ hiển thị trước. Cũng có thể kéo thả đổi vị trí ngay ở danh sách sản phẩm.</p></div>
         </div>
         <button type="button" x-show="id" class="btn btn-ghost w-full text-red-600" @click="remove()">{{ icon('trash', 'w-4 h-4') }} Xóa sản phẩm</button>
       </aside>

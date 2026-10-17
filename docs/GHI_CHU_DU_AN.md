@@ -8,7 +8,7 @@ _Cập nhật lần cuối: 17/10/2026_
 
 ## 1. Bối cảnh
 
-- **Sản phẩm:** website bán vòng tay ngọc (phỉ thúy, bích ngọc, hòa điền, thạch anh...) cho shop **Linh Nghi Jade** (tên tạm, đổi được trong admin).
+- **Sản phẩm:** website bán vòng tay ngọc (phỉ thúy, bích ngọc, hòa điền, thạch anh...) cho shop **Linh Nghi** (tên chính thức; đổi được trong admin).
 - **Mục tiêu:** trưng bày sản phẩm đẹp, tăng uy tín (chứng chỉ kiểm định), nhận đơn / yêu cầu custom / yêu cầu tư vấn qua email; chủ shop tự quản lý mọi nội dung, không cần lập trình viên.
 - **Người dùng admin:** chủ shop và nhân viên, không rành kỹ thuật, nên giao diện admin phải tiếng Việt và dễ dùng.
 - **Không có thanh toán online.** Khách gửi đơn, shop gọi/nhắn Zalo xác nhận và hướng dẫn thanh toán.
@@ -30,6 +30,7 @@ _Cập nhật lần cuối: 17/10/2026_
 | Gallery | Hiện tối đa 8 ảnh dạng 2 hàng × 4 cột (trang chủ và trang Gallery); hơn 8 ảnh thành slider tự lướt phải → trái. Tab "Tất cả" chỉ hiện ảnh bật "Hiện ở Gallery tổng", tab album hiện đủ ảnh | Chủ dự án muốn gallery tổng chọn lọc, album phụ chứa feedback / ảnh chưa chọn |
 | Trạng thái đơn | Mỗi loại có chuỗi riêng: đơn hàng thêm **Đang giao hàng** (kèm đơn vị vận chuyển + mã vận đơn khách xem được, tùy chọn email báo khách); liên hệ kết thúc ở "Đã xử lý" | Ngày 17/10/2026 |
 | Doanh thu | Tính theo **ngày hoàn thành** của đơn (giờ Việt Nam), đơn hoàn thành cũ lấy ngày cập nhật cuối làm gần đúng | Chủ dự án chốt |
+| Thứ tự sản phẩm | Admin kéo thả đổi vị trí; `sort_order` đứng đầu trong sắp xếp "Nổi bật" (khách) và khối nổi bật trang chủ, chưa sắp xếp thì Best Seller / nổi bật trước | `reorderProducts` trong `catalog.js`, ghi lại sort_order 1..n toàn cửa hàng |
 | Tìm kiếm | Không phân biệt hoa/thường và dấu ("áo" = "Áo" = "ao") cho sản phẩm, bài viết, đơn, khách, ảnh | Hàm `vn()` trong SQLite |
 | Menu | Mỗi mục có thể sổ dọc theo loại ngọc / màu / kiểu dáng / mệnh / loại sản phẩm / chuyên mục blog / bài mới / danh sách tự nhập. Mục Sản phẩm mặc định sổ theo loại ngọc, tự thêm các loại hàng khác đang hoạt động (Pháp phục) | |
 | Giao diện admin | Giữ nguyên menu bên trái và danh sách nhóm cài đặt; các trang nhiều thành phần (Cài đặt các nhóm dài, danh sách slide / khối) chia phần thu gọn / mở ra | Chủ dự án không muốn gập menu |

@@ -79,8 +79,36 @@ document.addEventListener('alpine:init', () => {
 
   // ---------------- Sản phẩm ----------------
   Alpine.data('productsList', (status = '') => ({
-    ...listPage('/products', { status, sort: 'moi', type: '' }),
+    ...listPage('/products', { status, sort: 'noi_bat', type: '' }),
     selected: [],
+    // Sửa nhanh giá ngay ở danh sách (bấm vào giá)
+    editing: null, pf: { price: '', sale_price: '' }, priceBusy: false, priceError: '',
+    startPrice(p) {
+      this.editing = p.id; this.priceError = '';
+      this.pf = { price: p.price ?? '', sale_price: p.sale_price ?? '' };
+      this.$nextTick(() => document.getElementById('pf-price-' + p.id)?.focus());
+    },
+    async savePrice(p) {
+      this.priceBusy = true; this.priceError = '';
+      try {
+        const r = await api(`/products/${p.id}/price`, { method: 'PATCH', body: { price: this.pf.price, sale_price: this.pf.sale_price } });
+        Object.assign(p, { price: r.price, sale_price: r.sale_price, final_price: r.final_price, on_sale: r.on_sale });
+        this.editing = null;
+        toast().show('Đã cập nhật giá');
+      } catch (e) { this.priceError = e.message; }
+      this.priceBusy = false;
+    },
+    // Kéo thả đổi vị trí: chỉ khi đang xem theo "Thứ tự hiển thị" (đúng thứ tự khách thấy)
+    get canDrag() { return this.filters.sort === 'noi_bat'; },
+    async reorder(id, position) {
+      const from = this.items.findIndex((p) => p.id === id);
+      if (from < 0) return;
+      this.items.splice(position, 0, this.items.splice(from, 1)[0]);
+      try {
+        await api('/products/reorder', { method: 'POST', body: { ids: this.items.map((p) => p.id) } });
+        toast().show('Đã lưu thứ tự sản phẩm');
+      } catch (e) { toast().error(e); this.load(); }
+    },
     // Quản lý loại sản phẩm (Vòng tay ngọc, Pháp phục...) ngay trên trang này
     types: [], typesOpen: false, typeForm: null, typeSaving: false,
     // Mặc định luôn xem Vòng tay ngọc (loại chính); muốn xem loại khác hoặc tất cả thì chọn ở ô lọc

@@ -153,6 +153,13 @@ router.post('/products', h((req) => {
   audit(req, 'create', 'product', pid, req.body.name);
   return { id: pid };
 }));
+// Sửa nhanh giá ngay ở danh sách: { price, sale_price } (để trống = Liên hệ / không khuyến mãi)
+router.patch('/products/:id/price', h((req) => {
+  const r = catalog.updateProductPrice(id(req), req.body || {});
+  const f = (v) => (v == null ? 'Liên hệ' : v);
+  audit(req, 'update', 'product', req.params.id, `giá ${f(r.before.price)} → ${f(r.price)}, khuyến mãi ${r.before.sale_price ?? '–'} → ${r.sale_price ?? '–'}`);
+  return r;
+}));
 router.put('/products/:id', h((req) => {
   catalog.saveProduct(id(req), req.body);
   audit(req, 'update', 'product', req.params.id, req.body.name);
@@ -162,6 +169,12 @@ router.post('/products/:id/duplicate', h((req) => {
   const pid = catalog.duplicateProduct(id(req));
   audit(req, 'duplicate', 'product', pid);
   return { id: pid };
+}));
+// Kéo thả đổi vị trí sản phẩm: { ids: [...] } theo thứ tự mới của các sản phẩm đang hiện
+router.post('/products/reorder', h((req) => {
+  const n = catalog.reorderProducts([].concat(req.body?.ids || []));
+  audit(req, 'reorder', 'product', '', `${n} sản phẩm`);
+  return { ok: true };
 }));
 // Ẩn / hiện / xóa nhiều sản phẩm: { ids: [..], action: 'hide' | 'show' | 'delete' }
 router.post('/products/bulk', h((req) => {

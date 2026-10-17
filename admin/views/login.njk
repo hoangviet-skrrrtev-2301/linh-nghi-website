@@ -11,9 +11,11 @@
 <body class="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-900 via-slate-900 to-slate-950 p-4">
   <div class="w-full max-w-sm">
     <div class="mb-8 text-center">
-      <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-lg shadow-brand-600/30">
+      {% set brandImg = shop.logo_light or shop.logo or shop.favicon %}
+      {% if brandImg %}<img src="{{ brandImg.md }}" alt="" class="mx-auto h-20 w-auto max-w-[200px] object-contain">
+      {% else %}<div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-lg shadow-brand-600/30">
         <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h12l4 6-10 12L2 9l4-6Z"/><path d="M2 9h20"/></svg>
-      </div>
+      </div>{% endif %}
       <h1 class="mt-4 text-xl font-semibold !text-white">{{ shop.name }}</h1>
       <p class="text-sm text-slate-400">Trang quản trị</p>
     </div>

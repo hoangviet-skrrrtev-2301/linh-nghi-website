@@ -39,7 +39,7 @@ Vào **Admin › Cài đặt website › Email (SMTP)** (chỉ tài khoản Ch�
 | Dùng SSL | Bật |
 | Tài khoản | Địa chỉ Gmail của shop, ví dụ `shoplinhnghi@gmail.com` |
 | Mật khẩu ứng dụng | Dán mã 16 ký tự ở Bước 2 (có hoặc không có dấu cách đều được) |
-| Tên người gửi | Tên shop, ví dụ `Linh Nghi Jade` |
+| Tên người gửi | Tên shop, ví dụ `Linh Nghi` |
 | Email nhận thông báo đơn hàng | Email muốn nhận đơn (có thể là Gmail trên hoặc email khác). Nhiều email thì cách nhau bằng dấu phẩy |
 | Gửi email xác nhận cho khách | Bật nếu muốn khách nhận email xác nhận |
 

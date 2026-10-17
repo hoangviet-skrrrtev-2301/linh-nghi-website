@@ -43,7 +43,7 @@ export const SETTINGS_SCHEMA = [
     label: 'Thông tin shop',
     description: 'Tên, logo, thông tin liên hệ hiển thị trên toàn website.',
     fields: [
-      { name: 'name', label: 'Tên shop', type: 'text', default: 'Linh Nghi Jade' },
+      { name: 'name', label: 'Tên shop', type: 'text', default: 'Linh Nghi' },
       { name: 'slogan', label: 'Slogan', type: 'text', default: 'Ngọc sáng an yên, trao gửi tâm tình' },
       { name: 'logo', label: 'Logo', type: 'image', help: 'Ảnh PNG nền trong suốt, ngang khoảng 400px' },
       { name: 'logo_light', label: 'Logo phiên bản sáng (trên nền tối)', type: 'image' },
@@ -63,7 +63,7 @@ export const SETTINGS_SCHEMA = [
       { name: 'bct_image', label: 'Ảnh đã đăng ký Bộ Công Thương (chân trang)', type: 'image', help: 'Logo "Đã thông báo Bộ Công Thương" do cổng online.gov.vn cấp. Để trống thì không hiển thị.' },
       { name: 'bct_url', label: 'Link khi bấm vào ảnh Bộ Công Thương', type: 'url', help: 'Thường là link xác nhận trên online.gov.vn do Bộ Công Thương cấp' },
       { name: 'footer_text', label: 'Đoạn giới thiệu ở chân trang', type: 'textarea', default: 'Vòng tay ngọc tự nhiên, có chứng chỉ kiểm định, chế tác thủ công theo yêu cầu.' },
-      { name: 'copyright', label: 'Dòng bản quyền', type: 'text', default: '© {year} Linh Nghi Jade. Bảo lưu mọi quyền.', help: '{year} sẽ được thay bằng năm hiện tại' },
+      { name: 'copyright', label: 'Dòng bản quyền', type: 'text', default: '© {year} Linh Nghi. Bảo lưu mọi quyền.', help: '{year} sẽ được thay bằng năm hiện tại' },
     ],
   },
   {
@@ -367,7 +367,7 @@ export const SETTINGS_SCHEMA = [
     label: 'Trang Về shop',
     fields: [
       { name: 'title', label: 'Tiêu đề', type: 'text', default: 'Câu chuyện của chúng tôi' },
-      { name: 'intro', label: 'Đoạn mở đầu', type: 'textarea', default: 'Linh Nghi Jade ra đời từ tình yêu với ngọc và mong muốn mang đến những chiếc vòng chân thật, bền đẹp cùng năm tháng.' },
+      { name: 'intro', label: 'Đoạn mở đầu', type: 'textarea', default: 'Linh Nghi ra đời từ tình yêu với ngọc và mong muốn mang đến những chiếc vòng chân thật, bền đẹp cùng năm tháng.' },
       { name: 'image', label: 'Ảnh chính', type: 'image' },
       { name: 'content', label: 'Nội dung', type: 'richtext', default: '<p>Nội dung giới thiệu về shop. Bạn có thể chỉnh sửa trong Admin &gt; Cài đặt &gt; Trang Về shop.</p>' },
       {
@@ -531,8 +531,8 @@ export const SETTINGS_SCHEMA = [
     key: 'seo',
     label: 'SEO & mã theo dõi',
     fields: [
-      { name: 'title_suffix', label: 'Hậu tố tiêu đề trang', type: 'text', default: ' | Linh Nghi Jade', help: 'Thêm vào cuối tiêu đề mỗi trang' },
-      { name: 'home_title', label: 'Tiêu đề trang chủ', type: 'text', default: 'Linh Nghi Jade – Vòng tay ngọc tự nhiên có kiểm định' },
+      { name: 'title_suffix', label: 'Hậu tố tiêu đề trang', type: 'text', default: ' | Linh Nghi', help: 'Thêm vào cuối tiêu đề mỗi trang' },
+      { name: 'home_title', label: 'Tiêu đề trang chủ', type: 'text', default: 'Linh Nghi – Vòng tay ngọc tự nhiên có kiểm định' },
       { name: 'default_description', label: 'Mô tả mặc định', type: 'textarea', default: 'Vòng tay ngọc phỉ thúy, bích ngọc tự nhiên có chứng chỉ kiểm định. Tư vấn chọn ni, thiết kế theo yêu cầu, giao hàng toàn quốc.' },
       { name: 'keywords', label: 'Từ khóa', type: 'text', default: 'vòng ngọc, vòng phỉ thúy, vòng tay ngọc tự nhiên, vòng ngọc kiểm định' },
       { name: 'og_image', label: 'Ảnh chia sẻ mạng xã hội mặc định', type: 'image', help: 'Tỉ lệ 1200×630px' },
@@ -587,7 +587,7 @@ export const SETTINGS_SCHEMA = [
       { name: 'secure', label: 'Dùng SSL (cổng 465)', type: 'toggle', default: true },
       { name: 'user', label: 'Tài khoản (email Gmail)', type: 'email' },
       { name: 'password', label: 'Mật khẩu ứng dụng', type: 'secret', help: 'Được mã hóa khi lưu. Để trống nếu không muốn đổi.' },
-      { name: 'from_name', label: 'Tên người gửi', type: 'text', default: 'Linh Nghi Jade' },
+      { name: 'from_name', label: 'Tên người gửi', type: 'text', default: 'Linh Nghi' },
       { name: 'notify_to', label: 'Email nhận thông báo đơn hàng', type: 'text', help: 'Nhiều email cách nhau bằng dấu phẩy' },
       { name: 'send_customer_copy', label: 'Gửi email xác nhận cho khách (nếu khách có nhập email)', type: 'toggle', default: true },
     ],

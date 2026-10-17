@@ -37,7 +37,10 @@
   <div x-cloak x-show="sidebar" class="fixed inset-0 z-40 bg-slate-900/50 lg:hidden" @click="sidebar = false"></div>
   <aside :class="sidebar ? 'translate-x-0' : '-translate-x-full'" class="fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-slate-900 transition-transform lg:translate-x-0">
     <div class="flex h-16 items-center gap-3 border-b border-white/10 px-5">
-      <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600 text-white">{{ icon('gem', 'w-5 h-5') }}</span>
+      {# Biểu tượng = logo của website (bản sáng cho nền tối nếu có), chưa có logo thì dùng biểu tượng kim cương #}
+      {% set brandImg = shop.logo_light or shop.logo or shop.favicon %}
+      {% if brandImg %}<img src="{{ brandImg.sm }}" alt="" class="h-10 w-10 shrink-0 object-contain">
+      {% else %}<span class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600 text-white">{{ icon('gem', 'w-5 h-5') }}</span>{% endif %}
       <div class="min-w-0"><p class="truncate text-sm font-semibold text-white">{{ shop.name }}</p><p class="text-[11px] text-slate-400">Trang quản trị</p></div>
     </div>
     {% set p = currentPath %}

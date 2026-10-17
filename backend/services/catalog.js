@@ -171,7 +171,8 @@ const SORTS = {
   moi: 'p.created_at DESC, p.id DESC',
   gia_tang: `(${EFFECTIVE_PRICE} IS NULL), ${EFFECTIVE_PRICE} ASC`,
   gia_giam: `${EFFECTIVE_PRICE} DESC`,
-  noi_bat: 'p.is_bestseller DESC, p.is_featured DESC, p.sort_order ASC, p.id DESC',
+  // Thứ tự kéo thả trong admin (sort_order) đứng đầu; sản phẩm chưa sắp xếp (sort_order bằng nhau) thì Best Seller, nổi bật lên trước
+  noi_bat: 'p.sort_order ASC, p.is_bestseller DESC, p.is_featured DESC, p.id DESC',
   // Best Seller trước, sau đó theo số lượng đã bán (đơn đã xác nhận / hoàn thành)
   ban_chay: `p.is_bestseller DESC, (SELECT COALESCE(SUM(json_extract(j.value, '$.qty')), 0) FROM inquiries i, json_each(i.items) j
     WHERE i.type = 'order' AND i.status IN ('confirmed', 'shipping', 'completed') AND json_extract(j.value, '$.id') = p.id) DESC, p.id DESC`,
@@ -197,9 +198,27 @@ export function searchProducts(filters = {}, { page = 1, perPage = 12, includeDr
   return { items: hydrate(rows), total, page: current, pages, perPage };
 }
 
+// Đổi vị trí sản phẩm bằng kéo thả. ids = các sản phẩm đang hiện (một trang, hoặc đã lọc) theo thứ tự MỚI.
+// Chỉ hoán đổi vị trí giữa chính các sản phẩm đó trong thứ tự toàn bộ cửa hàng, sản phẩm khác giữ nguyên chỗ;
+// rồi ghi lại sort_order 1..n cho tất cả để thứ tự ổn định.
+export function reorderProducts(ids) {
+  const wanted = [...new Set((ids || []).map(Number).filter((n) => Number.isInteger(n) && n > 0))];
+  if (wanted.length < 2) return 0;
+  const all = db.prepare(`SELECT p.id FROM products p ORDER BY ${SORTS.noi_bat}`).pluck().all();
+  const present = new Set(all);
+  const moved = wanted.filter((id) => present.has(id));
+  const inMoved = new Set(moved);
+  const slots = all.map((id, i) => (inMoved.has(id) ? i : -1)).filter((i) => i >= 0);
+  const next = [...all];
+  slots.forEach((slot, k) => { next[slot] = moved[k]; });
+  const upd = db.prepare('UPDATE products SET sort_order = ? WHERE id = ? AND sort_order != ?');
+  tx(() => next.forEach((id, i) => upd.run(i + 1, id, i + 1)));
+  return moved.length;
+}
+
 export function featuredProducts(limit = 8) {
   const rows = db.prepare(`SELECT * FROM products p WHERE status = 'published' AND ${TYPE_ACTIVE} AND (is_featured = 1 OR is_bestseller = 1)
-    ORDER BY is_bestseller DESC, sort_order, id DESC LIMIT ?`).all(limit);
+    ORDER BY sort_order, is_bestseller DESC, id DESC LIMIT ?`).all(limit);
   return hydrate(rows);
 }
 
@@ -354,6 +373,19 @@ const priceOrNull = (v) => {
   const n = toInt(String(v ?? '').replace(/[^\d]/g, ''));
   return n != null && n >= 0 ? n : null;
 };
+
+// Sửa nhanh giá bán / giá khuyến mãi ngay ở danh sách. Để trống giá bán = hiển thị "Liên hệ".
+export function updateProductPrice(id, data) {
+  const cur = db.prepare('SELECT id, price, sale_price FROM products WHERE id = ?').get(id);
+  if (!cur) throw new HttpError(404, 'Không tìm thấy sản phẩm');
+  const price = priceOrNull(data.price);
+  const sale = priceOrNull(data.sale_price);
+  if (price == null && sale != null) throw new HttpError(422, 'Hãy nhập giá bán trước khi nhập giá khuyến mãi', { price: 'Cần nhập giá bán' });
+  if (price != null && sale != null && sale >= price) throw new HttpError(422, 'Giá khuyến mãi phải nhỏ hơn giá bán', { sale_price: 'Phải nhỏ hơn giá bán' });
+  if (price != null && price > 1e11) throw new HttpError(422, 'Giá quá lớn', { price: 'Giá quá lớn' });
+  db.prepare("UPDATE products SET price = ?, sale_price = ?, updated_at = datetime('now') WHERE id = ?").run(price, sale, id);
+  return { id, before: { price: cur.price, sale_price: cur.sale_price }, price, sale_price: sale, final_price: sale ?? price, on_sale: sale != null && price != null && sale < price };
+}
 
 export function saveProduct(id, data) {
   const name = cleanText(data.name, 200);

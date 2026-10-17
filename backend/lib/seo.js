@@ -15,7 +15,8 @@ export function buildSeo(req, { page, title, description, image, type = 'website
   const pageNo = pagination && pagination.page > 1 ? pagination.page : 0;
   const baseTitle = isHome && !title
     ? pageTitle || s.seo.home_title
-    : pageTitle || `${title || s.site.name}${s.seo.title_suffix || ''}`;
+    // Cài đặt tự cắt khoảng trắng đầu / cuối nên hậu tố "| Tên shop" lưu không còn dấu cách đầu: nối lại bằng 1 dấu cách
+    : pageTitle || `${title || s.site.name}${s.seo.title_suffix ? ` ${String(s.seo.title_suffix).trim()}` : ''}`;
   const fullTitle = pageNo ? `${baseTitle} – Trang ${pageNo}` : baseTitle;
   const desc = truncate(stripHtml(ps[`${page}_description`] || description || s.seo.default_description), 160);
   const img = abs(ps[`${page}_og_image`]?.lg || image || s.seo.og_image?.lg);

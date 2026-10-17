@@ -90,6 +90,10 @@ Cột bên phải:
 
 **Nhân bản** (biểu tượng 2 tờ giấy ở danh sách): tạo nhanh sản phẩm tương tự.
 
+**Sửa nhanh giá:** ở danh sách sản phẩm, bấm vào giá (có biểu tượng bút chì) để nhập **giá bán** và **giá khuyến mãi** rồi bấm **Lưu** (hoặc nhấn Enter, nhấn Esc để hủy). Để trống giá bán thì website hiện "Liên hệ". Giá khuyến mãi phải nhỏ hơn giá bán. Giá mới áp dụng ngay cho khách.
+
+**Kéo thả đổi vị trí:** ở danh sách sản phẩm (sắp xếp "Thứ tự hiển thị (kéo thả)", là mặc định), kéo biểu tượng ⠿ ở đầu dòng lên xuống để đổi vị trí; lưu ngay. Thứ tự này là thứ tự khách thấy ở mục "Nổi bật" của trang Sản phẩm và ở khối sản phẩm nổi bật trang chủ. Sản phẩm mới thêm xuất hiện ở đầu danh sách, kéo xuống chỗ mong muốn. Danh sách chia trang nên kéo trong từng trang (muốn chuyển sang trang khác, đặt vào "Thứ tự hiển thị" bằng ô số trong trang sửa sản phẩm).
+
 **Ẩn / hiện / xóa ngay ở danh sách:** bấm biểu tượng con mắt gạch chéo để **ẩn** một sản phẩm (chuyển về bản nháp, khách không thấy, dữ liệu vẫn giữ), bấm lại để hiện. Tick chọn nhiều sản phẩm rồi dùng thanh **Ẩn / Hiện / Xóa** phía trên để làm hàng loạt (xóa luôn hỏi xác nhận).
 
 **Loại sản phẩm (Vòng tay ngọc, Pháp phục...):** bấm nút **Loại sản phẩm** ở trang danh sách để thêm / sửa loại, tự đặt các **thông số** cho từng loại (ô chữ, số, hoặc danh sách chọn; gõ giá trị mới khi nhập sản phẩm thì tự được thêm vào danh sách), và **bật / tắt hoạt động**. Nút **Thêm sản phẩm** cho chọn loại trước; form tự đổi theo loại (loại không phải ngọc không có ô loại ngọc, màu, ni, chứng chỉ).
@@ -172,7 +176,7 @@ Website đã tự động có: thẻ meta title/description/keywords, Open Graph
 | Thư viện ảnh | Nhập mô tả ảnh (alt) có từ khóa, ví dụ "vòng phỉ thúy xanh lục băng ni 54" |
 | Danh mục › Loại ngọc | Viết mô tả cho từng loại ngọc: trang lọc theo loại (VD `/san-pham?loai=phi-thuy`) được Google lập chỉ mục riêng |
 
-**Mẹo viết:** tiêu đề khoảng 50–60 ký tự, có từ khóa chính ở đầu (VD "Vòng phỉ thúy tự nhiên có kiểm định | Linh Nghi Jade"); mô tả 140–160 ký tự, có lời kêu gọi ("Giao toàn quốc, tư vấn ni miễn phí"). Viết blog đều đặn về kiến thức ngọc để có thêm lượt tìm kiếm.
+**Mẹo viết:** tiêu đề khoảng 50–60 ký tự, có từ khóa chính ở đầu (VD "Vòng phỉ thúy tự nhiên có kiểm định | Linh Nghi"); mô tả 140–160 ký tự, có lời kêu gọi ("Giao toàn quốc, tư vấn ni miễn phí"). Viết blog đều đặn về kiến thức ngọc để có thêm lượt tìm kiếm.
 
 **Gửi website cho Google:**
 1. Vào https://search.google.com/search-console, thêm tên miền, chọn cách xác minh "Thẻ HTML", copy phần `content="..."`.
