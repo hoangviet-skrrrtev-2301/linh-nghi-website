@@ -29,21 +29,52 @@ document.addEventListener('alpine:init', () => {
 
   // ---------------- Tổng quan ----------------
   Alpine.data('dashboard', () => ({
-    d: null,
-    async init() {
-      try { this.d = await api('/dashboard'); } catch (e) { toast().error(e); }
+    d: null, loading: true, range: '30d', from: '', to: '', metric: 'requests',
+    ranges: [['7d', '7 ngày'], ['30d', '30 ngày'], ['month', 'Tháng này'], ['last_month', 'Tháng trước'], ['quarter', 'Quý này'], ['year', 'Năm nay'], ['custom', 'Tùy chọn']],
+    statusColor: { new: 'bg-blue-500', contacted: 'bg-amber-500', confirmed: 'bg-violet-500', shipping: 'bg-sky-500', completed: 'bg-emerald-500', cancelled: 'bg-slate-400' },
+    init() {
+      try { Object.assign(this, JSON.parse(localStorage.getItem('ln_admin_dash') || '{}')); } catch { /* bỏ qua */ }
+      if (!this.ranges.some((r) => r[0] === this.range)) this.range = '30d';
+      this.load();
     },
-    count(type, key = 'total') { return this.d?.stats.byType.find((t) => t.type === type)?.[key] || 0; },
-    get chart() {
-      const days = [];
-      const map = Object.fromEntries((this.d?.stats.last30 || []).map((r) => [r.d, r.c]));
-      for (let i = 29; i >= 0; i--) {
-        const dt = new Date(Date.now() - i * 864e5 + 7 * 36e5).toISOString().slice(0, 10);
-        days.push({ d: dt, c: map[dt] || 0 });
-      }
-      const max = Math.max(1, ...days.map((x) => x.c));
-      return days.map((x) => ({ ...x, h: Math.round((x.c / max) * 100) }));
+    save() { try { localStorage.setItem('ln_admin_dash', JSON.stringify({ range: this.range, from: this.from, to: this.to, metric: this.metric })); } catch { /* chế độ riêng tư */ } },
+    setRange(k) { this.range = k; this.save(); if (k !== 'custom' || (this.from && this.to)) this.load(); },
+    async load() {
+      this.loading = true;
+      try { this.d = await api(`/dashboard?${qs({ range: this.range, from: this.range === 'custom' ? this.from : '', to: this.range === 'custom' ? this.to : '' })}`); } catch (e) { toast().error(e); }
+      this.loading = false;
     },
+    // ----- Thẻ số liệu -----
+    val(key) { return this.d ? this.d.totals[key] : null; },
+    money(n) { return window.Admin.fmt.vnd(n || 0); },
+    show(key) { const v = this.val(key); return v == null ? '–' : (key === 'revenue' || key === 'aov') ? this.money(v) : v; },
+    // So với kỳ liền trước có độ dài bằng nhau
+    delta(key) {
+      if (!this.d) return null;
+      const cur = this.d.totals[key]; const prev = this.d.prev[key];
+      if (!prev) return cur ? { text: 'mới', tone: 'up' } : null;
+      const pct = Math.round(((cur - prev) / prev) * 100);
+      return { text: (pct > 0 ? '+' : '') + pct + '%', tone: pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat' };
+    },
+    deltaClass(key) { const t = this.delta(key)?.tone; return t === 'up' ? 'bg-emerald-50 text-emerald-700' : t === 'down' ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-500'; },
+    deltaIcon(key) { const t = this.delta(key)?.tone; return t === 'up' ? '↑' : t === 'down' ? '↓' : '→'; },
+    // ----- Biểu đồ -----
+    compact(n) {
+      if (n >= 1e9) return (n / 1e9).toFixed(1).replace('.0', '') + ' tỷ';
+      if (n >= 1e6) return (n / 1e6).toFixed(1).replace('.0', '') + ' tr';
+      if (n >= 1e3) return Math.round(n / 1e3) + 'k';
+      return String(n);
+    },
+    cell(bk) { return this.metric === 'revenue' ? bk.revenue : bk.order + bk.custom + bk.contact; },
+    get buckets() { return this.d?.series.buckets || []; },
+    get max() { return Math.max(1, ...this.buckets.map((bk) => this.cell(bk))); },
+    get axis() { const m = this.max; return [m, Math.round(m / 2), 0].map((v) => (this.metric === 'revenue' ? this.compact(v) : String(v))); },
+    pct(v) { return (v / this.max) * 100; },
+    lab(bk) { const v = this.cell(bk); return v ? (this.metric === 'revenue' ? this.compact(v) : String(v)) : ''; },
+    // Chỉ ghi nhãn ngày ở một số cột cho khỏi chồng chữ
+    showTick(i) { const n = this.buckets.length; const step = Math.max(1, Math.ceil(n / 8)); return i % step === 0 || i === n - 1; },
+    get chartTotal() { return this.metric === 'revenue' ? this.money(this.d?.totals.revenue) : this.buckets.reduce((s, bk) => s + this.cell(bk), 0) + ' yêu cầu'; },
+    get statusTotal() { return Math.max(1, (this.d?.statusBreakdown || []).reduce((s, r) => s + r.n, 0)); },
   }));
 
   // ---------------- Sản phẩm ----------------
@@ -429,17 +460,36 @@ document.addEventListener('alpine:init', () => {
 
   // ---------------- Đơn hàng / yêu cầu ----------------
   Alpine.data('inquiriesList', (type) => ({
-    ...listPage('/inquiries', { type: type || '', status: '', from: '', to: '' }),
+    ...listPage('/inquiries', { type: type || '', status: new URLSearchParams(location.search).get('status') || '', from: '', to: '' }),
   }));
 
   Alpine.data('inquiryDetail', (id) => ({
-    d: null, saving: false, dirty: false,
+    d: null, saving: false, dirty: false, notify: false,
+    ship: { carrier: '', tracking_code: '' },
     edit: { items: [], adjustment: 0, adjustment_note: '' },
     pick: { q: '', open: false, results: [] },
-    async init() { try { this.setData(await api(`/inquiries/${id}`)); } catch (e) { toast().error(e); } },
+    async init() {
+      try {
+        this.setData(await api(`/inquiries/${id}`));
+        this.notify = this.canNotify;   // mặc định gửi email báo khách nếu có thể, admin bỏ tick được
+      } catch (e) { toast().error(e); }
+    },
+    get canNotify() { return !!(this.d?.email && this.d?.mail_ready); },
+    get notifyHelp() {
+      if (!this.d?.email) return 'Khách chưa để lại email nên không gửi được.';
+      if (!this.d.mail_ready) return 'Chưa bật email trong Cài đặt › Email.';
+      return 'Gửi tới ' + this.d.email + ' khi bạn đổi trạng thái.';
+    },
+    // Đổi trạng thái; có thể kèm email báo khách (tùy chọn tick ở trên)
+    async changeStatus(status) {
+      if (status === this.d.status) return;
+      await this.update({ status, notify_customer: this.notify && this.canNotify });
+    },
+    async saveShip() { await this.update({ carrier: this.ship.carrier, tracking_code: this.ship.tracking_code }); },
     // Nạp dữ liệu từ server. Phần dòng hàng đang sửa dở không bị ghi đè khi chỉ đổi trạng thái / ghi chú.
     setData(d, resetEdit = true) {
       this.d = d;
+      this.ship = { carrier: d.carrier || '', tracking_code: d.tracking_code || '' };
       if (resetEdit) {
         this.edit = {
           items: d.items.map((i) => ({ ...i, price: i.price ?? '' })),
@@ -488,7 +538,12 @@ document.addEventListener('alpine:init', () => {
     },
     async update(patch) {
       this.saving = true;
-      try { this.setData(await api(`/inquiries/${id}`, { method: 'PATCH', body: patch }), false); toast().show('Đã cập nhật'); } catch (e) { toast().error(e); }
+      try {
+        const r = await api(`/inquiries/${id}`, { method: 'PATCH', body: patch });
+        this.setData(r, false);
+        const mailMsg = { sent: ' và đã gửi email cho khách', failed: ', nhưng gửi email cho khách bị lỗi', no_email: ', khách chưa có email', not_configured: ', email chưa được cấu hình' }[r.notified] || '';
+        toast().show('Đã cập nhật' + mailMsg, r.notified === 'failed' ? 'error' : undefined);
+      } catch (e) { toast().error(e); }
       this.saving = false;
     },
     async resend() {
@@ -507,8 +562,12 @@ document.addEventListener('alpine:init', () => {
 
   // ---------------- Khách hàng ----------------
   Alpine.data('customersList', () => ({
-    ...listPage('/customers', { months: '', by: 'active' }),
-    summary: { customers: 0, inquiries: 0, spent: 0 },
+    ...listPage('/customers', { months: '', by: 'active', source: '' }),
+    summary: { customers: 0, inquiries: 0, spent: 0 }, sources: [],
+    // Bộ lọc thu gọn: nút "Bộ lọc" mở khung, kết quả lọc hiện thành các chip bên dưới
+    filtersOpen: false, preset: '',
+    // Nhập hàng loạt
+    imp: { open: false, text: '', source: '', tags: '', onDuplicate: 'skip', preview: null, busy: false, result: null, fileName: '' },
     selected: [], adding: false, saving: false, errors: {}, formError: '', dupId: null,
     form: { name: '', phone: '', email: '', address: '', wrist_size: '', note: '', tags: '', source: '' },
     // 12 tháng gần nhất theo giờ Việt Nam, mới nhất trước
@@ -520,12 +579,72 @@ document.addEventListener('alpine:init', () => {
         return { key, label: `Tháng ${d.getUTCMonth() + 1}/${d.getUTCFullYear()}` };
       });
     },
-    get exportUrl() { return `${A}/api/customers/export.csv?${qs({ q: this.filters.q, months: this.filters.months, by: this.filters.by })}`; },
+    get exportUrl() { return `${A}/api/customers/export.csv?${qs({ q: this.filters.q, months: this.filters.months, by: this.filters.by, source: this.filters.source })}`; },
+    get monthLabel() { return Object.fromEntries(this.monthOptions.map((m) => [m.key, m.label])); },
+    // Các bộ lọc đang bật, dạng chip có nút bỏ
+    get chips() {
+      const list = [];
+      if (this.selected.length) {
+        const names = this.preset && this.preset !== 'pick' ? this.presetLabels[this.preset] : this.selected.map((k) => this.monthLabel[k] || k).join(', ');
+        list.push({ key: 'time', text: 'Thời gian: ' + names });
+        list.push({ key: 'by', text: this.filters.by === 'created' ? 'Tính theo: khách mới tạo' : 'Tính theo: có phát sinh đơn/yêu cầu', fixed: true });
+      }
+      if (this.filters.source) list.push({ key: 'source', text: 'Nguồn: ' + this.filters.source });
+      return list;
+    },
+    get filterCount() { return (this.selected.length ? 1 : 0) + (this.filters.source ? 1 : 0); },
+    presetLabels: { this: 'Tháng này', last: 'Tháng trước', 3: '3 tháng gần nhất', 6: '6 tháng gần nhất', year: 'Năm nay' },
+    setPreset(v) {
+      this.preset = v;
+      const keys = this.monthOptions.map((m) => m.key);
+      const year = keys[0].slice(0, 4);
+      if (v === '') this.selected = [];
+      else if (v === 'this') this.selected = [keys[0]];
+      else if (v === 'last') this.selected = [keys[1]];
+      else if (v === '3' || v === '6') this.selected = keys.slice(0, Number(v));
+      else if (v === 'year') this.selected = keys.filter((k) => k.startsWith(year));
+      else if (v === 'pick') { if (!this.selected.length) this.selected = [keys[0]]; }
+      this.applyMonths();
+    },
+    clearChip(key) {
+      if (key === 'time') { this.preset = ''; this.selected = []; this.applyMonths(); }
+      if (key === 'source') { this.filters.source = ''; this.search(); }
+    },
+    clearAll() { this.preset = ''; this.selected = []; this.filters.source = ''; this.filters.months = ''; this.search(); },
+    // ----- Nhập hàng loạt -----
+    async readImportFile(ev) {
+      const f = ev.target.files?.[0];
+      if (!f) return;
+      this.imp.fileName = f.name;
+      this.imp.text = await f.text();
+      this.imp.preview = null; this.imp.result = null;
+      ev.target.value = '';
+    },
+    importBody() { const i = this.imp; return { text: i.text, source: i.source, tags: i.tags, on_duplicate: i.onDuplicate }; },
+    async previewImport() {
+      if (!this.imp.text.trim()) { toast().show('Hãy dán danh sách hoặc chọn file trước', 'error'); return; }
+      this.imp.busy = true; this.imp.result = null;
+      try { this.imp.preview = await api('/customers/import/preview', { method: 'POST', body: this.importBody() }); } catch (e) { toast().error(e); }
+      this.imp.busy = false;
+    },
+    async runImport() {
+      const c = this.imp.preview?.counts;
+      if (!c || !(c.new + c.update)) return;
+      this.imp.busy = true;
+      try {
+        this.imp.result = await api('/customers/import', { method: 'POST', body: this.importBody() });
+        this.imp.preview = null; this.imp.text = ''; this.imp.fileName = '';
+        toast().show(`Đã nhập ${this.imp.result.created} khách mới${this.imp.result.updated ? `, cập nhật ${this.imp.result.updated}` : ''}`);
+        this.load();
+      } catch (e) { toast().error(e); }
+      this.imp.busy = false;
+    },
+    get importStatusLabel() { return { new: 'Mới', update: 'Cập nhật', skip: 'Bỏ qua', error: 'Lỗi' }; },
     async load() {
       this.loading = true;
       try {
         const r = await api(`/customers?${qs({ ...this.filters, page: this.page })}`);
-        this.items = r.items; this.total = r.total; this.pages = r.pages; this.summary = r.summary;
+        this.items = r.items; this.total = r.total; this.pages = r.pages; this.summary = r.summary; this.sources = r.sources || [];
       } catch (e) { toast().error(e); }
       this.loading = false;
     },

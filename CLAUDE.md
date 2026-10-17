@@ -2,7 +2,7 @@
 
 Website bán vòng tay ngọc. Node 24 + Express 5 + SQLite (better-sqlite3) + Nunjucks (render tại server) + Tailwind CSS 4 + Alpine.js. Giao tiếp với chủ dự án bằng **tiếng Việt**.
 
-Đọc trước khi làm việc: `docs/GHI_CHU_DU_AN.md` (quyết định đã chốt, trạng thái, việc tiếp theo, bản đồ code) và `docs/DANH_CHO_LAP_TRINH_VIEN.md` (kiến trúc, quy ước).
+Đọc trước khi làm việc: `docs/GHI_CHU_DU_AN.md` (quyết định đã chốt, trạng thái, việc tiếp theo, bản đồ code, **cách làm việc và kiểm tra**) và `docs/DANH_CHO_LAP_TRINH_VIEN.md` (kiến trúc, luồng dữ liệu bán hàng, loại sản phẩm, quy ước).
 
 ## Lệnh
 
@@ -26,7 +26,13 @@ npm run migrate | backup | restore -- <thư-mục>
 - Không đặt `x-show` trực tiếp lên `<form>` có ô tên `style` (xung đột named access), bọc bằng `<div>`.
 - Popup: khung nội dung đứng **sau** lớp nền (`.modal-backdrop`, không có z-index) trong DOM.
 - Không xóa `.npmrc` (`ignore-scripts=true`): nhờ nó `npm install` dùng bản build sẵn của better-sqlite3/sharp, không cần Python/C++. Không thêm lại `allowScripts` vào package.json.
-- Trên Windows: không sửa file JS/template có chuỗi `${...}` bằng PowerShell (bị nuốt biến); dùng công cụ Edit.
+- Trên Windows: không sửa file JS/template có chuỗi `${...}` bằng PowerShell (bị nuốt biến); dùng công cụ Edit. Với script sửa file nhiều chỗ: ghi bằng công cụ Write rồi `node script.mjs`, đừng nhét code có backtick / `${}` vào `node -e "..."` hay heredoc.
+- **Không bao giờ `taskkill /IM node.exe`** (tắt cả `npm run dev` của chủ dự án). Máy chủ thử chạy cổng 3100 từ bản sao dự án và chỉ dừng theo PID. Git Bash: đặt `MSYS_NO_PATHCONV=1` khi truyền đường dẫn bắt đầu bằng `/`.
+- Migration **chạy tự động mỗi lần server khởi động** (kể cả `npm run dev` tự khởi động lại): `npm run backup` trước khi thêm migration. SQLite không sửa được CHECK / REFERENCES cột sẵn có: phải xây lại bảng (mẫu: `008_shipping_status.sql`).
+- Truy vấn sản phẩm phía khách phải có `TYPE_ACTIVE` (loại sản phẩm chưa hoạt động bị ẩn hoàn toàn) và trang "Tất cả sản phẩm" dùng `IN_MAIN_LIST` (xem `services/catalog.js`).
+- Tìm kiếm chữ dùng `vn(cột) LIKE likeVn(từ khóa)` (không phân biệt hoa/thường và dấu), không dùng `cột LIKE ?` trực tiếp.
+- Trạng thái yêu cầu theo từng loại ở `INQUIRY_FLOW` (`services/inquiries.js`); doanh thu tính theo `completed_at`. Nhóm cài đặt dài thì chia phần bằng `sectionize()` cuối `settings-schema.js` (trường chưa xếp phần sẽ báo lỗi khi khởi động).
+- Menu bên trái admin và danh sách nhóm cài đặt giữ nguyên dạng phẳng (chủ dự án không muốn gập menu); chỉ gập phần nội dung trong trang.
 
 ## An toàn: sao lưu trước mỗi thay đổi
 

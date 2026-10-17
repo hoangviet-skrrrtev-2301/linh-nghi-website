@@ -126,3 +126,20 @@ export function customerConfirmation(inq) {
       <p style="font-size:14px;line-height:1.6;margin-top:20px">Cần hỗ trợ ngay? Gọi/Zalo: <b>${escapeHtml(s.site.phone)}</b></p>`),
   };
 }
+
+// Email báo khách khi trạng thái đơn / yêu cầu thay đổi (do admin chọn gửi)
+export function customerStatusUpdate(inq) {
+  const s = getPublicSettings();
+  const note = s.forms[`track_msg_${inq.status}`] || '';
+  const ship = ['shipping', 'completed'].includes(inq.status)
+    ? rows([['Đơn vị vận chuyển', inq.carrier], ['Mã vận đơn', inq.tracking_code]]) : '';
+  return {
+    subject: `${s.site.name}: ${TYPE_LABEL[inq.type]} ${inq.code} – ${inq.status_label}`,
+    html: layout(`Xin chào ${inq.name},`, `<p style="font-size:14px;line-height:1.6">${TYPE_LABEL[inq.type]} <b>${escapeHtml(inq.code)}</b> của bạn vừa chuyển sang trạng thái:
+      <b style="color:${s.theme.color_primary}">${escapeHtml(inq.status_label)}</b></p>
+      ${note ? `<p style="font-size:14px;line-height:1.6;background:#f3f7f9;padding:12px 14px;border-radius:6px">${escapeHtml(note).replace(/\n/g, '<br>')}</p>` : ''}
+      ${ship}${itemsTable(inq.items, inq.total)}
+      <p style="font-size:14px;line-height:1.6;margin-top:20px">Xem chi tiết tại <a href="${escapeHtml(config.baseUrl)}/tra-cuu-don?ma=${encodeURIComponent(inq.code)}">${escapeHtml(config.baseUrl)}/tra-cuu-don</a> (nhập mã đơn và số điện thoại).</p>
+      <p style="font-size:14px;line-height:1.6;margin-top:20px">Cần hỗ trợ ngay? Gọi/Zalo: <b>${escapeHtml(s.site.phone)}</b></p>`),
+  };
+}

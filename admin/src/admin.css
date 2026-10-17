@@ -132,6 +132,8 @@
   --color-amber-50: #2b2210;    --color-amber-600: #f5c04a;   --color-amber-700: #fcd34d;
   --color-violet-50: #221a3b;   --color-violet-700: #c4b5fd;
   --color-emerald-50: #0f2a22;  --color-emerald-600: #4cc9a0; --color-emerald-700: #6ee7b7;
+  --color-sky-50: #0e2536;      --color-sky-600: #7dd3fc;     --color-sky-700: #bae6fd;
+  --color-rose-50: #2f1520;     --color-rose-600: #fda4af;
   --color-red-50: #2f1517;      --color-red-100: #3b1a1d;     --color-red-600: #f87171;   --color-red-700: #fca5a5;
 }
 :root[data-theme="dark"] .bg-white { background-color: var(--color-slate-100); }

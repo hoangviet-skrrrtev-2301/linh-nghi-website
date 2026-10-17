@@ -13,10 +13,12 @@ import * as media from '../../services/media.js';
 import * as catalog from '../../services/catalog.js';
 import * as content from '../../services/content.js';
 import * as inquiries from '../../services/inquiries.js';
+import * as customerImport from '../../services/customer-import.js';
+import { dashboardStats } from '../../services/dashboard.js';
 import * as users from '../../services/users.js';
 import * as settings from '../../services/settings.js';
 import { SETTINGS_SCHEMA, SCHEMA_BY_KEY } from '../../config/settings-schema.js';
-import { verifyConnection, sendMail } from '../../services/mailer.js';
+import { verifyConnection, sendMail, mailReady } from '../../services/mailer.js';
 
 const router = Router();
 const { audit } = users;
@@ -44,8 +46,9 @@ const upload = multer({
 // ---------------- Tổng quan ----------------
 router.get('/me', h((req) => ({ user: req.user })));
 
-router.get('/dashboard', h(() => ({
-  stats: inquiries.inquiryStats(),
+router.get('/dashboard', h((req) => ({
+  // Số liệu theo kỳ chọn (range = 7d | 30d | month | last_month | quarter | year | custom + from, to)
+  ...dashboardStats({ range: req.query.range, from: req.query.from, to: req.query.to }),
   counts: {
     products: db.prepare(`SELECT COUNT(*) FROM products WHERE status = 'published'`).pluck().get(),
     drafts: db.prepare(`SELECT COUNT(*) FROM products WHERE status = 'draft'`).pluck().get(),
@@ -242,17 +245,21 @@ router.get('/inquiries', h((req) => inquiries.listInquiries({
 router.get('/inquiries/:id', h((req) => {
   const inq = inquiries.getInquiry(id(req));
   if (!inq) throw new HttpError(404, 'Không tìm thấy');
-  return inq;
+  return { ...inq, mail_ready: mailReady() };
 }));
 router.post('/inquiries', h((req) => {
   const inq = inquiries.createAdminInquiry(req.body?.type || 'order', req.body || {}, req.user.id);
   audit(req, 'create', 'inquiry', inq.code, `admin tạo ${inq.type}`);
   return inq;
 }));
-router.patch('/inquiries/:id', h((req) => {
-  const inq = inquiries.updateInquiry(id(req), req.body);
-  audit(req, 'update', 'inquiry', inq.code, `status=${inq.status}${req.body?.items !== undefined ? ' sửa dòng hàng/giá' : ''}${req.body?.adjustment !== undefined ? ' điều chỉnh giá' : ''}`);
-  return inq;
+router.patch('/inquiries/:id', h(async (req) => {
+  const before = inquiries.getInquiry(id(req));
+  const inq = inquiries.updateInquiry(id(req), req.body || {});
+  // Admin tick "gửi email báo khách" và trạng thái vừa đổi thì gửi email; kết quả trả về để hiện thông báo
+  const statusChanged = before && before.status !== inq.status;
+  const notified = req.body?.notify_customer && statusChanged ? await inquiries.notifyStatusChange(inq.id) : null;
+  audit(req, 'update', 'inquiry', inq.code, `status=${inq.status}${req.body?.items !== undefined ? ' sửa dòng hàng/giá' : ''}${req.body?.adjustment !== undefined ? ' điều chỉnh giá' : ''}${req.body?.tracking_code !== undefined ? ' vận đơn' : ''}${notified ? ` email=${notified}` : ''}`);
+  return { ...inquiries.getInquiry(inq.id), mail_ready: mailReady(), notified };
 }));
 router.post('/inquiries/:id/convert', h((req) => {
   const order = inquiries.convertToOrder(id(req), req.user.id);
@@ -275,6 +282,19 @@ router.get('/customers/export.csv', requireOwner, (req, res) => {
   res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="khach-hang-${new Date().toISOString().slice(0, 10)}.csv"` });
   res.send(inquiries.customersCsv({ q: req.query.q, months: req.query.months, by: req.query.by, source: req.query.source }));
 });
+// Nhập khách hàng hàng loạt: xem trước (không ghi) rồi nhập thật
+router.get('/customers/import-template.csv', (req, res) => {
+  res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="mau-nhap-khach-hang.csv"' });
+  res.send(customerImport.importTemplateCsv());
+});
+router.post('/customers/import/preview', h((req) => customerImport.previewCustomerImport(String(req.body?.text || ''), {
+  source: req.body?.source, tags: req.body?.tags, onDuplicate: req.body?.on_duplicate,
+})));
+router.post('/customers/import', h((req) => {
+  const result = customerImport.importCustomers(String(req.body?.text || ''), { source: req.body?.source, tags: req.body?.tags, onDuplicate: req.body?.on_duplicate });
+  audit(req, 'import', 'customers', '', `${result.created} mới, ${result.updated} cập nhật, ${result.skipped} bỏ qua, ${result.failed} lỗi`);
+  return result;
+}));
 router.get('/customers', h((req) => inquiries.listCustomers({
   q: req.query.q, months: req.query.months, by: req.query.by, source: req.query.source, page: toInt(req.query.page, 1),
 })));

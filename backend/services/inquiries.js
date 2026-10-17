@@ -5,18 +5,36 @@ import { inquiryCode, safeJson, HttpError, toInt } from '../lib/utils.js';
 import { cleanText } from '../lib/sanitize.js';
 import { productsByIds } from './catalog.js';
 import { getRaw, getPublicSettings } from './settings.js';
-import { sendMail, mailReady, shopNotification, customerConfirmation } from './mailer.js';
+import { sendMail, mailReady, shopNotification, customerConfirmation, customerStatusUpdate } from './mailer.js';
 
 export const INQUIRY_TYPES = { order: 'Đơn hàng', custom: 'Thiết kế riêng', contact: 'Liên hệ' };
 export const INQUIRY_STATUS = {
   new: 'Mới',
   contacted: 'Đã liên hệ',
   confirmed: 'Đã xác nhận',
+  shipping: 'Đang giao hàng',
   completed: 'Hoàn thành',
   cancelled: 'Đã hủy',
 };
 
-const phoneRe = /^(\+?84|0)[\d\s.-]{8,13}$/;
+// Mỗi loại có chuỗi trạng thái riêng: đơn hàng có thêm "Đang giao hàng", lời nhắn liên hệ chỉ cần xử lý xong
+export const INQUIRY_FLOW = {
+  order: ['new', 'contacted', 'confirmed', 'shipping', 'completed', 'cancelled'],
+  custom: ['new', 'contacted', 'confirmed', 'completed', 'cancelled'],
+  contact: ['new', 'contacted', 'completed', 'cancelled'],
+};
+const STATUS_LABEL_BY_TYPE = { contact: { completed: 'Đã xử lý' } };
+export const statusLabel = (type, status) => STATUS_LABEL_BY_TYPE[type]?.[status] || INQUIRY_STATUS[status] || status;
+// Danh sách trạng thái (mã + nhãn) của một loại; withCancelled = false cho thanh tiến trình khách xem
+export const flowOf = (type, { withCancelled = true } = {}) => (INQUIRY_FLOW[type] || INQUIRY_FLOW.order)
+  .filter((k) => withCancelled || k !== 'cancelled').map((key) => ({ key, label: statusLabel(type, key) }));
+// Bảng mã → nhãn dùng cho giao diện admin (theo từng loại, "all" là gộp)
+export const INQUIRY_STATUS_BY_TYPE = {
+  all: INQUIRY_STATUS,
+  ...Object.fromEntries(Object.keys(INQUIRY_FLOW).map((t) => [t, Object.fromEntries(flowOf(t).map((s) => [s.key, s.label]))])),
+};
+
+export const phoneRe = /^(\+?84|0)[\d\s.-]{8,13}$/;
 const str = (max) => z.string().trim().max(max).optional().default('');
 
 const base = z.object({
@@ -57,7 +75,7 @@ const schemas = {
   }),
 };
 
-function normalizePhone(phone) {
+export function normalizePhone(phone) {
   let p = phone.replace(/[^\d+]/g, '');
   if (p.startsWith('+84')) p = '0' + p.slice(3);
   else if (p.startsWith('84') && p.length > 10) p = '0' + p.slice(2);
@@ -83,7 +101,8 @@ function present(row) {
     items: safeJson(row.items, []),
     details: safeJson(row.details, {}),
     type_label: INQUIRY_TYPES[row.type],
-    status_label: INQUIRY_STATUS[row.status],
+    status_label: statusLabel(row.type, row.status),
+    flow: flowOf(row.type),
   };
 }
 
@@ -103,6 +122,10 @@ export function lookupInquiry(code, phone) {
     type_label: inq.type_label,
     status: inq.status,
     status_label: inq.status_label,
+    flow: flowOf(inq.type, { withCancelled: false }),
+    carrier: inq.carrier,
+    tracking_code: inq.tracking_code,
+    shipped_at: inq.shipped_at,
     created_at: inq.created_at,
     updated_at: inq.updated_at,
     items: inq.items.map((i) => ({ name: i.name, size: i.size, qty: i.qty, price: showPrice ? i.price : null })),
@@ -267,24 +290,51 @@ export function listInquiries({ type, status, q, page = 1, perPage = 30, custome
   return { items: rows.map(present), total, page, pages: Math.max(1, Math.ceil(total / perPage)) };
 }
 
-export function updateInquiry(id, { status, admin_note, items, adjustment, adjustment_note }) {
+export function updateInquiry(id, { status, admin_note, items, adjustment, adjustment_note, carrier, tracking_code }) {
   const cur = getInquiry(id);
   if (!cur) throw new HttpError(404, 'Không tìm thấy');
+  // Chỉ nhận trạng thái thuộc chuỗi của loại này (ví dụ lời nhắn liên hệ không có "Đang giao hàng")
+  if (status !== undefined && !INQUIRY_FLOW[cur.type].includes(status)) throw new HttpError(400, 'Trạng thái này không dùng cho loại yêu cầu này');
+  const nextStatus = status !== undefined ? status : cur.status;
+  const now = db.prepare("SELECT datetime('now')").pluck().get();
+  // Mốc thời gian: giao hàng và hoàn thành (doanh thu tính theo ngày hoàn thành). Lùi trạng thái thì xóa mốc đã qua.
+  const shippedAt = ['shipping', 'completed'].includes(nextStatus) ? (cur.shipped_at || (nextStatus === 'shipping' ? now : null)) : null;
+  const completedAt = nextStatus === 'completed' ? (cur.completed_at || now) : null;
   // Chỉ khi admin gửi lên danh sách dòng hàng / điều chỉnh mới tính lại tổng tiền
   const repriced = items !== undefined || adjustment !== undefined;
   const nextItems = items !== undefined ? cleanItems(items) : cur.items;
   const nextAdj = adjustment !== undefined ? cleanAdjustment(adjustment) : cur.adjustment;
   db.prepare(`UPDATE inquiries SET status = ?, admin_note = ?, items = ?, adjustment = ?, adjustment_note = ?, total = ?,
-    updated_at = datetime('now') WHERE id = ?`).run(
-    INQUIRY_STATUS[status] ? status : cur.status,
+    carrier = ?, tracking_code = ?, shipped_at = ?, completed_at = ?, updated_at = datetime('now') WHERE id = ?`).run(
+    nextStatus,
     admin_note !== undefined ? cleanText(admin_note, 5000) : cur.admin_note,
     JSON.stringify(nextItems),
     nextAdj,
     adjustment_note !== undefined ? cleanText(adjustment_note, 300) : cur.adjustment_note,
     repriced ? computeTotal(nextItems, nextAdj) : cur.total,
+    carrier !== undefined ? cleanText(carrier, 80) : cur.carrier,
+    tracking_code !== undefined ? cleanText(tracking_code, 100) : cur.tracking_code,
+    shippedAt,
+    completedAt,
     id,
   );
   return getInquiry(id);
+}
+
+// Gửi email báo khách khi đổi trạng thái (admin chọn gửi). Trả về: sent | no_email | not_configured | failed
+export async function notifyStatusChange(id) {
+  const inq = getInquiry(id);
+  if (!inq) throw new HttpError(404, 'Không tìm thấy');
+  if (!inq.email) return 'no_email';
+  if (!mailReady()) return 'not_configured';
+  try {
+    const m = customerStatusUpdate(inq);
+    await sendMail({ to: inq.email, subject: m.subject, html: m.html, replyTo: getPublicSettings().site.email || undefined });
+    return 'sent';
+  } catch (err) {
+    console.error('[mail] Gửi email trạng thái thất bại:', err.message);
+    return 'failed';
+  }
 }
 
 // Shop tự lên đơn / ghi nhận yêu cầu cho khách (khách nhắn qua Zalo, Facebook, đến cửa hàng...)
@@ -304,9 +354,10 @@ export function createAdminInquiry(type, input, userId = null) {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'admin', ?, 'none')`).run(
     inquiryCode(type), type, customer.id, customer.name, customer.phone, customer.email, customer.address, '',
     JSON.stringify(items), computeTotal(items, adjustment), JSON.stringify(details), cleanText(input.message, 3000),
-    INQUIRY_STATUS[input.status] ? input.status : (parentId ? 'contacted' : 'new'),
+    INQUIRY_FLOW[type].includes(input.status) ? input.status : (parentId ? 'contacted' : 'new'),
     parentId, adjustment, cleanText(input.adjustment_note, 300), userId,
   ).lastInsertRowid;
+  if (input.status === 'completed' && INQUIRY_FLOW[type].includes('completed')) db.prepare("UPDATE inquiries SET completed_at = datetime('now') WHERE id = ?").run(id);
   return getInquiry(id);
 }
 
@@ -383,7 +434,9 @@ export function listCustomers({ q, page = 1, perPage = 30, months, by, source } 
     COALESCE(SUM(total_spent), 0) AS spent FROM f`).get(...params);
   const items = db.prepare(`${sql} SELECT * FROM f ORDER BY COALESCE(last_inquiry_at, created_at) DESC LIMIT ? OFFSET ?`)
     .all(...params, perPage, (Math.max(1, page) - 1) * perPage);
-  return { items, total: summary.customers, summary, page, pages: Math.max(1, Math.ceil(summary.customers / perPage)) };
+  // Các nguồn khách đang có (Zalo, Facebook...) để chọn nhanh trong bộ lọc
+  const sources = db.prepare("SELECT source AS name, COUNT(*) AS count FROM customers WHERE source != '' GROUP BY source ORDER BY count DESC, source").all();
+  return { items, total: summary.customers, summary, sources, page, pages: Math.max(1, Math.ceil(summary.customers / perPage)) };
 }
 
 // Admin thêm khách (khách nhắn Zalo/Facebook, đến cửa hàng...). Số điện thoại là khóa duy nhất.

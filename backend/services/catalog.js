@@ -174,7 +174,7 @@ const SORTS = {
   noi_bat: 'p.is_bestseller DESC, p.is_featured DESC, p.sort_order ASC, p.id DESC',
   // Best Seller trước, sau đó theo số lượng đã bán (đơn đã xác nhận / hoàn thành)
   ban_chay: `p.is_bestseller DESC, (SELECT COALESCE(SUM(json_extract(j.value, '$.qty')), 0) FROM inquiries i, json_each(i.items) j
-    WHERE i.type = 'order' AND i.status IN ('confirmed', 'completed') AND json_extract(j.value, '$.id') = p.id) DESC, p.id DESC`,
+    WHERE i.type = 'order' AND i.status IN ('confirmed', 'shipping', 'completed') AND json_extract(j.value, '$.id') = p.id) DESC, p.id DESC`,
   ten: 'p.name COLLATE NOCASE ASC',
 };
 export const SORT_OPTIONS = [

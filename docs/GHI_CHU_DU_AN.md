@@ -2,7 +2,7 @@
 
 Tài liệu "sổ tay" để tiếp tục phát triển: bối cảnh, các quyết định đã chốt, những gì đã xong, việc còn chờ. Cập nhật file này mỗi khi có quyết định hoặc thay đổi lớn.
 
-_Cập nhật lần cuối: 16/10/2026_
+_Cập nhật lần cuối: 17/10/2026_
 
 ---
 
@@ -27,6 +27,13 @@ _Cập nhật lần cuối: 16/10/2026_
 | Chứng chỉ | Theo từng sản phẩm (ảnh + nơi cấp + mã số + ngày cấp) **và** khối mẫu giấy kiểm định ở trang chủ | |
 | Loại sản phẩm | Có bảng `product_types`: Vòng tay ngọc (chính) và **Pháp phục** (tạo sẵn, **chưa hoạt động**: nhập được trong admin nhưng khách chưa thấy). Mỗi loại tự khai báo thông số (ô chữ / số / danh sách chọn) | Ngày 17/10/2026. Bật hoạt động sẽ hiện chung trong trang Sản phẩm cho đến khi có trang riêng, xem DANH_CHO_LAP_TRINH_VIEN.md |
 | Blog | Chia theo chuyên mục; trang chuyên mục `noindex, follow`, không có trong sitemap (tắt được) | Để tránh nội dung trùng khi viết bài SEO nhiều chủ đề |
+| Gallery | Hiện tối đa 8 ảnh dạng 2 hàng × 4 cột (trang chủ và trang Gallery); hơn 8 ảnh thành slider tự lướt phải → trái. Tab "Tất cả" chỉ hiện ảnh bật "Hiện ở Gallery tổng", tab album hiện đủ ảnh | Chủ dự án muốn gallery tổng chọn lọc, album phụ chứa feedback / ảnh chưa chọn |
+| Trạng thái đơn | Mỗi loại có chuỗi riêng: đơn hàng thêm **Đang giao hàng** (kèm đơn vị vận chuyển + mã vận đơn khách xem được, tùy chọn email báo khách); liên hệ kết thúc ở "Đã xử lý" | Ngày 17/10/2026 |
+| Doanh thu | Tính theo **ngày hoàn thành** của đơn (giờ Việt Nam), đơn hoàn thành cũ lấy ngày cập nhật cuối làm gần đúng | Chủ dự án chốt |
+| Tìm kiếm | Không phân biệt hoa/thường và dấu ("áo" = "Áo" = "ao") cho sản phẩm, bài viết, đơn, khách, ảnh | Hàm `vn()` trong SQLite |
+| Menu | Mỗi mục có thể sổ dọc theo loại ngọc / màu / kiểu dáng / mệnh / loại sản phẩm / chuyên mục blog / bài mới / danh sách tự nhập. Mục Sản phẩm mặc định sổ theo loại ngọc, tự thêm các loại hàng khác đang hoạt động (Pháp phục) | |
+| Giao diện admin | Giữ nguyên menu bên trái và danh sách nhóm cài đặt; các trang nhiều thành phần (Cài đặt các nhóm dài, danh sách slide / khối) chia phần thu gọn / mở ra | Chủ dự án không muốn gập menu |
+| Loại hàng khác ngọc (Pháp phục) | Hiện giống ngọc (thẻ sản phẩm, trang chi tiết) nhưng **không có bộ lọc** (bộ lọc chỉ cho ngọc), không hiện chung trong "Tất cả sản phẩm", chỉ xem qua menu / đường dẫn `?nhom=<slug>` / tìm kiếm | Chủ dự án chốt |
 | Bộ lọc | Loại ngọc, giá (khoảng giá cấu hình được), ni tay, màu, kiểu dáng, mệnh | Danh mục quản lý trong admin |
 | Chế độ tối | Có, khách tự chuyển; mặc định theo thiết bị; chủ shop chỉnh màu tối / tắt trong Admin › Giao diện | Biến CSS `:root[data-theme="dark"]` sinh tại `/theme.css` |
 | Đơn của shop tự tạo | Admin tạo khách / đơn / custom thủ công; đơn lên từ custom có mã DH riêng (parent_id); giá đơn sửa được sau khi liên hệ, tổng = dòng hàng + điều chỉnh | Khách tra cứu bằng mã + SĐT |
@@ -42,33 +49,43 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 
 ## 3. Trạng thái hiện tại
 
-**Đã hoàn thành và đã kiểm tra trên trình duyệt thật (Edge headless, desktop + mobile):**
+**Đã hoàn thành và đã kiểm tra trên trình duyệt thật (Chrome headless, desktop + mobile 390px):**
 
-- Trang khách: trang chủ (banner nhiều slide, khối thông tin có popup, sản phẩm nổi bật, chứng chỉ kiểm định, phân loại, phong thủy, bảng ni + tính ni nhanh, custom, gallery, cảm nhận khách, blog), sản phẩm (tìm kiếm, bộ lọc, sắp xếp, phân trang), chi tiết sản phẩm, gallery, hướng dẫn size (có video YouTube), blog, giỏ hàng, thiết kế riêng, liên hệ, về shop, trang 404.
-- Popup: xem nhanh sản phẩm, nội dung khối thông tin, yêu cầu tư vấn / đặt nhanh, chào mừng (bật/tắt), toast.
-- Nhãn sản phẩm: Best Seller, Mới (tự động theo số ngày), Sale %, Đặt trước, Đã bán, Có thể custom; ảnh góc khác khi di chuột.
-- Gửi email: thông báo cho shop + xác nhận cho khách. **Mới kiểm tra nội dung email, chưa gửi thật bằng Gmail.**
-- Admin: tổng quan, đơn hàng / custom / liên hệ (trạng thái, ghi chú, gửi lại email), khách hàng (gộp theo SĐT, nhãn, xuất CSV), sản phẩm, danh mục, gallery (kéo thả sắp xếp), blog (hẹn giờ đăng), thư viện ảnh, 13 nhóm cài đặt, tài khoản, 2FA, nhật ký.
-- SEO: meta, Open Graph, canonical, JSON-LD, sitemap, robots, SEO riêng từng trang / sản phẩm / bài viết.
-- Bảo mật: xem `BAO_MAT_SAO_LUU.md`.
-- Vận hành: script cài VPS, cập nhật, sao lưu tự động hằng đêm, khôi phục (`npm run restore`).
+- **Trang khách:** trang chủ (các khối bật/tắt, đổi thứ tự, nền riêng từng khối), sản phẩm (tìm kiếm không dấu, bộ lọc cho ngọc, phân trang bằng liên kết thật, canonical + prev/next), trang theo loại sản phẩm, chi tiết sản phẩm, gallery 2×4 + slider, hướng dẫn size, blog 2 cột (mục lục, gợi ý bài, banner dọc, chuyên mục), giỏ hàng, thiết kế riêng, liên hệ, về shop, tra cứu đơn (5 bước theo loại, vận đơn), 404. Menu sổ dọc, chân trang tùy chỉnh, chế độ tối.
+- **Đặt hàng:** sau khi gửi đơn khách tải được ảnh PNG "Thông tin đơn hàng" (vẽ trên trình duyệt, `frontend/public/js/order-image.js`).
+- **Admin:** Tổng quan theo kỳ (so sánh kỳ trước, biểu đồ có số), đơn hàng / custom / liên hệ (chuỗi trạng thái theo loại, vận chuyển, email báo khách tùy chọn), khách hàng (bộ lọc thu gọn, nhập hàng loạt, thêm thủ công, xuất CSV), sản phẩm (ẩn / hiện / xóa hàng loạt, loại sản phẩm + thông số tự đặt, xem thử như khách), danh mục, gallery, blog (chuyên mục), thư viện ảnh theo thư mục, cài đặt (các nhóm dài chia phần thu gọn), tài khoản, 2FA, nhật ký. Admin dùng được trên điện thoại (bảng thành thẻ).
+- **SEO:** meta, Open Graph, canonical riêng từng trang phân trang, JSON-LD (Organization, WebSite, CollectionPage / Blog + ItemList, Product, BlogPosting, BreadcrumbList, AboutPage / ContactPage), sitemap, robots, SEO riêng từng trang / sản phẩm / bài viết.
+- **Email:** thông báo cho shop, xác nhận cho khách, báo trạng thái đơn. **Mới kiểm tra nội dung email, chưa gửi thật bằng Gmail.**
+- Bảo mật: xem `BAO_MAT_SAO_LUU.md`. Vận hành: script cài VPS, cập nhật, sao lưu tự động, khôi phục (`npm run restore`).
 
-**Chưa kiểm tra được (cần môi trường thật):**
-- Gửi email thật qua Gmail (cần Gmail + App Password của shop).
+**Chưa kiểm tra được:**
+- Gửi email thật qua Gmail (cần Gmail + App Password của shop), gồm cả email báo giao hàng.
+- Ảnh đơn hàng, menu điện thoại, nút chia sẻ trên iPhone / Safari và Android thật (mới thử bằng Chrome giả lập).
+- Công cụ Rich Results của Google với dữ liệu JSON-LD mới.
 - `deploy/setup-vps.sh` trên VPS Ubuntu thật (mới kiểm tra cú pháp).
+
+**Dữ liệu thử đang nằm trong database thật (xóa khi không cần):**
+- 2 sản phẩm Pháp phục mẫu (mã `PP-TEST-01`, `PP-TEST-02`, tên có "(mẫu thử)", ảnh tạm lấy từ ảnh mẫu). Loại Pháp phục đang **chưa hoạt động** nên khách không thấy; xóa bằng tick chọn rồi Xóa ở Admin › Sản phẩm.
+- Vài đơn / khách thử do chủ dự án tự tạo khi thử tính năng (có thể xóa trong admin).
 
 ## 4. Việc tiếp theo
 
-- [ ] Nhận mẫu giao diện + tông màu từ chủ dự án → chỉnh `frontend/src/css/app.css`, các template trong `frontend/views/`, và giá trị mặc định nhóm `theme` trong `settings-schema.js`
+- [ ] Nhận mẫu giao diện + tông màu từ chủ dự án → chỉnh `frontend/src/css/app.css`, các template trong `frontend/views/`, và giá trị mặc định nhóm `theme` trong `settings-schema.js` (bố cục chưa chốt)
 - [ ] Mua VPS + tên miền, chạy `deploy/setup-vps.sh`
-- [ ] Cấu hình Gmail App Password, thử gửi đơn thật
-- [ ] Thay dữ liệu mẫu bằng sản phẩm, ảnh, giấy kiểm định thật; xóa ảnh mẫu (Thư viện ảnh, thư mục "sample")
-- [ ] Nhập nội dung thật: Về shop, chính sách, SEO từng trang
-- [ ] Gửi sitemap lên Google Search Console
+- [ ] Cấu hình Gmail App Password, thử gửi đơn thật và email báo giao hàng
+- [ ] Thử trên điện thoại thật (iPhone Safari, Android): menu, ảnh đơn hàng + nút chia sẻ, admin responsive
+- [ ] Thay dữ liệu mẫu bằng sản phẩm, ảnh, giấy kiểm định thật; xóa ảnh mẫu (Thư viện ảnh, thư mục "sample") và 2 mẫu Pháp phục thử
+- [ ] Nhập nội dung thật: Về shop, chính sách, SEO từng trang, chuyên mục + banner blog
+- [ ] Gửi sitemap lên Google Search Console, kiểm tra Rich Results
+
+**Khi muốn mở bán Pháp phục** (loại đã có sẵn, đang thử nghiệm): nhập sản phẩm thật, kiểm tra bằng "Xem thử như khách", rồi Admin › Sản phẩm › Loại sản phẩm › Bật hoạt động. Còn thiếu trước khi mở bán thật: chọn **kích cỡ** (S/M/L...) khi đặt hàng (giỏ hàng hiện chỉ hiểu "ni" dạng số), thanh toán/chuyển khoản nếu cần, schema SEO riêng cho loại không phải ngọc.
 
 **Ý tưởng có thể làm sau (chưa ai yêu cầu):**
+- Trạng thái thanh toán và trừ kho tự động khi có đơn (hiện chưa có)
+- Tách "khách hàng" khỏi "người chỉ nhắn hỏi" (mọi lời nhắn liên hệ hiện đều tạo hồ sơ khách)
+- Gộp "SEO Google & chia sẻ" vào cùng trang với nội dung từng trang (hiện tách 2 nhóm, đã ghi rõ ô nào lấy từ đâu)
 - Hỗ trợ ảnh HEIC của iPhone (cần sharp build kèm libheif)
-- Tra cứu mã chứng chỉ kiểm định trên website (đã từng đề xuất, chủ dự án chọn phương án "Ảnh + thông tin mã số")
+- Tra cứu mã chứng chỉ kiểm định trên website
 - Đăng nhập Zalo/Google cho khách, lịch sử đơn của khách
 - Thông báo đơn mới qua Telegram/Zalo OA
 - Song ngữ Việt – Anh
@@ -80,8 +97,13 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 | Ảnh HEIC (iPhone) không upload được | Hướng dẫn người dùng chụp JPG, đã ghi trong HUONG_DAN_SU_DUNG.md |
 | SQLite chạy 1 tiến trình | Đủ cho hàng nghìn sản phẩm / đơn. Nếu sau này cần nhiều server thì chuyển sang PostgreSQL |
 | Alpine.js cần `'unsafe-eval'` trong CSP | Toàn bộ nội dung người dùng nhập đều escape/sanitize; ghi chú tại `backend/middleware/security.js` |
-| Trên Windows, `node --watch` in dòng "Completed running..." sau mỗi lần tự khởi động lại | Chỉ là thông báo, server vẫn chạy bình thường |
+| Trên Windows, `node --watch` in dòng "Completed running..." sau mỗi lần tự khởi động lại | Chỉ là thông báo, server vẫn chạy bình thường. `npm run dev` chỉ theo dõi thư mục `backend` (sửa `frontend` / `admin` chỉ cần tải lại trang) |
+| **Migration chạy tự động mỗi lần server khởi động** | Kể cả `npm run dev` tự khởi động lại khi sửa file `backend`. Luôn `npm run backup` trước khi thêm migration |
 | `.npmrc` đặt `ignore-scripts=true` | Thư viện native (better-sqlite3, sharp, tailwind) dùng bản build sẵn, máy mới không cần Python / trình biên dịch. Nếu sau này thêm thư viện **bắt buộc** chạy script cài đặt thì cần xem lại |
+| Giỏ hàng chỉ hiểu "ni" dạng số | Loại hàng khác ngọc (Pháp phục) chưa chọn được kích cỡ khi đặt hàng |
+| Ảnh đơn hàng cho khách vẽ trên trình duyệt | Cần font đã tải; nếu trình duyệt khách quá cũ có thể không tạo được ảnh (khách vẫn đặt hàng bình thường) |
+| Tìm kiếm tiếng Việt quét toàn bảng (`vn()`) | Không dùng chỉ mục; nhanh với vài nghìn dòng, cần xem lại nếu lên hàng chục nghìn |
+| Trạng thái đơn đã chốt trong DB bằng ràng buộc CHECK | Thêm trạng thái mới phải xây lại bảng `inquiries` (xem migration 008 làm mẫu) |
 
 ## 6. Bản đồ code: muốn sửa X thì mở file nào
 
@@ -102,10 +124,26 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 | Thứ tự / nền các khối trang chủ | `backend/lib/home-layout.js`, `frontend/views/partials/home/*.njk`, nhóm `home_layout` trong `settings-schema.js` |
 | Chân trang, blog 2 cột | `partials/footer.njk`, `backend/lib/footer-layout.js`; `pages/post.njk`, `partials/blog-sidebar.njk`, `backend/lib/toc.js` |
 | Menu sổ dọc, phân trang, schema | `backend/lib/nav-menu.js`, `backend/lib/pagination.js`, `backend/lib/seo.js` |
+| Tổng quan admin theo kỳ | `backend/services/dashboard.js`, `admin/views/pages/dashboard.njk`, component `dashboard` trong `pages.js` |
+| Trạng thái đơn, vận chuyển, email báo khách | `INQUIRY_FLOW` + `updateInquiry` trong `services/inquiries.js`, `customerStatusUpdate` trong `mailer.js`, trang tra cứu `frontend/views/pages/track.njk` |
+| Nhập khách hàng hàng loạt | `backend/services/customer-import.js` + panel trong `admin/views/pages/customers.njk` |
+| Loại sản phẩm, thông số tự đặt, xem thử | `product_types` trong `services/catalog.js` (`TYPE_ACTIVE`, `IN_MAIN_LIST`), `/admin/preview/san-pham/:id` trong `routes/admin.js` |
+| Chuyên mục blog | `services/content.js` (`listPostCategories`...), `routes/public.js` (`renderBlogList`) |
+| Ảnh đơn hàng khách tải về | `frontend/public/js/order-image.js`, `buildReceipt` trong `app.js` |
+| Tìm kiếm không dấu | `foldVn`, `likeVn`, hàm SQL `vn()` trong `backend/lib/db.js` |
+| Chia phần thu gọn trong Cài đặt | `sectionize()` cuối `settings-schema.js`, `settingsPage` trong `pages.js`, `admin/views/pages/settings.njk` |
 | Trang admin | `admin/views/pages/*.njk` + component tương ứng trong `admin/public/js/pages.js` |
 | API admin | `backend/routes/admin-api/index.js` |
 | Cấu trúc database | thêm file mới trong `database/migrations/` |
 | Dữ liệu mẫu | `backend/scripts/seed.js` |
+
+## 6b. Cách làm việc và kiểm tra (đọc trước khi làm tiếp)
+
+- **Kiểm tra trên bản sao, không thử trên database thật:** sao chép dự án sang thư mục tạm (bỏ `node_modules`, dùng junction), tạo admin thử, chạy `PORT=3100 BASE_URL=http://localhost:3100 node backend/server.js` từ bản sao rồi điều khiển Chrome headless bằng CDP (WebSocket, Node 24) để đăng nhập, đặt đơn, chụp màn hình, đo tràn ngang. Sửa file thật xong thì `cp -r` sang bản sao và khởi động lại máy chủ thử (template bị cache).
+- **Không bao giờ `taskkill /IM node.exe`:** lệnh này tắt cả `npm run dev` của chủ dự án. Chỉ dừng máy chủ thử theo PID cổng 3100 (`netstat -ano | grep :3100` → `taskkill /F /PID <số>`).
+- **Git Bash trên Windows:** đặt `MSYS_NO_PATHCONV=1` khi truyền đường dẫn bắt đầu bằng `/` (nếu không bị đổi thành `C:/Program Files/Git/...`; lúc đó `taskkill` dùng một dấu `/F`). Dùng `cp -r`, không dùng `robocopy`.
+- **Ghi script sửa file bằng công cụ Write rồi chạy `node script.mjs`:** đừng nhét code có dấu backtick hoặc `${...}` vào `node -e "..."` hoặc heredoc (shell nuốt mất, đã gây lỗi nhiều lần).
+- Luôn `npm run backup` trước khi sửa; chỉ commit khi chủ dự án đồng ý; ghi `CHANGELOG.md` và file này khi xong việc lớn.
 
 ## 7. Lịch sử thay đổi
 

@@ -10,7 +10,7 @@ import { getPublicSettings } from '../services/settings.js';
 import { SETTINGS_SCHEMA, SCHEMA_BY_KEY } from '../config/settings-schema.js';
 import { TERM_TYPES, STOCK_LABEL, getProduct, relatedProducts } from '../services/catalog.js';
 import { publicLocals } from './public.js';
-import { INQUIRY_TYPES, INQUIRY_STATUS } from '../services/inquiries.js';
+import { INQUIRY_TYPES, INQUIRY_STATUS, INQUIRY_STATUS_BY_TYPE } from '../services/inquiries.js';
 import { HttpError } from '../lib/utils.js';
 import apiRouter from './admin-api/index.js';
 
@@ -32,7 +32,7 @@ router.use((req, res, next) => {
   res.locals.A = config.adminPath;
   res.locals.currentPath = req.path;
   res.locals.meta = {
-    termTypes: TERM_TYPES, stockLabels: STOCK_LABEL, inquiryTypes: INQUIRY_TYPES, inquiryStatus: INQUIRY_STATUS, roles: ROLES,
+    termTypes: TERM_TYPES, stockLabels: STOCK_LABEL, inquiryTypes: INQUIRY_TYPES, inquiryStatus: INQUIRY_STATUS, statusByType: INQUIRY_STATUS_BY_TYPE, roles: ROLES,
   };
   next();
 });

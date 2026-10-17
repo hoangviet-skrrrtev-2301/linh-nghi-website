@@ -287,7 +287,8 @@ document.addEventListener('alpine:init', () => {
   // Tra cứu tình trạng đơn bằng mã + số điện thoại
   Alpine.data('trackForm', (preset = '') => ({
     code: preset, phone: '', loading: false, error: '', result: null, statusNote: '',
-    steps: [{ key: 'new', label: 'Đã nhận' }, { key: 'contacted', label: 'Đã liên hệ' }, { key: 'confirmed', label: 'Đã xác nhận' }, { key: 'completed', label: 'Hoàn thành' }],
+    // Các bước do server trả về theo từng loại (đơn hàng có thêm "Đang giao hàng", liên hệ ít bước hơn)
+    get steps() { return this.result?.flow?.length ? this.result.flow.map((s) => (s.key === 'new' ? { ...s, label: 'Đã nhận' } : s)) : []; },
     get stepIndex() { return this.steps.findIndex((s) => s.key === this.result?.status); },
     vnd: (n) => new Intl.NumberFormat('vi-VN').format(n) + 'đ',
     fmtDate(v) {

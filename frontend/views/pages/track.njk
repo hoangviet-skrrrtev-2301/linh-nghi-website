@@ -46,7 +46,7 @@
         </div>
 
         {# Thanh tiến trình #}
-        <ol class="mt-7 grid grid-cols-4 gap-2 text-center text-xs" x-show="result.status !== 'cancelled'">
+        <ol class="mt-7 grid gap-2 text-center text-xs" :style="'grid-template-columns: repeat(' + steps.length + ', minmax(0, 1fr))'" x-show="result.status !== 'cancelled'">
           <template x-for="(st, i) in steps" :key="st.key">
             <li>
               <span class="mx-auto flex h-8 w-8 items-center justify-center rounded-full text-[13px] font-semibold"
@@ -57,6 +57,12 @@
         </ol>
 
         <p class="mt-6 rounded-md bg-primary/5 p-4 text-sm leading-relaxed" x-show="statusNote" x-text="statusNote"></p>
+
+        {# Thông tin vận chuyển khi shop đã giao cho đơn vị vận chuyển #}
+        <dl class="mt-4 grid gap-3 rounded-md border border-line p-4 text-sm sm:grid-cols-2" x-show="result.carrier || result.tracking_code" x-cloak>
+          <div x-show="result.carrier"><dt class="text-muted">Đơn vị vận chuyển</dt><dd class="font-medium" x-text="result.carrier"></dd></div>
+          <div x-show="result.tracking_code"><dt class="text-muted">Mã vận đơn</dt><dd class="font-mono font-medium" x-text="result.tracking_code"></dd></div>
+        </dl>
 
         <dl class="mt-6 grid gap-3 text-sm sm:grid-cols-2">
           <div><dt class="text-muted">Ngày gửi</dt><dd class="font-medium" x-text="fmtDate(result.created_at)"></dd></div>

@@ -95,10 +95,23 @@
         <div class="card card-body space-y-3">
           <label class="label">Cập nhật trạng thái</label>
           <div class="grid grid-cols-2 gap-2">
-            {% for k, v in meta.inquiryStatus %}
-            <button class="btn btn-sm" :class="d.status === '{{ k }}' ? 'btn-primary' : 'btn-secondary'" :disabled="saving" @click="update({ status: '{{ k }}' })">{{ v }}</button>
-            {% endfor %}
+            <template x-for="s in d.flow" :key="s.key">
+              <button class="btn btn-sm" :class="d.status === s.key ? 'btn-primary' : 'btn-secondary'" :disabled="saving" @click="changeStatus(s.key)" x-text="s.label"></button>
+            </template>
           </div>
+          <label class="flex items-start gap-2 text-sm" :class="!canNotify && 'opacity-60'">
+            <input type="checkbox" class="mt-0.5 h-4 w-4 accent-brand-600" x-model="notify" :disabled="!canNotify">
+            <span>Gửi email báo khách khi đổi trạng thái<span class="help block !mt-0" x-text="notifyHelp"></span></span>
+          </label>
+        </div>
+        {# Thông tin vận chuyển: khách xem được ở trang tra cứu đơn #}
+        <div class="card card-body space-y-3" x-show="d.type === 'order'">
+          <label class="label !mb-0">Vận chuyển</label>
+          <input class="input" list="carrier-list" placeholder="Đơn vị vận chuyển (GHN, GHTK, Viettel Post...)" x-model="ship.carrier" maxlength="80">
+          <datalist id="carrier-list"><option>Giao hàng nhanh (GHN)</option><option>Giao hàng tiết kiệm (GHTK)</option><option>Viettel Post</option><option>J&amp;T Express</option><option>VNPost</option><option>Ahamove / Grab</option><option>Shop giao trực tiếp</option></datalist>
+          <input class="input font-mono" placeholder="Mã vận đơn (nếu có)" x-model="ship.tracking_code" maxlength="100">
+          <button class="btn btn-secondary btn-sm" :disabled="saving" @click="saveShip()">Lưu thông tin vận chuyển</button>
+          <p class="help !mt-0">Khách thấy đơn vị vận chuyển và mã vận đơn khi tra cứu đơn bằng mã và số điện thoại.<span x-show="d.shipped_at"> Bắt đầu giao: <b x-text="$fmt.date(d.shipped_at)"></b>.</span></p>
         </div>
         <div class="card card-body space-y-2" x-show="d.type !== 'order'">
           <button class="btn btn-primary w-full" :disabled="saving" @click="convert()">{{ icon('bag', 'w-4 h-4') }} Lên đơn hàng từ yêu cầu này</button>
@@ -111,6 +124,7 @@
         </div>
         <div class="card card-body space-y-2 text-sm text-slate-600">
           <p>Nhận lúc: <b x-text="$fmt.date(d.created_at)"></b></p>
+          <p x-show="d.completed_at">Hoàn thành lúc: <b x-text="$fmt.date(d.completed_at)"></b></p>
           <template x-if="d.mail_status !== 'none'">
             <div class="space-y-2">
               <p>Email thông báo: <b x-text="{ sent: 'Đã gửi', failed: 'Gửi lỗi', not_configured: 'Chưa cấu hình email', pending: 'Đang gửi' }[d.mail_status]"></b></p>

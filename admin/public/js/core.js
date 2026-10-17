@@ -42,7 +42,7 @@
   };
 
   const STATUS_COLOR = {
-    new: 'bg-blue-50 text-blue-700', contacted: 'bg-amber-50 text-amber-700', confirmed: 'bg-violet-50 text-violet-700',
+    new: 'bg-blue-50 text-blue-700', contacted: 'bg-amber-50 text-amber-700', confirmed: 'bg-violet-50 text-violet-700', shipping: 'bg-sky-50 text-sky-700',
     completed: 'bg-emerald-50 text-emerald-700', cancelled: 'bg-slate-100 text-slate-500',
   };
 

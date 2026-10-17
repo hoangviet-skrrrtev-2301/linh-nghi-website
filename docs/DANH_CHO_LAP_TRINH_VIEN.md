@@ -76,6 +76,29 @@ Chạy `npm run migrate` (trên VPS, `deploy/update.sh` tự chạy). Mỗi file
 | `product_types` | Loại sản phẩm (Vòng tay ngọc, Pháp phục...): tên, thông số tự đặt `spec_fields` (JSON), `active`, `uses_jade_fields` |
 | `post_categories` | Chuyên mục blog (`posts.category_id`) |
 
+## Luồng dữ liệu bán hàng (khách hàng, liên hệ, custom, đơn hàng)
+
+```
+KHÁCH TRÊN WEBSITE                       SHOP TỰ NHẬP (admin)
+ ├ Đặt hàng       ┐                      ├ Thêm khách thủ công / nhập hàng loạt (dán Excel, CSV)
+ ├ Thiết kế riêng ├─ mỗi lần gửi ─►      ├ Tạo đơn / custom / liên hệ cho khách (channel = admin)
+ └ Liên hệ / tư vấn┘  tạo 1 "yêu cầu"    └ Bấm "Lên đơn" từ yêu cầu custom hoặc liên hệ
+
+ inquiries (yêu cầu) ──thuộc về──► customers (khách; khóa duy nhất = SĐT chuẩn hóa)
+   type: order | custom | contact        1 khách có nhiều yêu cầu; gửi lại cùng SĐT thì gộp vào khách cũ
+   code: DH… / CT… / LH… (khách tra cứu bằng mã + SĐT)
+   custom/contact ──parent_id──► order mới (1 yêu cầu gốc có thể lên nhiều đơn)
+   thông tin liên hệ và dòng hàng được chụp lại (snapshot) trong yêu cầu, không đổi khi sửa khách sau này
+```
+
+- **Trạng thái theo từng loại** (`INQUIRY_FLOW` trong `services/inquiries.js`):
+  đơn hàng: Mới → Đã liên hệ → Đã xác nhận → **Đang giao hàng** → Hoàn thành (hoặc Đã hủy);
+  custom: Mới → Đã liên hệ → Đã xác nhận → Hoàn thành; liên hệ: Mới → Đã liên hệ → Đã xử lý. Đổi sang trạng thái ngoài chuỗi của loại bị từ chối (400).
+- **Mốc thời gian:** `shipped_at` (lúc sang "Đang giao hàng"), `completed_at` (lúc sang "Hoàn thành"); lùi trạng thái thì mốc đã qua bị xóa. Doanh thu ở Tổng quan = tổng tiền các đơn hoàn thành tính theo `completed_at` (giờ Việt Nam).
+- **Vận chuyển:** `carrier`, `tracking_code` hiện ở trang tra cứu của khách. Admin có thể tick gửi email báo khách khi đổi trạng thái (`notifyStatusChange`, mẫu `customerStatusUpdate` trong `mailer.js`).
+- "Đã mua" của khách chỉ cộng các đơn Hoàn thành. Xóa khách thì yêu cầu cũ giữ lại (`customer_id` thành NULL).
+- Tổng quan admin (`services/dashboard.js`): chọn kỳ (7 ngày … tùy chọn), thẻ số liệu so với kỳ liền trước bằng số ngày, biểu đồ theo ngày / tuần / tháng tùy độ dài kỳ.
+
 ## Loại sản phẩm (nhóm hàng)
 
 - Mỗi sản phẩm có `products.product_type_id` (mặc định 1 = Vòng tay ngọc). Loại có `uses_jade_fields = 1` dùng bộ thuộc tính ngọc (loại ngọc, màu, kiểu dáng, mệnh, ni, chứng chỉ). Loại khác dùng thông số tự đặt: khai báo ở `product_types.spec_fields`, giá trị lưu ở `products.attrs` (mã thông số → giá trị).

@@ -7,7 +7,7 @@
 <div x-data="inquiriesList({{ (query.type or '') | dump }})">
   <div class="mb-4 flex flex-wrap gap-1">
     <button class="tab" :class="filters.status === '' && 'active'" @click="filters.status = ''; search()">Tất cả</button>
-    {% for k, v in meta.inquiryStatus %}<button class="tab" :class="filters.status === '{{ k }}' && 'active'" @click="filters.status = '{{ k }}'; search()">{{ v }}</button>{% endfor %}
+    {% for k, v in (meta.statusByType[query.type] if query.type and meta.statusByType[query.type] else meta.statusByType.all) %}<button class="tab" :class="filters.status === '{{ k }}' && 'active'" @click="filters.status = '{{ k }}'; search()">{{ v }}</button>{% endfor %}
   </div>
   <div class="mb-5 flex flex-wrap items-end gap-3">
     <div class="relative w-full max-w-xs"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{{ icon('search', 'w-4 h-4') }}</span>

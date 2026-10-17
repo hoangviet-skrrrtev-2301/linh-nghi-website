@@ -17,7 +17,12 @@
 
 ## 1. Tổng quan
 
-Hiển thị số đơn hàng, yêu cầu custom, lời nhắn (kèm số **mới chưa xử lý**), doanh thu tháng (tính từ các đơn ở trạng thái **Hoàn thành**), biểu đồ 30 ngày và các yêu cầu mới nhất. Nếu email chưa được cấu hình, trang hiện cảnh báo màu vàng.
+Chọn khoảng thời gian muốn xem ở hàng nút phía trên: **7 ngày, 30 ngày, tháng này, tháng trước, quý này, năm nay** hoặc **Tùy chọn** (chọn từ ngày – đến ngày). Lựa chọn được nhớ cho lần sau.
+
+- **Thẻ số liệu:** đơn hàng mới, yêu cầu custom, lời nhắn liên hệ, khách mới, **doanh thu** và giá trị trung bình mỗi đơn trong kỳ. Mũi tên ↑↓ so với kỳ liền trước có số ngày bằng nhau. Doanh thu chỉ tính các đơn **Hoàn thành**, theo **ngày hoàn thành**.
+- **Biểu đồ:** số hiện sẵn trên từng cột; chuyển giữa "Số yêu cầu" và "Doanh thu"; kỳ dài tự gom theo tuần hoặc tháng. Bấm "Xem số liệu chi tiết từng cột" để xem bảng.
+- Bên phải: tình trạng đơn, **sản phẩm bán chạy** trong kỳ, khách mới theo nguồn. Phía dưới: các yêu cầu mới nhất.
+- Nếu email chưa được cấu hình, trang hiện cảnh báo màu vàng.
 
 ## 2. Đơn hàng / Yêu cầu custom / Liên hệ
 
@@ -41,7 +46,12 @@ Khi khách gửi đơn, hệ thống sẽ:
 
 **Xử lý một đơn:** bấm vào đơn để mở chi tiết, gọi điện hoặc bấm **Zalo** để liên hệ khách, rồi chuyển trạng thái:
 
-`Mới` → `Đã liên hệ` → `Đã xác nhận` → `Hoàn thành` (hoặc `Đã hủy`)
+Đơn hàng: `Mới` → `Đã liên hệ` → `Đã xác nhận` → `Đang giao hàng` → `Hoàn thành` (hoặc `Đã hủy`).
+Yêu cầu custom bỏ bước "Đang giao hàng"; lời nhắn liên hệ chỉ có `Mới` → `Đã liên hệ` → `Đã xử lý`.
+
+**Giao hàng:** khi chuyển đơn sang **Đang giao hàng**, nhập **đơn vị vận chuyển** và **mã vận đơn** ở khung "Vận chuyển" rồi bấm lưu. Khách tra cứu đơn (mã + số điện thoại) sẽ thấy tiến trình, đơn vị vận chuyển và mã vận đơn. Muốn báo khách ngay, tick **Gửi email báo khách khi đổi trạng thái** (tự bật nếu khách có email và email đã cấu hình; bỏ tick nếu không muốn gửi). Nội dung lời nhắn hiện cho khách ở từng trạng thái chỉnh tại Cài đặt › Biểu mẫu & đặt hàng.
+
+**Lên đơn từ yêu cầu:** với yêu cầu custom hoặc liên hệ, bấm **Lên đơn hàng từ yêu cầu này** để tạo đơn có mã riêng cho khách, chốt giá và theo dõi giống đơn đặt qua website.
 
 Dùng ô **Ghi chú nội bộ** để ghi lại các lần trao đổi (khách không nhìn thấy). Nếu email gửi lỗi, bấm **Gửi lại email thông báo**.
 
@@ -50,6 +60,10 @@ Dùng ô **Ghi chú nội bộ** để ghi lại các lần trao đổi (khách 
 ## 3. Khách hàng
 
 Danh sách khách được gộp theo số điện thoại, kèm số lần đặt và tổng tiền đã mua. Bấm vào một khách để thêm **nhãn** (VIP, khách sỉ...), **ghi chú**, ni tay và xem lịch sử đơn. Chủ shop có thể **Xuất Excel (CSV)**: mở bằng Excel sẽ hiển thị đúng tiếng Việt.
+
+- **Bộ lọc:** bấm **Bộ lọc** để chọn thời gian (tháng này, tháng trước, 3 / 6 tháng, năm nay hoặc chọn tháng cụ thể), cách tính (có phát sinh đơn/yêu cầu hay khách mới tạo) và **nguồn khách**. Bộ lọc đang bật hiện thành các nhãn nhỏ phía trên danh sách, bấm ✕ để bỏ.
+- **Thêm khách:** nút **Thêm khách** cho từng người (khách nhắn Zalo, Facebook, đến cửa hàng...). Số điện thoại là mã định danh, trùng số thì không tạo mới.
+- **Nhập hàng loạt:** bấm **Nhập hàng loạt**, dán danh sách copy từ Excel / Google Sheets (hoặc chọn file CSV). Cột theo thứ tự: Họ tên, Số điện thoại, Email, Địa chỉ, Nguồn, Nhãn, Ni tay, Ghi chú (có dòng tiêu đề thì tự nhận cột; chỉ họ tên và số điện thoại là bắt buộc; tải **file mẫu** ngay trong khung). Bấm **Kiểm tra trước** để xem từng dòng là mới / trùng / lỗi rồi mới bấm **Nhập**. Có thể gán sẵn nguồn và nhãn cho cả lô, chọn bỏ qua hoặc cập nhật khi trùng số điện thoại. Mỗi lần tối đa 2.000 khách.
 
 ## 4. Sản phẩm
 
@@ -76,11 +90,20 @@ Cột bên phải:
 
 **Nhân bản** (biểu tượng 2 tờ giấy ở danh sách): tạo nhanh sản phẩm tương tự.
 
+**Ẩn / hiện / xóa ngay ở danh sách:** bấm biểu tượng con mắt gạch chéo để **ẩn** một sản phẩm (chuyển về bản nháp, khách không thấy, dữ liệu vẫn giữ), bấm lại để hiện. Tick chọn nhiều sản phẩm rồi dùng thanh **Ẩn / Hiện / Xóa** phía trên để làm hàng loạt (xóa luôn hỏi xác nhận).
+
+**Loại sản phẩm (Vòng tay ngọc, Pháp phục...):** bấm nút **Loại sản phẩm** ở trang danh sách để thêm / sửa loại, tự đặt các **thông số** cho từng loại (ô chữ, số, hoặc danh sách chọn; gõ giá trị mới khi nhập sản phẩm thì tự được thêm vào danh sách), và **bật / tắt hoạt động**. Nút **Thêm sản phẩm** cho chọn loại trước; form tự đổi theo loại (loại không phải ngọc không có ô loại ngọc, màu, ni, chứng chỉ).
+- Loại **Chưa hoạt động (thử nghiệm)**: sản phẩm vẫn nhập và lưu được, nhưng khách không thấy ở bất kỳ đâu. Dùng nút mắt **Xem thử như khách** để xem trang sản phẩm đúng như khách sẽ thấy.
+- Khi bật hoạt động: sản phẩm hiện qua menu Sản phẩm (mục tên loại), đường dẫn riêng của loại và tìm kiếm; **không** hiện chung trong "Tất cả sản phẩm" (trừ khi tick "Hiện chung") và **không có bộ lọc** (bộ lọc chỉ dành cho ngọc).
+- Bật hoạt động xong, đơn đặt Pháp phục chưa chọn được kích cỡ S/M/L (xem GHI_CHU_DU_AN.md).
+
 ## 5. Danh mục & bộ lọc
 
 Có 4 nhóm: **Loại ngọc, Màu sắc, Kiểu dáng, Mệnh phong thủy**. Các mục này tự trở thành bộ lọc trên trang Sản phẩm. Loại ngọc có thể gắn ảnh để hiện ở khối "Phân loại" trên trang chủ; Màu sắc có mã màu để hiện chấm màu.
 
 ## 6. Gallery
+
+Trang Gallery và khối Gallery ở trang chủ hiện **tối đa 8 ảnh dạng 2 hàng × 4 cột**; nhiều hơn 8 ảnh thì thành slider tự lướt từ phải sang trái (bật/tắt tự lướt và tốc độ ở Cài đặt › Trang chủ). Ô **Hiện ở Gallery tổng** quyết định ảnh có xuất hiện ở tab "Tất cả" và trang chủ hay không; tab album luôn hiện đủ ảnh của album đó (dùng cho ảnh feedback khách hoặc ảnh chưa muốn đưa lên Gallery tổng).
 
 Bấm **Thêm ảnh** để chọn nhiều ảnh cùng lúc. Với mỗi ảnh có thể nhập tiêu đề, mô tả, **album** (để chia nhóm, VD "Khách hàng"), gắn link tới sản phẩm, ẩn/hiện. Kéo biểu tượng ⠿ để sắp xếp thứ tự. Thay đổi được lưu ngay khi rời khỏi ô nhập.
 
@@ -90,6 +113,10 @@ Bấm **Thêm ảnh** để chọn nhiều ảnh cùng lúc. Với mỗi ảnh c
 ## 7. Blog
 
 Viết bài với trình soạn thảo (tiêu đề, in đậm, danh sách, chèn ảnh từ thư viện, chèn link). Có thể **hẹn giờ đăng** bằng cách chọn ngày đăng trong tương lai. Bật/tắt toàn bộ trang Blog tại Cài đặt › Bật/tắt tính năng.
+
+**Chuyên mục:** bấm **Quản lý chuyên mục** ở trang Blog để thêm / sửa / xóa chuyên mục (xóa chuyên mục thì bài chuyển về "Chưa phân loại", không mất bài). Chọn chuyên mục cho bài ở cột phải của trang sửa bài, hoặc gõ tên để tạo nhanh. Khách thấy thanh chọn chuyên mục ở đầu trang Blog và trang riêng từng chuyên mục. Trang chuyên mục mặc định **không được Google lập chỉ mục** (noindex) và không có trong sitemap để tránh trùng nội dung, bài viết vẫn được lập chỉ mục bình thường (tắt trong Cài đặt › Trang Sản phẩm / Gallery / Blog).
+
+**Banner dọc, mục lục, bài gợi ý** ở cột phải: chỉnh trong Cài đặt › Trang Sản phẩm / Gallery / Blog. Mục lục tự tạo từ các tiêu đề H2, H3 trong bài.
 
 ## 8. Thư viện ảnh
 
@@ -111,16 +138,22 @@ Mọi nội dung trên website đều chỉnh được ở đây, chia thành c�
 | Thông tin shop | Tên, slogan, logo, favicon, SĐT, Zalo, email, địa chỉ, bản đồ, mạng xã hội, chân trang |
 | Giao diện | Màu chủ đạo, màu nhấn, màu nền, font chữ, độ bo góc, số cột sản phẩm, hiệu ứng, CSS tùy chỉnh |
 | Bật/tắt tính năng | Đặt hàng, custom, blog, gallery, trang size, hiện giá, nút liên hệ nổi, **popup chào mừng**, thanh thông báo |
-| Menu | Thêm, xóa, đổi tên, sắp xếp mục menu |
+| Menu | Thêm, xóa, đổi tên, sắp xếp mục menu; mỗi mục chọn được **menu sổ dọc** (theo loại ngọc, màu, kiểu dáng, mệnh, loại sản phẩm, chuyên mục blog, bài mới nhất hoặc tự nhập "Tên \| /đường-dẫn"). Mục Sản phẩm mặc định sổ theo loại ngọc |
+| Bố cục trang chủ | **Bật/tắt và đổi thứ tự (↑ ↓)** từng khối trang chủ; mỗi khối đổi được **nền** (một màu, họa tiết, hoặc ảnh tải lên kèm lớp phủ) và màu chữ |
+| Chân trang | Bật/tắt và đổi thứ tự các cột (giới thiệu, menu, dòng ngọc, liên kết tự thêm, liên hệ) và từng thông tin trong chân trang |
 | Trang chủ | Banner (nhiều slide), khối thông tin nổi bật (kèm nội dung popup), **khối chứng chỉ kiểm định** (ảnh giấy VGC / PNJ Lab..., lời cam kết), **khối ý nghĩa phong thủy**, công cụ tính ni nhanh, tiêu đề các khối, cảm nhận khách hàng |
 | Trang Về shop / Hướng dẫn size / Liên hệ | Nội dung từng trang, bảng quy đổi size, **video hướng dẫn đo** (dán link YouTube) |
 | Biểu mẫu & đặt hàng | Nội dung trang đặt hàng, các thông báo sau khi gửi, lựa chọn ngân sách, **lựa chọn dây / mặt / phụ kiện** cho form custom, kênh liên hệ |
-| Tiêu đề các trang | Tiêu đề, mô tả trang Sản phẩm, Gallery, Blog; **các khoảng giá trong bộ lọc**; số ngày gắn nhãn "Mới"; **hướng dẫn bảo quản** chung cho mọi sản phẩm |
+| Trang Sản phẩm / Gallery / Blog | Tiêu đề, mô tả hiện đầu trang; **các khoảng giá trong bộ lọc**; số ngày gắn nhãn "Mới"; **hướng dẫn bảo quản** chung; số sản phẩm / bài mỗi trang; mục lục, bài gợi ý, **banner dọc** của Blog |
 | SEO & mã theo dõi | Tiêu đề, mô tả, từ khóa, ảnh chia sẻ mặc định, Google Search Console, Google Analytics, Facebook Pixel |
-| SEO từng trang | Tiêu đề, mô tả, từ khóa, ảnh chia sẻ riêng cho từng trang |
+| SEO Google & chia sẻ | Chỉ nhập khi muốn trang hiện **khác** trên Google / Facebook so với nội dung hiển thị; ô để trống thì tự lấy tiêu đề và mô tả của trang (mỗi ô ghi rõ lấy từ đâu) |
 | Email (SMTP) | (Chủ shop) cấu hình gửi email, xem [CAU_HINH_EMAIL.md](CAU_HINH_EMAIL.md) |
 
 Bấm **Lưu** để áp dụng ngay. Bấm **Xem website** để kiểm tra.
+
+**Các nhóm dài** (Trang chủ, Thông tin shop, Giao diện...) được chia thành nhiều phần: bấm tên từng phần để mở hoặc thu gọn (có nút **Mở tất cả / Thu gọn tất cả**, trạng thái được nhớ). Các danh sách nhiều mục (slide banner, khối thông tin, các khối trang chủ...) bấm tên từng mục để mở / thu gọn.
+
+**Ảnh đơn hàng cho khách tải:** sau khi đặt hàng, khách tải được ảnh gồm mã đơn, thông tin nhận hàng, sản phẩm, tổng tiền để gửi shop và tra cứu về sau. Chữ trên ảnh và nút chỉnh ở Cài đặt › Biểu mẫu & đặt hàng; có công tắc tắt.
 
 **Tắt đặt hàng (thanh toán):** vào Bật/tắt tính năng, tắt "Cho phép đặt hàng". Khi đó giỏ hàng biến mất, các nút chuyển thành "Nhắn Zalo tư vấn".
 

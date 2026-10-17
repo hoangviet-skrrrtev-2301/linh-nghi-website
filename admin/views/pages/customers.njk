@@ -7,36 +7,128 @@
   <div class="mb-4 flex flex-wrap items-center gap-3">
     <div class="relative w-full max-w-xs"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{{ icon('search', 'w-4 h-4') }}</span>
       <input type="search" class="input pl-9" placeholder="Tên, SĐT, email, nhãn, nguồn..." x-model="filters.q" @input.debounce.400ms="search()"></div>
+    <button type="button" class="btn btn-secondary" @click="filtersOpen = !filtersOpen" :aria-expanded="filtersOpen">{{ icon('filter', 'w-4 h-4') }} Bộ lọc<span class="badge bg-brand-600 text-white" x-show="filterCount" x-text="filterCount"></span></button>
     <div class="ml-auto flex flex-wrap gap-2">
-      <button type="button" class="btn btn-primary" @click="openNew()">{{ icon('plus', 'w-4 h-4') }} Thêm khách</button>
+      <button type="button" class="btn btn-secondary" @click="imp.open = !imp.open; if (imp.open) adding = false">{{ icon('plus', 'w-4 h-4') }} Nhập hàng loạt</button>
+      <button type="button" class="btn btn-primary" @click="openNew(); imp.open = false">{{ icon('plus', 'w-4 h-4') }} Thêm khách</button>
       {% if currentUser.role == 'owner' %}<a :href="exportUrl" class="btn btn-secondary">{{ icon('download', 'w-4 h-4') }} Xuất Excel (CSV)</a>{% endif %}
     </div>
   </div>
 
-  {# ---- Lọc theo tháng ---- #}
-  <div class="card card-body mb-4 space-y-3">
-    <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
-      <p class="text-sm font-medium text-slate-700">Lọc theo tháng</p>
-      <div class="inline-flex rounded-lg border border-slate-300 p-0.5 text-xs">
-        <button type="button" class="rounded-md px-2.5 py-1" :class="filters.by === 'active' ? 'bg-brand-600 text-white' : 'text-slate-600'" @click="filters.by = 'active'; search()">Có phát sinh đơn/yêu cầu</button>
-        <button type="button" class="rounded-md px-2.5 py-1" :class="filters.by === 'created' ? 'bg-brand-600 text-white' : 'text-slate-600'" @click="filters.by = 'created'; search()">Khách mới tạo</button>
-      </div>
-      <div class="ml-auto flex flex-wrap gap-1.5 text-xs">
-        <button type="button" class="btn btn-secondary btn-sm" @click="quick(1)">Tháng này</button>
-        <button type="button" class="btn btn-secondary btn-sm" @click="quick(2, true)">Tháng trước</button>
-        <button type="button" class="btn btn-secondary btn-sm" @click="quick(3)">3 tháng gần nhất</button>
-        <button type="button" class="btn btn-secondary btn-sm" @click="quick(6)">6 tháng gần nhất</button>
-        <button type="button" class="btn btn-ghost btn-sm" x-show="selected.length" @click="selected = []; applyMonths()">Bỏ lọc</button>
+  {# ---- Bộ lọc thu gọn: chip hiện bộ lọc đang bật; bấm "Bộ lọc" để mở khung chỉnh ---- #}
+  <div class="mb-4 space-y-3">
+    <div class="flex flex-wrap items-center gap-2" x-show="chips.length || summary.customers >= 0" x-cloak>
+      <template x-for="ch in chips" :key="ch.key + ch.text">
+        <span class="inline-flex items-center gap-1.5 rounded-full border border-brand-500/40 bg-brand-50 py-1 pl-3 pr-2 text-xs text-brand-700">
+          <span x-text="ch.text"></span>
+          <button type="button" x-show="!ch.fixed" class="rounded-full p-0.5 hover:bg-brand-100" @click="clearChip(ch.key)" aria-label="Bỏ lọc">{{ icon('close', 'w-3 h-3') }}</button>
+        </span>
+      </template>
+      <button type="button" class="text-xs text-slate-500 underline hover:text-slate-700" x-show="chips.length" @click="clearAll()">Xóa tất cả bộ lọc</button>
+      <p class="ml-auto text-xs text-slate-500" x-show="filterCount || filters.q">
+        <b x-text="summary.customers"></b> khách · <b x-text="summary.inquiries"></b> đơn/yêu cầu<span x-show="selected.length && filters.by === 'active'"> trong kỳ</span> · đã mua <b x-text="$fmt.vnd(summary.spent)"></b>
+      </p>
+    </div>
+
+    <div x-cloak x-show="filtersOpen" x-collapse>
+      <div class="card card-body space-y-4">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div>
+            <label class="label">Thời gian</label>
+            <select class="input" :value="preset" @change="setPreset($event.target.value)">
+              <option value="">Tất cả thời gian</option><option value="this">Tháng này</option><option value="last">Tháng trước</option>
+              <option value="3">3 tháng gần nhất</option><option value="6">6 tháng gần nhất</option><option value="year">Năm nay</option><option value="pick">Chọn tháng cụ thể…</option>
+            </select>
+          </div>
+          <div x-show="selected.length">
+            <label class="label">Tính theo</label>
+            <select class="input" x-model="filters.by" @change="search()">
+              <option value="active">Có phát sinh đơn / yêu cầu</option><option value="created">Khách mới tạo</option>
+            </select>
+          </div>
+          <div x-show="sources.length">
+            <label class="label">Nguồn khách</label>
+            <select class="input" x-model="filters.source" @change="search()">
+              <option value="">Tất cả nguồn</option>
+              <template x-for="s in sources" :key="s.name"><option :value="s.name" x-text="s.name + ' (' + s.count + ')'"></option></template>
+            </select>
+          </div>
+        </div>
+        <div x-show="preset === 'pick'" x-cloak>
+          <p class="label">Chọn một hoặc nhiều tháng</p>
+          <div class="flex flex-wrap gap-1.5">
+            <template x-for="m in monthOptions" :key="m.key">
+              <button type="button" class="rounded-full border px-3 py-1 text-xs transition" :class="selected.includes(m.key) ? 'border-brand-600 bg-brand-600 text-white' : 'border-slate-300 text-slate-600 hover:border-slate-400'" @click="toggleMonth(m.key)" x-text="m.label"></button>
+            </template>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="flex flex-wrap gap-1.5">
-      <template x-for="m in monthOptions" :key="m.key">
-        <button type="button" class="rounded-full border px-3 py-1 text-xs transition" :class="selected.includes(m.key) ? 'border-brand-600 bg-brand-600 text-white' : 'border-slate-300 text-slate-600 hover:border-slate-400'" @click="toggleMonth(m.key)" x-text="m.label"></button>
+  </div>
+
+  {# ---- Nhập khách hàng hàng loạt ---- #}
+  <div x-cloak x-show="imp.open" x-collapse>
+    <div class="card card-body mb-4 space-y-4">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h3 class="card-title">Nhập khách hàng hàng loạt</h3>
+          <p class="help !mt-1">Dán danh sách copy từ Excel / Google Sheets, hoặc chọn file CSV. Cột theo thứ tự: <b>Họ tên, Số điện thoại, Email, Địa chỉ, Nguồn, Nhãn, Ni tay, Ghi chú</b> (có dòng tiêu đề thì hệ thống tự nhận cột). Chỉ <b>họ tên</b> và <b>số điện thoại</b> là bắt buộc; tối đa 2.000 khách mỗi lần.
+            <a href="{{ A }}/api/customers/import-template.csv" class="text-brand-600 underline">Tải file mẫu</a></p>
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm" @click="imp.open = false">{{ icon('close', 'w-4 h-4') }}</button>
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <label class="btn btn-secondary btn-sm cursor-pointer">{{ icon('download', 'w-4 h-4 rotate-180') }} Chọn file CSV<input type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" class="sr-only" @change="readImportFile($event)"></label>
+        <span class="text-xs text-slate-500" x-show="imp.fileName" x-text="'Đã nạp: ' + imp.fileName"></span>
+      </div>
+      <textarea class="input font-mono text-[13px]" rows="7" x-model="imp.text" @input="imp.preview = null; imp.result = null" placeholder="Nguyễn Văn A&#9;0912345678&#9;a@example.com&#9;Hà Nội&#9;Zalo&#9;VIP"></textarea>
+      <div class="grid gap-4 sm:grid-cols-3">
+        <div><label class="label">Nguồn mặc định cho cả lô</label><input class="input" list="source-list" x-model="imp.source" placeholder="Dùng khi dòng không có nguồn" @input="imp.preview = null"></div>
+        <div><label class="label">Thêm nhãn cho cả lô</label><input class="input" x-model="imp.tags" placeholder="VD: Sự kiện tháng 10" @input="imp.preview = null"></div>
+        <div><label class="label">Khi trùng số điện thoại với khách đã có</label>
+          <select class="input" x-model="imp.onDuplicate" @change="imp.preview = null"><option value="skip">Bỏ qua dòng đó</option><option value="update">Cập nhật thông tin khách đã có</option></select></div>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <button type="button" class="btn btn-secondary" :disabled="imp.busy || !imp.text.trim()" @click="previewImport()">Kiểm tra trước</button>
+        <button type="button" class="btn btn-primary" :disabled="imp.busy || !imp.preview || !(imp.preview.counts.new + imp.preview.counts.update)" @click="runImport()"
+          x-text="imp.preview ? 'Nhập ' + (imp.preview.counts.new + imp.preview.counts.update) + ' khách' : 'Nhập'"></button>
+        <span class="text-xs text-slate-500" x-show="!imp.preview && !imp.result">Bấm “Kiểm tra trước” để xem kết quả, chưa lưu gì.</span>
+      </div>
+
+      <template x-if="imp.preview">
+        <div class="space-y-3">
+          <div class="flex flex-wrap gap-2 text-xs">
+            <span class="badge bg-emerald-50 text-emerald-700"><b x-text="imp.preview.counts.new"></b>&nbsp;khách mới</span>
+            <span class="badge bg-blue-50 text-blue-700" x-show="imp.preview.counts.update"><b x-text="imp.preview.counts.update"></b>&nbsp;cập nhật</span>
+            <span class="badge bg-amber-50 text-amber-700"><b x-text="imp.preview.counts.skip"></b>&nbsp;bỏ qua (trùng)</span>
+            <span class="badge bg-red-50 text-red-700"><b x-text="imp.preview.counts.error"></b>&nbsp;lỗi, sẽ không nhập</span>
+            <span class="text-slate-500" x-show="imp.preview.truncated">Chỉ hiện 300 dòng đầu, tất cả dòng vẫn được xử lý.</span>
+          </div>
+          <div class="max-h-80 overflow-auto rounded-lg border border-slate-200">
+            <table class="w-full text-left text-xs">
+              <thead class="sticky top-0 bg-slate-50 text-slate-500"><tr><th class="px-3 py-2">Dòng</th><th class="px-3 py-2">Họ tên</th><th class="px-3 py-2">SĐT</th><th class="px-3 py-2">Kết quả</th></tr></thead>
+              <tbody>
+                <template x-for="r in imp.preview.rows" :key="r.line">
+                  <tr class="border-t border-slate-100">
+                    <td class="px-3 py-1.5 text-slate-400" x-text="r.line"></td><td class="px-3 py-1.5" x-text="r.name"></td><td class="px-3 py-1.5 font-mono" x-text="r.phone"></td>
+                    <td class="px-3 py-1.5"><span class="badge" :class="{ new: 'bg-emerald-50 text-emerald-700', update: 'bg-blue-50 text-blue-700', skip: 'bg-amber-50 text-amber-700', error: 'bg-red-50 text-red-700' }[r.status]" x-text="importStatusLabel[r.status]"></span> <span class="text-slate-500" x-text="r.message"></span></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </template>
+
+      <template x-if="imp.result">
+        <div class="rounded-lg bg-emerald-50 p-4 text-sm text-emerald-800">
+          <p class="font-medium">Đã nhập xong: <span x-text="imp.result.created"></span> khách mới<span x-show="imp.result.updated">, <span x-text="imp.result.updated"></span> cập nhật</span><span x-show="imp.result.skipped">, <span x-text="imp.result.skipped"></span> bỏ qua</span><span x-show="imp.result.failed">, <span x-text="imp.result.failed"></span> lỗi</span>.</p>
+          <ul class="mt-2 space-y-0.5 text-xs" x-show="imp.result.problems.length">
+            <template x-for="p in imp.result.problems.slice(0, 20)" :key="p.line"><li x-text="'Dòng ' + p.line + (p.name ? ' (' + p.name + ')' : '') + ': ' + p.message"></li></template>
+          </ul>
+        </div>
       </template>
     </div>
-    <p class="text-xs text-slate-500" x-show="selected.length" x-cloak>
-      <b x-text="summary.customers"></b> khách · <b x-text="summary.inquiries"></b> đơn/yêu cầu<span x-show="filters.by === 'active'"> trong các tháng đã chọn</span> · đã mua (đơn hoàn thành) <b x-text="$fmt.vnd(summary.spent)"></b>
-    </p>
   </div>
 
   {# ---- Form thêm khách ---- #}
