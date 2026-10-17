@@ -99,6 +99,14 @@
         <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary text-on-primary">{{ icon('check', 'w-7 h-7') }}</span>
         <p class="mt-5 text-lg font-medium" x-text="message"></p>
         <p class="mt-2 text-sm text-muted">Mã yêu cầu: <b class="font-mono" x-text="code"></b></p>
+        <div x-show="receipt" x-cloak class="mx-auto mt-5 w-full max-w-xs text-left">
+          <img :src="receipt?.url" alt="Ảnh thông tin đơn hàng" class="no-dim w-full rounded-md border border-line shadow-lg">
+          <div class="mt-4 flex flex-wrap justify-center gap-3">
+            <a :href="receipt?.url" :download="receipt?.filename" class="btn btn-primary">{{ icon('download', 'w-4 h-4') }} <span x-text="$store.app.orderImage?.button"></span></a>
+            <button type="button" class="btn btn-outline" x-show="receipt?.canShare" @click="share()"><span x-text="$store.app.orderImage?.share"></span></button>
+          </div>
+          <p class="mt-3 text-xs text-muted">Lưu ảnh này để gửi cho shop và dùng mã đơn tra cứu về sau (trên điện thoại, có thể nhấn giữ ảnh để lưu).</p>
+        </div>
         <button class="btn btn-outline mt-6" @click="$store.consult.open = false">Đóng</button>
       </div>
     </template>

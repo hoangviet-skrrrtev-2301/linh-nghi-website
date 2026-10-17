@@ -4,6 +4,7 @@ Ghi lại các thay đổi đáng chú ý, mới nhất ở trên cùng.
 
 ## Chưa phát hành
 
+- Đặt hàng: sau khi gửi đơn, khách xem và tải về ảnh PNG "Thông tin đơn hàng" (mã đơn, thông tin nhận hàng, sản phẩm, tổng tiền, hướng dẫn tra cứu) để gửi shop và lưu mã đơn tra cứu sau này; trên điện thoại có nút chia sẻ ảnh. Có ở trang giỏ hàng và popup đặt nhanh. Ảnh vẽ ngay trên máy khách (`frontend/public/js/order-image.js`), không lưu trên máy chủ. Chữ trên ảnh và nút chỉnh ở Admin › Cài đặt › Biểu mẫu & đặt hàng, có công tắc tắt
 - Admin trên điện thoại: bảng (sản phẩm, đơn hàng, khách, bài viết, tài khoản, danh mục, nhật ký, báo giá đơn) chuyển thành danh sách thẻ có nhãn cột thay vì cuộn ngang (class `table-stack`, nhãn gắn bởi `admin/public/js/core.js`); sửa trang sửa sản phẩm / chi tiết đơn bị tràn ngang (lưới thiếu `grid-cols-1`); ô nhập chữ 16px để iPhone không tự phóng to; tiêu đề trang sửa sản phẩm / bài viết gọn hơn
 - Sửa: menu điện thoại (và ô tìm kiếm) bị cắt, không lướt được sau khi cuộn trang, do hiệu ứng nền mờ đặt trên chính thanh header. Nền mờ chuyển sang lớp riêng
 - Gallery dùng chung một lưới ở trang chủ và trang Gallery (`partials/gallery-grid.njk`): tối đa 8 ảnh dạng 2 hàng × 4 cột, nhiều hơn 8 ảnh thì thành slider (tự lướt phải sang trái, hoặc vuốt tay nếu tắt tự lướt). Bỏ kiểu xếp gạch cũ của trang Gallery

@@ -28,6 +28,29 @@ async function api(url, options = {}) {
   return data;
 }
 
+// Ảnh thông tin đơn hàng cho khách tải về (vẽ tại trình duyệt, xem order-image.js).
+// order = { code, items: [{name, size, qty, price}], total, customer }, gọi sau khi gửi đơn thành công.
+async function buildReceipt(order) {
+  const oi = CONFIG.orderImage;
+  if (!oi?.enabled || !order.code) return null;
+  try {
+    // Chỉ tải file vẽ ảnh khi khách vừa đặt xong, các trang khác không tốn thêm dung lượng
+    const { makeOrderImage } = await import('/assets/js/order-image.js');
+    const blob = await makeOrderImage({
+      ...order,
+      shopName: CONFIG.shopName, logoUrl: CONFIG.logo, showPrices: CONFIG.showPrices,
+      title: oi.title, note: oi.note,
+      trackText: (oi.track || '').replace('{link}', `${location.origin}/tra-cuu-don`),
+      dateText: new Intl.DateTimeFormat('vi-VN', { dateStyle: 'full', timeStyle: 'short' }).format(new Date()),
+      phone: CONFIG.phone, site: location.host,
+    });
+    if (!blob) return null;
+    const filename = `don-hang-${order.code}.png`;
+    const file = new File([blob], filename, { type: 'image/png' });
+    return { url: URL.createObjectURL(blob), filename, file, canShare: !!navigator.canShare?.({ files: [file] }) };
+  } catch { return null; }
+}
+
 document.addEventListener('alpine:init', () => {
   const Alpine = window.Alpine;
 
@@ -167,10 +190,11 @@ document.addEventListener('alpine:init', () => {
   });
 
   Alpine.data('quickInquiry', () => ({
-    loading: false, success: false, message: '', code: '', errors: {},
+    loading: false, success: false, message: '', code: '', errors: {}, receipt: null,
+    async share() { try { await navigator.share({ files: [this.receipt.file], title: CONFIG.shopName }); } catch { /* khách bấm hủy */ } },
     init() {
       // Mỗi lần mở popup thì xóa trạng thái lần gửi trước
-      window.addEventListener('consult-open', () => { this.success = false; this.message = ''; this.errors = {}; });
+      window.addEventListener('consult-open', () => { this.success = false; this.message = ''; this.errors = {}; this.receipt = null; });
     },
     async submit(form) {
       const st = Alpine.store('consult');
@@ -191,6 +215,12 @@ document.addEventListener('alpine:init', () => {
         this.success = true;
         this.message = res.message;
         this.code = res.code || '';
+        if (type === 'order') {
+          this.receipt = await buildReceipt({
+            code: this.code, customer: body, total: st.p.final_price != null ? st.p.final_price * st.qty : null,
+            items: [{ name: st.p.name, size: st.size, qty: st.qty, price: st.p.final_price }],
+          });
+        }
         form.reset();
         window.gtag?.('event', 'generate_lead', { form_type: type });
         window.fbq?.('track', 'Lead');
@@ -283,7 +313,8 @@ document.addEventListener('alpine:init', () => {
 
   // Form gửi đơn hàng / custom / liên hệ
   Alpine.data('inquiryForm', (type) => ({
-    loading: false, success: false, message: '', code: '', errors: {},
+    loading: false, success: false, message: '', code: '', errors: {}, receipt: null,
+    async share() { try { await navigator.share({ files: [this.receipt.file], title: CONFIG.shopName }); } catch { /* khách bấm hủy */ } },
     init() {
       if (type === 'order') Alpine.store('cart').refresh();
     },
@@ -304,7 +335,15 @@ document.addEventListener('alpine:init', () => {
         this.success = true;
         this.message = res.message;
         this.code = res.code || '';
-        if (type === 'order') Alpine.store('cart').clear();
+        if (type === 'order') {
+          const cart = Alpine.store('cart');
+          // Chụp thông tin giỏ trước khi xóa để vẽ ảnh đơn hàng
+          this.receipt = await buildReceipt({
+            code: this.code, customer: body, total: cart.total,
+            items: cart.items.map((i) => ({ name: i.name, size: i.size, qty: i.qty, price: i.final_price })),
+          });
+          cart.clear();
+        }
         form.reset();
         window.scrollTo({ top: 0, behavior: 'smooth' });
         window.gtag?.('event', 'generate_lead', { form_type: type });

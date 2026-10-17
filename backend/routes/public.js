@@ -50,6 +50,12 @@ export function publicLocals(req, res) {
     animations: !!s.theme.enable_animations,
     welcome: !!s.features.welcome_popup,
     welcomeDelay: Number(s.features.welcome_popup_delay) || 5,
+    shopName: s.site.name,
+    logo: s.site.logo?.md || '',
+    orderImage: {
+      enabled: !!s.forms.order_image_enabled, title: s.forms.order_image_title, note: s.forms.order_image_note,
+      track: s.forms.order_image_track, button: s.forms.order_image_button, share: s.forms.order_image_share,
+    },
     zalo: String(s.site.zalo || '').replace(/[^\d]/g, ''),
     phone: String(s.site.phone || '').replace(/[^\d+]/g, ''),
   };
