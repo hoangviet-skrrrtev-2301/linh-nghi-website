@@ -1,0 +1,16 @@
+{% from "partials/icons.njk" import icon %}
+{% from "partials/product-card.njk" import productCard %}
+{# ================= BLOG ================= #}
+{% if posts.length %}
+<section class="section {{ 'bg-surface' if s.home.testimonials.length }}">
+  <div class="container-x">
+    <div class="mb-10 flex items-end justify-between gap-4 reveal">
+      <div><span class="eyebrow">Blog</span><h2 class="section-title">{{ s.pages.blog_title }}</h2></div>
+      <a href="/blog" class="hidden items-center gap-1 text-sm font-medium text-primary hover:underline sm:inline-flex">Tất cả bài viết {{ icon('arrow-right', 'w-4 h-4') }}</a>
+    </div>
+    <div class="grid gap-8 md:grid-cols-3">
+      {% for p in posts %}{% include "partials/post-card.njk" %}{% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}

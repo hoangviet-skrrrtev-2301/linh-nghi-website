@@ -8,6 +8,7 @@ import { listPosts, getPost, listGallery, galleryAlbums } from '../services/cont
 import { buildSeo, productJsonLd, breadcrumbJsonLd, articleJsonLd } from '../lib/seo.js';
 import { formToken } from '../middleware/security.js';
 import { HttpError } from '../lib/utils.js';
+import { homeSections } from '../lib/home-layout.js';
 
 const router = Router();
 
@@ -75,6 +76,7 @@ const requireFeature =(key) => (req, res, next) => (getRaw('features')[key] ? ne
 router.get('/', (req, res) => {
   const s = res.locals.s;
   res.view('pages/home.njk', {
+    sections: homeSections(s.home_layout),
     featured: featuredProducts(Number(s.home.featured_limit) || 8),
     gallery: s.features.gallery && s.home.show_gallery ? listGallery({ limit: Math.min(Math.max(Number(s.home.gallery_limit) || 24, 4), 60) }) : [],
     posts: s.features.blog && s.home.show_blog ? listPosts({ perPage: 3 }).items : [],

@@ -15,6 +15,28 @@ const FONT_OPTIONS = [
   'Be Vietnam Pro', 'Inter', 'Montserrat', 'Nunito Sans', 'Quicksand', 'Mulish',
 ].map((f) => ({ value: f, label: f }));
 
+// Các khối của trang chủ (thứ tự mặc định). bg: false = khối tự có nền riêng (banner), không cho đổi nền.
+export const HOME_SECTIONS = [
+  { key: 'banner', label: 'Banner đầu trang', bg: false },
+  { key: 'info', label: 'Thông tin nổi bật (4 ô)', bg: true },
+  { key: 'featured', label: 'Sản phẩm nổi bật', bg: true },
+  { key: 'certificates', label: 'Chứng chỉ kiểm định', bg: true, defaultLook: 'primary' },
+  { key: 'categories', label: 'Phân loại theo dòng ngọc', bg: true },
+  { key: 'fengshui', label: 'Ý nghĩa ngọc & phong thủy', bg: true },
+  { key: 'size', label: 'Bảng số đo ni', bg: true },
+  { key: 'custom', label: 'Thiết kế riêng', bg: true },
+  { key: 'gallery', label: 'Gallery', bg: true },
+  { key: 'testimonials', label: 'Cảm nhận khách hàng', bg: true },
+  { key: 'blog', label: 'Bài viết mới (Blog)', bg: true },
+];
+
+export const SECTION_PATTERNS = [
+  { value: 'dots', label: 'Chấm bi' }, { value: 'grid', label: 'Lưới ô vuông' }, { value: 'diagonal', label: 'Sọc chéo' },
+  { value: 'rings', label: 'Vòng tròn đồng tâm (vòng ngọc)' }, { value: 'waves', label: 'Sóng nhẹ' },
+];
+
+const sectionBgOn = "item.bg_mode == 'color' || item.bg_mode == 'pattern'";
+
 export const SETTINGS_SCHEMA = [
   {
     key: 'site',
@@ -84,6 +106,10 @@ export const SETTINGS_SCHEMA = [
       {
         name: 'product_grid', label: 'Số cột sản phẩm (màn hình lớn)', type: 'select', default: '4',
         options: [{ value: '3', label: '3 cột' }, { value: '4', label: '4 cột' }],
+      },
+      {
+        name: 'product_frame', label: 'Khung viền thẻ sản phẩm', type: 'select', default: 'inset',
+        options: [{ value: 'none', label: 'Không có khung' }, { value: 'thin', label: 'Viền siêu mảnh quanh thẻ' }, { value: 'inset', label: 'Viền siêu mảnh + khung lồng trong ảnh' }],
       },
       { name: 'enable_animations', label: 'Bật hiệu ứng chuyển động khi cuộn trang', type: 'toggle', default: true },
       { name: 'custom_css', label: 'CSS tùy chỉnh (nâng cao)', type: 'textarea', help: 'Dành cho người biết CSS. Để trống nếu không dùng.' },
@@ -232,6 +258,43 @@ export const SETTINGS_SCHEMA = [
           { name: 'avatar', label: 'Ảnh đại diện', type: 'image' },
         ],
         default: [],
+      },
+    ],
+  },
+  {
+    key: 'home_layout',
+    label: 'Bố cục trang chủ',
+    description: 'Bật/tắt, đổi thứ tự (↑ ↓) và đổi nền cho từng khối của trang chủ. Nội dung chữ, ảnh của mỗi khối sửa ở nhóm "Trang chủ".',
+    fields: [
+      {
+        name: 'sections', label: 'Các khối trang chủ (từ trên xuống dưới)', type: 'list', fixed: true,
+        default: HOME_SECTIONS.map((x) => ({
+          key: x.key, label: x.label, enabled: true, bg_mode: 'none', bg_color: '#f1ece1', bg_pattern: 'dots', bg_pattern_color: '#2e6b94',
+          bg_pattern_strength: 18, bg_image: null, bg_overlay: 35, bg_overlay_color: '#000000', text_tone: 'auto',
+        })),
+        fields: [
+          { name: 'key', label: 'Mã khối', type: 'text', hidden: true },
+          { name: 'label', label: 'Tên khối', type: 'text', hidden: true },
+          { name: 'enabled', label: 'Hiện khối này trên trang chủ', type: 'toggle', default: true },
+          {
+            name: 'bg_mode', label: 'Nền của khối', type: 'select', default: 'none', noBgFor: ['banner'],
+            options: [
+              { value: 'none', label: 'Mặc định của giao diện' }, { value: 'color', label: 'Một màu nền' },
+              { value: 'pattern', label: 'Họa tiết trên nền màu' }, { value: 'image', label: 'Ảnh nền tải lên' },
+            ],
+          },
+          { name: 'bg_color', label: 'Màu nền', type: 'color', default: '#f1ece1', showIf: sectionBgOn },
+          { name: 'bg_pattern', label: 'Họa tiết', type: 'select', default: 'dots', options: SECTION_PATTERNS, showIf: "item.bg_mode == 'pattern'" },
+          { name: 'bg_pattern_color', label: 'Màu họa tiết', type: 'color', default: '#2e6b94', showIf: "item.bg_mode == 'pattern'" },
+          { name: 'bg_pattern_strength', label: 'Độ đậm họa tiết (5–60)', type: 'number', default: 18, showIf: "item.bg_mode == 'pattern'" },
+          { name: 'bg_image', label: 'Ảnh nền', type: 'image', showIf: "item.bg_mode == 'image'", help: 'Nên dùng ảnh ngang, rộng từ 1600px.' },
+          { name: 'bg_overlay', label: 'Độ phủ màu lên ảnh, 0–90 (để chữ dễ đọc)', type: 'number', default: 35, showIf: "item.bg_mode == 'image'" },
+          { name: 'bg_overlay_color', label: 'Màu phủ lên ảnh', type: 'color', default: '#000000', showIf: "item.bg_mode == 'image'" },
+          {
+            name: 'text_tone', label: 'Màu chữ trong khối', type: 'select', default: 'auto', showIf: "item.bg_mode != 'none'",
+            options: [{ value: 'auto', label: 'Tự chọn theo nền' }, { value: 'light', label: 'Chữ sáng (cho nền tối)' }, { value: 'dark', label: 'Chữ tối (cho nền sáng)' }],
+          },
+        ],
       },
     ],
   },

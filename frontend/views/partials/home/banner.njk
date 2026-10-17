@@ -1,0 +1,35 @@
+{% from "partials/icons.njk" import icon %}
+{% from "partials/product-card.njk" import productCard %}
+{# ================= BANNER ================= #}
+{% set slides = s.home.hero_slides %}
+<section class="relative" aria-label="Banner">
+  <div class="swiper hero-swiper h-[78vh] min-h-[520px] max-h-[820px]" data-count="{{ slides.length }}">
+    <div class="swiper-wrapper">
+      {% for sl in slides %}
+      <div class="swiper-slide hero-slide relative overflow-hidden">
+        {% if sl.image %}
+          <img src="{{ sl.image.lg }}" srcset="{{ sl.image | srcset }}" sizes="100vw" alt="{{ sl.title }}" class="hero-img absolute inset-0 h-full w-full object-cover" {{ 'fetchpriority=high' if loop.first else 'loading=lazy' }}>
+          <div class="absolute inset-0 bg-gradient-to-r from-black/55 via-black/25 to-transparent"></div>
+        {% else %}
+          <div class="hero-img absolute inset-0 bg-grain" style="background-color: color-mix(in srgb, var(--c-primary) 9%, var(--c-bg))"></div>
+          <div class="absolute -right-24 top-1/2 hidden h-[560px] w-[560px] -translate-y-1/2 rounded-full border-[70px] border-primary/25 lg:block" style="box-shadow: inset 0 0 80px rgba(255,255,255,.5)"></div>
+        {% endif %}
+        <div class="container-x relative flex h-full items-center">
+          <div class="max-w-xl {{ 'text-white' if sl.image else '' }}">
+            {% if sl.eyebrow %}<p class="eyebrow {{ '!text-white/85' if sl.image }}">{{ sl.eyebrow }}</p>{% endif %}
+            <h1 class="mt-4 text-balance text-[2.6rem] font-medium leading-[1.05] sm:text-6xl lg:text-7xl">{{ sl.title }}</h1>
+            {% if sl.subtitle %}<p class="mt-6 max-w-md text-[16px] leading-relaxed {{ 'text-white/85' if sl.image else 'text-muted' }}">{{ sl.subtitle }}</p>{% endif %}
+            {% if sl.cta_label %}
+            <div class="mt-9 flex flex-wrap gap-3">
+              <a href="{{ sl.cta_url or '/san-pham' }}" class="btn {{ 'btn-light' if sl.image else 'btn-primary' }}">{{ sl.cta_label }} {{ icon('arrow-right', 'w-4 h-4') }}</a>
+              {% if features.custom_request %}<a href="/thiet-ke-rieng" class="btn {{ 'border border-white/50 text-white hover:bg-white/10' if sl.image else 'btn-outline' }}">Thiết kế riêng</a>{% endif %}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% if slides.length > 1 %}<div class="swiper-pagination !bottom-8"></div>{% endif %}
+  </div>
+</section>

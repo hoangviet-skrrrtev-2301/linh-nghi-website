@@ -1,0 +1,31 @@
+{% from "partials/icons.njk" import icon %}
+{% from "partials/product-card.njk" import productCard %}
+{# ================= PHÂN LOẠI ================= #}
+{% if jadeTypes.length %}
+<section class="section bg-surface">
+  <div class="container-x">
+    <div class="section-head reveal">
+      <span class="eyebrow">Phân loại</span>
+      <h2 class="section-title">{{ s.home.categories_title }}</h2>
+      <div class="divider-ornament"></div>
+    </div>
+    <div class="grid grid-cols-2 gap-4 md:gap-6 lg:grid-cols-{{ jadeTypes.length if jadeTypes.length <= 4 else 4 }}">
+      {% for t in jadeTypes %}
+      <a href="/san-pham?loai={{ t.slug }}" class="reveal group relative block aspect-[4/5] overflow-hidden rounded-lg bg-primary/10">
+        {% if t.image %}
+          <img src="{{ t.image.md }}" alt="{{ t.name }}" loading="lazy" class="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105">
+        {% else %}
+          <div class="absolute inset-0 bg-grain transition duration-700 group-hover:scale-105" style="background: radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--c-primary) {{ 20 + loop.index0 * 12 }}%, white), color-mix(in srgb, var(--c-primary) {{ 55 + loop.index0 * 10 }}%, black))"></div>
+        {% endif %}
+        <div class="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent"></div>
+        <div class="absolute inset-x-0 bottom-0 p-5 text-white md:p-6">
+          <h3 class="text-2xl font-medium md:text-3xl">{{ t.name }}</h3>
+          {% if t.description %}<p class="mt-1.5 line-clamp-2 text-[13px] text-white/80">{{ t.description }}</p>{% endif %}
+          <span class="mt-3 inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.15em] text-white/90 transition group-hover:gap-3">Khám phá {{ icon('arrow-right', 'w-3.5 h-3.5') }}</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}

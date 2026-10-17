@@ -27,24 +27,26 @@
               <div class="md:col-span-2">
                 <div class="mb-2 flex items-center justify-between">
                   <label class="label !mb-0">{{ f.label }}</label>
-                  <button type="button" class="btn btn-secondary btn-sm" @click="addItem('{{ f.name }}', {{ f.fields | blankItem | attrjson }})">{{ icon('plus', 'w-3.5 h-3.5') }} Thêm</button>
+                  {% if not f.fixed %}<button type="button" class="btn btn-secondary btn-sm" @click="addItem('{{ f.name }}', {{ f.fields | blankItem | attrjson }})">{{ icon('plus', 'w-3.5 h-3.5') }} Thêm</button>{% endif %}
                 </div>
                 <div class="space-y-3">
                   <template x-for="(item, i) in values.{{ f.name }}" :key="i">
-                    <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                    <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4" :class="{% if f.fixed %}item.enabled === false && 'opacity-60'{% else %}''{% endif %}">
                       <div class="mb-3 flex items-center gap-2 text-xs text-slate-500">
                         <span class="font-semibold" x-text="'#' + (i + 1)"></span>
+                        {% if f.fixed %}<span class="text-sm font-semibold text-slate-800" x-text="item.label"></span>{% endif %}
                         <span class="ml-auto"></span>
                         <button type="button" class="btn btn-ghost btn-sm" @click="move('{{ f.name }}', i, -1)" :disabled="i === 0">↑</button>
                         <button type="button" class="btn btn-ghost btn-sm" @click="move('{{ f.name }}', i, 1)" :disabled="i === values.{{ f.name }}.length - 1">↓</button>
-                        <button type="button" class="btn btn-ghost btn-sm text-red-600" @click="removeItem('{{ f.name }}', i)">{{ icon('trash', 'w-3.5 h-3.5') }}</button>
+                        {% if not f.fixed %}<button type="button" class="btn btn-ghost btn-sm text-red-600" @click="removeItem('{{ f.name }}', i)">{{ icon('trash', 'w-3.5 h-3.5') }}</button>{% endif %}
                       </div>
                       <div class="grid gap-4 {{ 'md:grid-cols-2' if f.fields.length > 1 }} {{ 'lg:grid-cols-4' if f.fields.length == 4 and (f.fields | allText) }}">
-                        {% for sub in f.fields %}
-                        <div class="{{ 'md:col-span-2 lg:col-span-full' if sub.type in ['richtext', 'textarea'] }}">
+                        {% for sub in f.fields %}{% if not sub.hidden %}
+                        <div class="{{ 'md:col-span-2 lg:col-span-full' if sub.type in ['richtext', 'textarea'] }}"
+                          {% if sub.showIf %}x-show="{{ sub.showIf }}"{% elif sub.noBgFor %}x-show="!{{ sub.noBgFor | attrjson }}.includes(item.key)"{% endif %}>
                           {{ schemaField(sub, 'item.' + sub.name, 'media[item.' + sub.name + ']') }}
                         </div>
-                        {% endfor %}
+                        {% endif %}{% endfor %}
                       </div>
                     </div>
                   </template>

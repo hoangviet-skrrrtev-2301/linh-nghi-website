@@ -1,0 +1,36 @@
+{% from "partials/icons.njk" import icon %}
+{% from "partials/product-card.njk" import productCard %}
+{# ================= Ý NGHĨA NGỌC & PHONG THỦY ================= #}
+{% if s.home.show_fengshui and s.home.fengshui_items.length %}
+<section class="section">
+  <div class="container-x grid items-center gap-12 {{ 'lg:grid-cols-[1fr_1.2fr]' if s.home.fengshui_image }}">
+    {% if s.home.fengshui_image %}
+    <div class="reveal relative">
+      <img src="{{ s.home.fengshui_image.md }}" alt="{{ s.home.fengshui_title }}" loading="lazy" class="aspect-[4/5] w-full rounded-lg object-cover">
+      <div class="absolute -bottom-5 -right-5 -z-10 h-full w-full rounded-lg border border-accent/40"></div>
+    </div>
+    {% endif %}
+    <div>
+      <div class="reveal {{ 'section-head' if not s.home.fengshui_image else 'mb-10' }}">
+        <span class="eyebrow">Phong thủy</span>
+        <h2 class="section-title">{{ s.home.fengshui_title }}</h2>
+        <p class="section-sub">{{ s.home.fengshui_subtitle }}</p>
+        {% if not s.home.fengshui_image %}<div class="divider-ornament"></div>{% endif %}
+      </div>
+      <div class="grid gap-5 sm:grid-cols-2 {{ 'lg:grid-cols-4' if not s.home.fengshui_image }}">
+        {% for f in s.home.fengshui_items %}
+        <div class="reveal card p-6">
+          <span class="font-heading text-4xl leading-none text-accent">{{ '0' + loop.index if loop.index < 10 else loop.index }}</span>
+          <h3 class="mt-3 text-xl font-medium">{{ f.title }}</h3>
+          <p class="mt-2 text-sm leading-relaxed text-muted">{{ f.content }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      {% if jadeTypes.length %}
+      <p class="reveal mt-8 text-sm text-muted {{ 'text-center' if not s.home.fengshui_image }}">Chọn ngọc hợp mệnh:
+        <a href="/san-pham" class="font-medium text-primary underline decoration-accent/50 underline-offset-4 hover:decoration-accent">lọc sản phẩm theo mệnh của bạn</a></p>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}

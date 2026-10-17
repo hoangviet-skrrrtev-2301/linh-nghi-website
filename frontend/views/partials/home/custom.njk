@@ -1,0 +1,22 @@
+{% from "partials/icons.njk" import icon %}
+{% from "partials/product-card.njk" import productCard %}
+{# ================= THIẾT KẾ RIÊNG ================= #}
+{% if features.custom_request %}
+<section class="section !pt-0">
+  <div class="container-x">
+    <div class="reveal relative grid overflow-hidden rounded-lg panel-primary lg:grid-cols-2">
+      <div class="relative z-10 p-8 md:p-14">
+        <span class="eyebrow !text-accent">Custom</span>
+        <h2 class="mt-3 text-3xl font-medium md:text-5xl">{{ s.home.custom_title }}</h2>
+        <p class="mt-5 max-w-md opacity-80">{{ s.home.custom_subtitle }}</p>
+        <a href="/thiet-ke-rieng" class="btn btn-accent mt-8">{{ icon('sparkle', 'w-4 h-4') }} Gửi yêu cầu thiết kế</a>
+      </div>
+      {% if s.home.custom_image %}
+        <img src="{{ s.home.custom_image.md }}" alt="{{ s.home.custom_title }}" loading="lazy" class="h-full max-h-[420px] w-full object-cover lg:max-h-none">
+      {% else %}
+        <div class="relative hidden lg:block"><div class="absolute -right-16 top-1/2 h-[420px] w-[420px] -translate-y-1/2 rounded-full border-[56px] border-white/15"></div><div class="absolute right-40 top-10 h-40 w-40 rounded-full border-[22px] border-accent/40"></div></div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}

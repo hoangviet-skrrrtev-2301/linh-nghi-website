@@ -1,0 +1,21 @@
+{% from "partials/icons.njk" import icon %}
+{% from "partials/product-card.njk" import productCard %}
+{# ================= THÔNG TIN NỔI BẬT (bấm để xem chi tiết) ================= #}
+{% if s.home.info_blocks.length %}
+<section class="relative z-10 {{ '-mt-14' if sec.afterBanner and not sec.hasBg else 'py-10' }}">
+  <div class="container-x">
+    <div class="grid grid-cols-2 overflow-hidden rounded-lg border border-line bg-surface shadow-xl shadow-ink/5 lg:grid-cols-{{ s.home.info_blocks.length if s.home.info_blocks.length <= 4 else 4 }}">
+      {% for b in s.home.info_blocks %}
+      <button type="button" class="reveal group flex flex-col items-start gap-3 border-line p-5 text-left transition hover:bg-primary/[.03] md:p-7 {{ 'border-r' if not loop.last }} {{ 'border-b lg:border-b-0' if loop.index <= 2 }}"
+        data-title="{{ b.title }}" @click="$store.info.fromTemplate($el.dataset.title, 'info-{{ loop.index0 }}')">
+        <span class="flex h-11 w-11 items-center justify-center rounded-full bg-primary/8 text-primary transition group-hover:bg-primary group-hover:text-on-primary">{{ icon(b.icon or 'gem', 'w-5 h-5') }}</span>
+        <span class="font-heading text-lg font-medium leading-tight md:text-xl">{{ b.title }}</span>
+        <span class="text-[13px] leading-relaxed text-muted">{{ b.summary }}</span>
+        <span class="mt-auto inline-flex items-center gap-1 text-xs font-medium text-accent">Xem thêm {{ icon('chevron-right', 'w-3.5 h-3.5') }}</span>
+      </button>
+      <template id="info-{{ loop.index0 }}">{{ b.detail | safe }}</template>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}

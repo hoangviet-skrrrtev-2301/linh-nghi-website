@@ -1,0 +1,41 @@
+{% from "partials/icons.njk" import icon %}
+{% from "partials/product-card.njk" import productCard %}
+{# ================= GALLERY ================= #}
+{% if gallery.length %}
+<section class="section bg-surface">
+  <div class="container-x">
+    <div class="section-head reveal">
+      <span class="eyebrow">Gallery</span>
+      <h2 class="section-title">{{ s.pages.gallery_title }}</h2>
+      <p class="section-sub">{{ s.pages.gallery_intro }}</p>
+    </div>
+    {% if s.home.gallery_autoscroll and gallery.length > 8 %}
+    {# Lướt tự động phải → trái; JS nhân đôi dãy ảnh để chạy vòng liên tục #}
+    <div class="gallery-marquee" data-marquee style="--marquee-time: {{ s.home.gallery_scroll_seconds or 45 }}s">
+      <div class="gallery-marquee-track" data-pswp>
+        <div class="gallery-group">
+        {% for g in gallery %}
+        {% if g.product_slug %}<a href="/san-pham/{{ g.product_slug }}" @click.prevent="$store.quick.show('{{ g.product_slug }}')"{% else %}<a href="{{ g.image.lg }}" data-pswp-width="{{ g.image.width }}" data-pswp-height="{{ g.image.height }}" data-caption="{{ g.title }}"{% endif %}
+          class="group relative block aspect-square overflow-hidden rounded-md">
+          <img src="{{ g.image.sm }}" alt="{{ g.image.alt or g.title }}" loading="lazy" class="h-full w-full object-cover transition duration-700 group-hover:scale-105">
+          <span class="absolute inset-0 flex items-center justify-center bg-ink/0 text-white opacity-0 transition group-hover:bg-ink/30 group-hover:opacity-100">{{ icon('zoom', 'w-7 h-7') }}</span>
+        </a>
+        {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="pswp-gallery grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4" data-pswp>
+      {% for g in gallery | batch(8) | first %}
+      {% if g.product_slug %}<a href="/san-pham/{{ g.product_slug }}" @click.prevent="$store.quick.show('{{ g.product_slug }}')"{% else %}<a href="{{ g.image.lg }}" data-pswp-width="{{ g.image.width }}" data-pswp-height="{{ g.image.height }}" data-caption="{{ g.title }}"{% endif %}
+        class="reveal group relative block overflow-hidden rounded-md">
+        <img src="{{ g.image.sm }}" alt="{{ g.image.alt or g.title }}" loading="lazy" class="aspect-square h-full w-full object-cover transition duration-700 group-hover:scale-105">
+        <span class="absolute inset-0 flex items-center justify-center bg-ink/0 text-white opacity-0 transition group-hover:bg-ink/30 group-hover:opacity-100">{{ icon('zoom', 'w-7 h-7') }}</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <div class="mt-10 text-center"><a href="/gallery" class="btn btn-outline">Xem thêm Gallery</a></div>
+  </div>
+</section>
+{% endif %}

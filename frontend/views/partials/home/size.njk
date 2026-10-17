@@ -1,0 +1,51 @@
+{% from "partials/icons.njk" import icon %}
+{% from "partials/product-card.njk" import productCard %}
+{# ================= SỐ ĐO NI ================= #}
+{% if features.size_guide and s.size_guide.table.length %}
+<section class="section">
+  <div class="container-x grid items-center gap-12 lg:grid-cols-2">
+    <div class="reveal">
+      <span class="eyebrow">Chọn size</span>
+      <h2 class="section-title">{{ s.home.size_title }}</h2>
+      <p class="section-sub max-w-md">{{ s.home.size_subtitle }}</p>
+      <ol class="mt-8 space-y-5">
+        {% for st in s.size_guide.steps | batch(3) | first %}
+        <li class="flex gap-4">
+          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-accent font-heading text-accent">{{ loop.index }}</span>
+          <div><p class="font-medium">{{ st.title }}</p><p class="text-sm text-muted">{{ st.content }}</p></div>
+        </li>
+        {% endfor %}
+      </ol>
+      {% if s.home.show_size_calc %}
+      <div class="mt-8 rounded-lg border border-line bg-surface p-5" x-data="sizeCalc({{ s.size_guide.table | attrjson }})">
+        <label for="home-hand" class="label">Tính ni nhanh: nhập chu vi bàn tay (cm)</label>
+        <div class="flex items-center gap-3">
+          <input id="home-hand" type="number" step="0.1" min="10" max="30" x-model.number="hand" class="input !w-36" placeholder="VD: 18.5">
+          <p class="text-sm" x-show="hand" x-cloak>
+            <template x-if="result"><span>Ni phù hợp: <b class="font-heading text-2xl text-primary" x-text="result.size"></b> mm</span></template>
+            <template x-if="!result"><span class="text-muted">Ngoài bảng, nhắn shop để tư vấn</span></template>
+          </p>
+        </div>
+      </div>
+      {% endif %}
+      <a href="/huong-dan-size" class="btn btn-primary mt-8">{{ icon('ruler', 'w-4 h-4') }} Hướng dẫn chi tiết</a>
+    </div>
+    <div class="reveal card overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-primary text-on-primary">
+          <tr><th class="px-5 py-3.5 text-left font-medium">Ni (mm)</th><th class="px-5 py-3.5 text-left font-medium">Chu vi bàn tay</th><th class="hidden px-5 py-3.5 text-left font-medium sm:table-cell">Cổ tay</th></tr>
+        </thead>
+        <tbody>
+          {% for r in s.size_guide.table %}
+          <tr class="border-t border-line odd:bg-ink/[.02]">
+            <td class="px-5 py-3 font-heading text-lg font-semibold text-primary">{{ r.size }}</td>
+            <td class="px-5 py-3">{{ r.hand }} cm {% if r.note %}<span class="badge ml-1 bg-accent/10 text-accent">{{ r.note }}</span>{% endif %}</td>
+            <td class="hidden px-5 py-3 text-muted sm:table-cell">{{ r.wrist }} cm</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endif %}

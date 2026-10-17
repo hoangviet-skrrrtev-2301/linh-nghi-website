@@ -66,7 +66,7 @@
   <script defer src="/vendor/alpine-focus/cdn.min.js"></script>
   <script defer src="/vendor/alpine/cdn.min.js"></script>
 </head>
-<body class="min-h-screen flex flex-col" x-data>
+<body class="min-h-screen flex flex-col {{ 'frame-' + s.theme.product_frame if s.theme.product_frame and s.theme.product_frame != 'none' }}" x-data>
   <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] btn btn-primary">Bỏ qua tới nội dung</a>
 
   {% include "partials/header.njk" %}

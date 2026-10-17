@@ -1,0 +1,19 @@
+{% from "partials/icons.njk" import icon %}
+{% from "partials/product-card.njk" import productCard %}
+{# ================= SẢN PHẨM NỔI BẬT ================= #}
+{% if featured.length %}
+<section class="section">
+  <div class="container-x">
+    <div class="section-head reveal">
+      <span class="eyebrow">Bộ sưu tập</span>
+      <h2 class="section-title">{{ s.home.featured_title }}</h2>
+      <p class="section-sub">{{ s.home.featured_subtitle }}</p>
+      <div class="divider-ornament"></div>
+    </div>
+    <div class="grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 md:gap-x-6 {{ 'lg:grid-cols-4' if s.theme.product_grid == '4' else 'lg:grid-cols-3' }}">
+      {% for p in featured %}{{ productCard(p, features, loop.index0) }}{% endfor %}
+    </div>
+    <div class="mt-14 text-center"><a href="/san-pham" class="btn btn-outline">Xem tất cả sản phẩm {{ icon('arrow-right', 'w-4 h-4') }}</a></div>
+  </div>
+</section>
+{% endif %}

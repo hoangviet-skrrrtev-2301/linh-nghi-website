@@ -1,0 +1,22 @@
+{% from "partials/icons.njk" import icon %}
+{% from "partials/product-card.njk" import productCard %}
+{# ================= CẢM NHẬN KHÁCH HÀNG ================= #}
+{% if s.home.testimonials.length %}
+<section class="section">
+  <div class="container-x">
+    <div class="section-head reveal"><span class="eyebrow">Khách hàng</span><h2 class="section-title">Cảm nhận từ khách hàng</h2></div>
+    <div class="grid gap-6 md:grid-cols-3">
+      {% for t in s.home.testimonials %}
+      <figure class="reveal card p-7">
+        <div class="font-heading text-5xl leading-none text-accent">“</div>
+        <blockquote class="mt-2 text-[15px] leading-relaxed text-ink/85">{{ t.content }}</blockquote>
+        <figcaption class="mt-5 flex items-center gap-3">
+          {% if t.avatar %}<img src="{{ t.avatar.sm }}" alt="{{ t.name }}" class="h-10 w-10 rounded-full object-cover" loading="lazy">{% endif %}
+          <span class="font-medium">{{ t.name }}</span>
+        </figcaption>
+      </figure>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
