@@ -8,19 +8,26 @@
   </div>
 </section>
 <section class="container-x py-14">
-  {% if result.items.length %}
-  <div class="grid gap-x-8 gap-y-12 md:grid-cols-2 lg:grid-cols-3">
-    {% for p in result.items %}{% include "partials/post-card.njk" %}{% endfor %}
+  <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-14">
+    <div class="min-w-0">
+      {% if result.items.length %}
+      <div class="grid gap-x-8 gap-y-12 sm:grid-cols-2">
+        {% for p in result.items %}{% include "partials/post-card.njk" %}{% endfor %}
+      </div>
+      {% if result.pages > 1 %}
+      <nav class="mt-14 flex justify-center gap-1.5" aria-label="Phân trang">
+        {% for n in range(1, result.pages + 1) %}
+        <a href="/blog{{ '?trang=' + n if n > 1 }}" class="flex h-10 min-w-10 items-center justify-center rounded-full px-3 text-sm {{ 'bg-primary text-on-primary' if n == result.page else 'hover:bg-ink/5' }}">{{ n }}</a>
+        {% endfor %}
+      </nav>
+      {% endif %}
+      {% else %}
+      <p class="py-20 text-center text-muted">Chưa có bài viết nào.</p>
+      {% endif %}
+    </div>
+    <div class="lg:sticky lg:top-[calc(var(--header-h)+1rem)] lg:self-start">
+      {% include "partials/blog-sidebar.njk" %}
+    </div>
   </div>
-  {% if result.pages > 1 %}
-  <nav class="mt-14 flex justify-center gap-1.5" aria-label="Phân trang">
-    {% for n in range(1, result.pages + 1) %}
-    <a href="/blog{{ '?trang=' + n if n > 1 }}" class="flex h-10 min-w-10 items-center justify-center rounded-full px-3 text-sm {{ 'bg-primary text-on-primary' if n == result.page else 'hover:bg-ink/5' }}">{{ n }}</a>
-    {% endfor %}
-  </nav>
-  {% endif %}
-  {% else %}
-  <p class="py-20 text-center text-muted">Chưa có bài viết nào.</p>
-  {% endif %}
 </section>
 {% endblock %}

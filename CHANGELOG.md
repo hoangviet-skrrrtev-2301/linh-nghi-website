@@ -4,6 +4,7 @@ Ghi lại các thay đổi đáng chú ý, mới nhất ở trên cùng.
 
 ## Chưa phát hành
 
+- Blog chia 2 cột: bài viết bên trái, cột phải gồm mục lục (tự tạo từ H2/H3, đánh dấu mục đang đọc; điện thoại gập lại phía trên bài), gợi ý bài viết và banner dọc có link. Trang danh sách blog cũng có cột phải (gợi ý + banner). Tiêu đề, số bài gợi ý, bật/tắt mục lục và banner chỉnh ở Admin › Cài đặt › Trang Sản phẩm / Gallery / Blog. Mã: `backend/lib/toc.js`, `frontend/views/partials/blog-sidebar.njk`
 - Thẻ sản phẩm có khung viền siêu mảnh (1px) đổi sang màu nhấn khi rê chuột; kiểu "viền + khung lồng trong ảnh" thêm đường viền trắng mảnh bên trong ảnh. Chọn kiểu hoặc tắt ở Admin › Giao diện › Khung viền thẻ sản phẩm
 - Bố cục trang chủ (Admin › Cài đặt › Bố cục trang chủ): bật/tắt và đổi thứ tự (↑ ↓) từng khối; mỗi khối đổi được nền (một màu, họa tiết chấm/lưới/sọc/vòng ngọc/sóng, hoặc ảnh tải lên kèm lớp phủ màu) và màu chữ. Trang chủ tách mỗi khối thành file riêng trong `frontend/views/partials/home/`; logic nền ở `backend/lib/home-layout.js`
 - Gallery: tab Tất cả và trang chủ chỉ hiện ảnh bật "Hiện ở Gallery tổng", tab album hiện đủ ảnh của album (bật hay tắt). Trang chủ hiện 2 hàng × 4 cột, nhiều hơn 8 ảnh thì tự lướt phải sang trái (chỉnh số ảnh, bật/tắt, tốc độ trong Cài đặt › Trang chủ)

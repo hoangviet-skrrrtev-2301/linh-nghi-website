@@ -9,6 +9,7 @@ import { buildSeo, productJsonLd, breadcrumbJsonLd, articleJsonLd } from '../lib
 import { formToken } from '../middleware/security.js';
 import { HttpError } from '../lib/utils.js';
 import { homeSections } from '../lib/home-layout.js';
+import { buildToc } from '../lib/toc.js';
 
 const router = Router();
 
@@ -141,11 +142,17 @@ router.get('/huong-dan-size', requireFeature('size_guide'), (req, res) => {
 });
 
 // ---------------- Blog ----------------
+// Bài viết gợi ý ở cột phải (bài mới nhất, bỏ bài đang xem)
+function sidebarPosts(s, excludeId) {
+  const n = Math.min(Math.max(Number(s.pages.blog_related_count) || 4, 1), 10);
+  return listPosts({ perPage: n + 1 }).items.filter((p) => p.id !== excludeId).slice(0, n);
+}
+
 router.get('/blog', requireFeature('blog'), (req, res) => {
   const s = res.locals.s;
   const result = listPosts({ page: req.query.trang, perPage: 9 });
   res.locals.seo = buildSeo(req, { page: 'blog', title: s.pages.blog_title, description: s.pages.blog_intro, noindex: Number(req.query.trang) > 1 });
-  res.view('pages/blog.njk', { result });
+  res.view('pages/blog.njk', { result, sidebarPosts: sidebarPosts(s) });
 });
 
 router.get('/blog/:slug', requireFeature('blog'), (req, res, next) => {
@@ -158,8 +165,13 @@ router.get('/blog/:slug', requireFeature('blog'), (req, res, next) => {
     type: 'article',
     jsonLd: [articleJsonLd(post), breadcrumbJsonLd([{ name: 'Trang chủ', url: '/' }, { name: 'Blog', url: '/blog' }, { name: post.title, url: `/blog/${post.slug}` }])],
   });
-  const recent = listPosts({ perPage: 4 }).items.filter((p) => p.id !== post.id).slice(0, 3);
-  res.view('pages/post.njk', { post, recent });
+  const s = res.locals.s;
+  const { html, toc } = buildToc(post.content);
+  res.view('pages/post.njk', {
+    post: { ...post, content: html },
+    toc: s.pages.blog_show_toc && toc.length >= 2 ? toc : [],
+    sidebarPosts: sidebarPosts(s, post.id),
+  });
 });
 
 // ---------------- Giỏ hàng & đặt hàng ----------------

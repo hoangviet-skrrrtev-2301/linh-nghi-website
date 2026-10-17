@@ -381,6 +381,23 @@ function initMarquee() {
   });
 }
 
+// Mục lục bài viết: đánh dấu mục đang đọc
+function initToc() {
+  const links = [...document.querySelectorAll('[data-toc-link]')];
+  if (!links.length || !('IntersectionObserver' in window)) return;
+  const byId = new Map();
+  links.forEach((a) => { const id = a.getAttribute('href').slice(1); (byId.get(id) || byId.set(id, []).get(id)).push(a); });
+  const heads = [...byId.keys()].map((id) => document.getElementById(id)).filter(Boolean);
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (!e.isIntersecting) return;
+      links.forEach((a) => a.classList.remove('is-active'));
+      byId.get(e.target.id)?.forEach((a) => a.classList.add('is-active'));
+    });
+  }, { rootMargin: '-100px 0px -70% 0px' });
+  heads.forEach((h) => io.observe(h));
+}
+
 function initReveal() {
   const items = document.querySelectorAll('.reveal');
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -413,6 +430,7 @@ ready(() => {
   initReveal();
   initLightbox();
   initMarquee();
+  initToc();
   // Swiper nạp bằng thẻ defer, chạy sau khi tải xong
   if (window.Swiper) initSwipers();
   else window.addEventListener('load', initSwipers, { once: true });

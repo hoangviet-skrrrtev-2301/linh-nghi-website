@@ -165,6 +165,8 @@
   /* Nội dung soạn thảo (mô tả sản phẩm, blog, trang giới thiệu) */
   .prose-jade { @apply text-[15.5px] leading-[1.8] text-ink/90; }
   .prose-jade > * + * { margin-top: 1em; }
+  .prose-jade h2, .prose-jade h3 { scroll-margin-top: calc(var(--header-h) + 20px); }
+  html { scroll-behavior: smooth; }
   .prose-jade h2 { @apply mt-10 text-2xl font-medium text-ink; }
   .prose-jade h3 { @apply mt-8 text-xl font-medium text-ink; }
   .prose-jade h4 { @apply mt-6 text-lg font-semibold text-ink; }

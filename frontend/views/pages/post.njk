@@ -1,28 +1,31 @@
 {% extends "layouts/base.njk" %}
 {% block content %}
-<article>
-  <header class="container-x max-w-3xl pt-10 text-center md:pt-16">
-    <nav class="text-xs text-muted" aria-label="Breadcrumb"><a href="/" class="hover:text-primary">Trang chủ</a><span class="mx-1.5">/</span><a href="/blog" class="hover:text-primary">Blog</a></nav>
-    <h1 class="mt-5 text-balance text-4xl font-medium leading-tight md:text-5xl">{{ post.title }}</h1>
-    <p class="mt-4 text-sm text-muted">{{ post.published_at | date }}{% if post.author %} · {{ post.author }}{% endif %} · {{ post.reading_minutes }} phút đọc</p>
-  </header>
-  {% if post.cover %}
-  <div class="container-x mt-10 max-w-5xl">
-    <img src="{{ post.cover.lg }}" srcset="{{ post.cover | srcset }}" sizes="(min-width:1024px) 1024px, 100vw" alt="{{ post.cover.alt or post.title }}" class="aspect-[16/9] w-full rounded-lg object-cover" fetchpriority="high">
+<div class="container-x py-10 md:py-14">
+  <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-14">
+    <article class="min-w-0">
+      <header>
+        <nav class="text-xs text-muted" aria-label="Breadcrumb"><a href="/" class="hover:text-primary">Trang chủ</a><span class="mx-1.5">/</span><a href="/blog" class="hover:text-primary">Blog</a></nav>
+        <h1 class="mt-4 text-balance text-3xl font-medium leading-tight md:text-5xl">{{ post.title }}</h1>
+        <p class="mt-4 text-sm text-muted">{{ post.published_at | date }}{% if post.author %} · {{ post.author }}{% endif %} · {{ post.reading_minutes }} phút đọc</p>
+      </header>
+      {% if post.cover %}
+      <img src="{{ post.cover.lg }}" srcset="{{ post.cover | srcset }}" sizes="(min-width:1024px) 760px, 100vw" alt="{{ post.cover.alt or post.title }}" class="mt-8 aspect-[16/9] w-full rounded-lg border border-line object-cover" fetchpriority="high">
+      {% endif %}
+      {% if toc.length %}
+      {# Điện thoại / máy tính bảng: mục lục gập lại phía trên bài; máy tính để cột phải #}
+      <details class="card mt-8 p-4 lg:hidden">
+        <summary class="cursor-pointer font-heading text-lg font-medium">{{ s.pages.blog_toc_title }}</summary>
+        <div class="mt-3">{% include "partials/blog-toc.njk" %}</div>
+      </details>
+      {% endif %}
+      <div class="mt-8 max-w-3xl">
+        {% if post.excerpt %}<p class="mb-8 font-heading text-xl italic leading-relaxed text-ink/80">{{ post.excerpt }}</p>{% endif %}
+        <div class="prose-jade">{{ post.content | safe }}</div>
+      </div>
+    </article>
+    <div class="lg:sticky lg:top-[calc(var(--header-h)+1rem)] lg:self-start">
+      {% include "partials/blog-sidebar.njk" %}
+    </div>
   </div>
-  {% endif %}
-  <div class="container-x max-w-3xl py-12">
-    {% if post.excerpt %}<p class="mb-8 font-heading text-xl italic leading-relaxed text-ink/80">{{ post.excerpt }}</p>{% endif %}
-    <div class="prose-jade">{{ post.content | safe }}</div>
-  </div>
-</article>
-
-{% if recent.length %}
-<section class="section border-t border-line bg-surface">
-  <div class="container-x">
-    <h2 class="mb-10 text-center text-3xl font-medium">Bài viết khác</h2>
-    <div class="grid gap-8 md:grid-cols-3">{% for p in recent %}{% include "partials/post-card.njk" %}{% endfor %}</div>
-  </div>
-</section>
-{% endif %}
+</div>
 {% endblock %}

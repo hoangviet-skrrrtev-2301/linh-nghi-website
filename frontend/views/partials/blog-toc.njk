@@ -1,0 +1,6 @@
+{# Mục lục bài viết. Cần biến toc; tiêu đề lấy từ cài đặt #}
+<ol class="space-y-1 text-sm" data-toc>
+  {% for t in toc %}
+  <li class="{{ 'pl-4' if t.level == 3 }}"><a href="#{{ t.id }}" data-toc-link class="block border-l-2 border-transparent py-1 pl-3 text-muted transition hover:text-primary [&.is-active]:border-accent [&.is-active]:font-medium [&.is-active]:text-primary">{{ t.text }}</a></li>
+  {% endfor %}
+</ol>
