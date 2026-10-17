@@ -17,6 +17,10 @@ function loadAll() {
   const stored = Object.fromEntries(db.prepare('SELECT key, value FROM settings').all().map((r) => [r.key, safeJson(r.value, {})]));
   cache = {};
   for (const group of SETTINGS_SCHEMA) cache[group.key] = { ...defaults(group), ...(stored[group.key] || {}) };
+  // Menu đã lưu từ trước chưa có kiểu sổ dọc: mục Sản phẩm mặc định sổ theo loại ngọc, các mục khác không sổ
+  cache.navigation.items = (cache.navigation.items || []).map((it) => ({
+    dropdown: it.url === '/san-pham' ? 'jade_type' : 'none', dropdown_custom: '', ...it,
+  }));
   return cache;
 }
 

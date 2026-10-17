@@ -307,6 +307,19 @@ export function deleteProduct(id) {
   db.prepare('DELETE FROM products WHERE id = ?').run(id);
 }
 
+// Ẩn / hiện / xóa nhiều sản phẩm cùng lúc. Ẩn = chuyển về bản nháp (khách không thấy, dữ liệu vẫn giữ).
+export function bulkProducts(ids, action) {
+  const list = [...new Set((ids || []).map(Number).filter((n) => Number.isInteger(n) && n > 0))].slice(0, 500);
+  if (!list.length) throw new HttpError(400, 'Chưa chọn sản phẩm nào');
+  const marks = list.map(() => '?').join(',');
+  let result;
+  if (action === 'hide') result = db.prepare(`UPDATE products SET status = 'draft', updated_at = datetime('now') WHERE id IN (${marks})`).run(...list);
+  else if (action === 'show') result = db.prepare(`UPDATE products SET status = 'published', updated_at = datetime('now') WHERE id IN (${marks})`).run(...list);
+  else if (action === 'delete') result = db.prepare(`DELETE FROM products WHERE id IN (${marks})`).run(...list);
+  else throw new HttpError(400, 'Thao tác không hợp lệ');
+  return { ids: list, changed: result.changes };
+}
+
 export function duplicateProduct(id) {
   const p = getProduct(Number(id), { publicOnly: false });
   if (!p) throw new HttpError(404, 'Không tìm thấy sản phẩm');

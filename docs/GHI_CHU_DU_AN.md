@@ -99,6 +99,7 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 | Thẻ meta SEO, JSON-LD | `backend/lib/seo.js`, `frontend/views/layouts/base.njk` |
 | Thứ tự / nền các khối trang chủ | `backend/lib/home-layout.js`, `frontend/views/partials/home/*.njk`, nhóm `home_layout` trong `settings-schema.js` |
 | Chân trang, blog 2 cột | `partials/footer.njk`, `backend/lib/footer-layout.js`; `pages/post.njk`, `partials/blog-sidebar.njk`, `backend/lib/toc.js` |
+| Menu sổ dọc, phân trang, schema | `backend/lib/nav-menu.js`, `backend/lib/pagination.js`, `backend/lib/seo.js` |
 | Trang admin | `admin/views/pages/*.njk` + component tương ứng trong `admin/public/js/pages.js` |
 | API admin | `backend/routes/admin-api/index.js` |
 | Cấu trúc database | thêm file mới trong `database/migrations/` |

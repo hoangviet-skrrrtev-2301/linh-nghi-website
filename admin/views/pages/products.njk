@@ -18,13 +18,25 @@
     <a href="{{ A }}/products/new" class="btn btn-primary ml-auto">{{ icon('plus', 'w-4 h-4') }} Thêm sản phẩm</a>
   </div>
 
+  {# Thanh thao tác hàng loạt: hiện khi có sản phẩm được tick #}
+  <div x-cloak x-show="selected.length" x-transition class="sticky top-16 z-20 mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-brand-500/30 bg-brand-50 px-4 py-2.5 text-sm shadow-sm">
+    <span class="font-medium text-brand-700" x-text="'Đã chọn ' + selected.length + ' sản phẩm'"></span>
+    <span class="ml-auto flex flex-wrap gap-2">
+      <button type="button" class="btn btn-secondary btn-sm" @click="bulk('hide')">{{ icon('eye-off', 'w-4 h-4') }} Ẩn</button>
+      <button type="button" class="btn btn-secondary btn-sm" @click="bulk('show')">{{ icon('eye', 'w-4 h-4') }} Hiện</button>
+      <button type="button" class="btn btn-danger btn-sm" @click="bulk('delete')">{{ icon('trash', 'w-4 h-4') }} Xóa</button>
+      <button type="button" class="btn btn-ghost btn-sm" @click="selected = []">Bỏ chọn</button>
+    </span>
+  </div>
+
   <div class="card overflow-hidden">
     <div class="overflow-x-auto">
       <table class="table table-stack">
-        <thead><tr><th class="w-16"></th><th class="stack-title">Sản phẩm</th><th>Loại ngọc</th><th>Giá</th><th>Tình trạng</th><th>Hiển thị</th><th class="w-32"></th></tr></thead>
+        <thead><tr><th class="w-10"><input type="checkbox" class="h-4 w-4 accent-brand-600" :checked="allSelected" @change="toggleAll($event.target.checked)" aria-label="Chọn tất cả"></th><th class="w-16"></th><th class="stack-title">Sản phẩm</th><th>Loại ngọc</th><th>Giá</th><th>Tình trạng</th><th>Hiển thị</th><th class="w-32"></th></tr></thead>
         <tbody>
           <template x-for="p in items" :key="p.id">
-            <tr>
+            <tr :class="p.status !== 'published' && 'opacity-70'">
+              <td><input type="checkbox" class="h-4 w-4 accent-brand-600" :value="p.id" x-model.number="selected" :aria-label="'Chọn ' + p.name"></td>
               <td><img :src="p.cover?.sm" alt="" class="h-12 w-12 rounded-lg bg-slate-100 object-cover"></td>
               <td>
                 <a :href="'{{ A }}/products/' + p.id" class="font-medium text-slate-900 hover:text-brand-600" x-text="p.name"></a>
@@ -36,12 +48,13 @@
               <td><span class="badge" :class="p.status === 'published' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'" x-text="p.status === 'published' ? 'Đang hiển thị' : 'Bản nháp'"></span></td>
               <td class="text-right whitespace-nowrap">
                 <a :href="'/san-pham/' + p.slug" target="_blank" class="btn btn-ghost btn-sm" title="Xem trên web" x-show="p.status === 'published'">{{ icon('eye', 'w-4 h-4') }}</a>
+                <button class="btn btn-ghost btn-sm" :title="p.status === 'published' ? 'Ẩn sản phẩm (khách không thấy)' : 'Hiện lại sản phẩm'" @click="toggleHide(p)"><span x-show="p.status === 'published'">{{ icon('eye-off', 'w-4 h-4') }}</span><span x-cloak x-show="p.status !== 'published'">{{ icon('eye', 'w-4 h-4') }}</span></button>
                 <button class="btn btn-ghost btn-sm" title="Nhân bản" @click="duplicate(p)">{{ icon('copy', 'w-4 h-4') }}</button>
                 <button class="btn btn-ghost btn-sm text-red-600" title="Xóa" @click="remove(p)">{{ icon('trash', 'w-4 h-4') }}</button>
               </td>
             </tr>
           </template>
-          <tr x-show="!loading && !items.length"><td colspan="7" class="py-14 text-center text-slate-500">Chưa có sản phẩm nào.</td></tr>
+          <tr x-show="!loading && !items.length"><td colspan="8" class="py-14 text-center text-slate-500">Chưa có sản phẩm nào.</td></tr>
         </tbody>
       </table>
     </div>

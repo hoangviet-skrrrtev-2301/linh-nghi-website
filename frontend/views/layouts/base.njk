@@ -17,6 +17,7 @@
   {% if seo.keywords %}<meta name="keywords" content="{{ seo.keywords }}">{% endif %}
   <meta name="robots" content="{{ seo.robots }}">
   <link rel="canonical" href="{{ seo.canonical }}">
+  {% if seo.prev %}<link rel="prev" href="{{ seo.prev }}">{% endif %}{% if seo.next %}<link rel="next" href="{{ seo.next }}">{% endif %}
   <meta name="theme-color" content="{{ s.theme.color_primary }}">
   <meta name="format-detection" content="telephone=no">
   {% if s.seo.google_site_verification %}<meta name="google-site-verification" content="{{ s.seo.google_site_verification }}">{% endif %}

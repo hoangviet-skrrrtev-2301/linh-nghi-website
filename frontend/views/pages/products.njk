@@ -116,13 +116,7 @@
         {% for p in result.items %}{{ productCard(p, features, loop.index0, false) }}{% endfor %}
       </div>
 
-      {% if result.pages > 1 %}
-      <nav class="mt-14 flex items-center justify-center gap-1.5" aria-label="Phân trang">
-        {% for n in range(1, result.pages + 1) %}
-        <button type="submit" name="trang" value="{{ n }}" class="h-10 min-w-10 rounded-full px-3 text-sm transition {{ 'bg-primary text-on-primary' if n == result.page else 'hover:bg-ink/5' }}" {{ 'aria-current=page' if n == result.page }}>{{ n }}</button>
-        {% endfor %}
-      </nav>
-      {% endif %}
+      {% set pg = result %}{% include "partials/pagination.njk" %}
       {% else %}
       <div class="card flex flex-col items-center px-6 py-20 text-center">
         <span class="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">{{ icon('search', 'w-6 h-6') }}</span>

@@ -143,6 +143,12 @@ router.post('/products/:id/duplicate', h((req) => {
   audit(req, 'duplicate', 'product', pid);
   return { id: pid };
 }));
+// Ẩn / hiện / xóa nhiều sản phẩm: { ids: [..], action: 'hide' | 'show' | 'delete' }
+router.post('/products/bulk', h((req) => {
+  const r = catalog.bulkProducts(req.body.ids, req.body.action);
+  audit(req, req.body.action, 'product', r.ids.join(','), `${r.changed} sản phẩm`);
+  return r;
+}));
 router.delete('/products/:id', h((req) => {
   catalog.deleteProduct(id(req));
   audit(req, 'delete', 'product', req.params.id);

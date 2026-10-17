@@ -2,6 +2,7 @@
 import nunjucks from 'nunjucks';
 import { config } from '../config/index.js';
 import { formatVnd, formatDate, escapeHtml } from './utils.js';
+import { pageWindow } from './pagination.js';
 
 // Đổi giá trị này mỗi lần khởi động để trình duyệt tải lại CSS/JS mới
 export const ASSET_VERSION = Date.now().toString(36);
@@ -27,6 +28,7 @@ function makeEnv(dir) {
   env.addFilter('blankItem', (fields) => Object.fromEntries((fields || []).map((f) => [f.name, f.type === 'toggle' ? false : f.type === 'image' ? null : ''])));
   env.addFilter('allText', (fields) => (fields || []).every((f) => f.type === 'text'));
   env.addGlobal('assetVersion', ASSET_VERSION);
+  env.addGlobal('pageWindow', pageWindow);
   env.addGlobal('adminPath', config.adminPath);
   env.addGlobal('baseUrl', config.baseUrl);
   return env;

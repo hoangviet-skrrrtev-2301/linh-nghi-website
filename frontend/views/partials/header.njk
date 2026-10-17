@@ -26,11 +26,20 @@
       <ul class="flex items-center gap-1">
         {% for item in nav %}
         {% set active = (item.url == '/' and currentPath == '/') or (item.url != '/' and currentPath.startsWith(item.url)) %}
-        <li>
-          <a href="{{ item.url }}" class="relative whitespace-nowrap px-2.5 py-2 text-[14px] tracking-wide transition xl:px-3 hover:text-primary {{ 'text-primary font-medium' if active else 'text-ink/80' }}">
-            {{ item.label }}
+        <li class="{{ 'group/dd relative' if item.children.length }}">
+          <a href="{{ item.url }}" class="relative inline-flex items-center gap-1 whitespace-nowrap px-2.5 py-2 text-[14px] tracking-wide transition xl:px-3 hover:text-primary {{ 'text-primary font-medium' if active else 'text-ink/80' }}">
+            {{ item.label }}{% if item.children.length %}{{ icon('chevron-down', 'w-3.5 h-3.5 opacity-60 transition group-hover/dd:rotate-180') }}{% endif %}
             {% if active %}<span class="absolute inset-x-3 -bottom-0.5 h-px bg-accent"></span>{% endif %}
           </a>
+          {% if item.children.length %}
+          {# Menu sổ dọc: hiện khi rê chuột hoặc khi tab bàn phím vào (không cần JS) #}
+          <div class="invisible absolute left-0 top-full z-50 min-w-56 pt-2 opacity-0 transition duration-200 group-hover/dd:visible group-hover/dd:opacity-100 group-focus-within/dd:visible group-focus-within/dd:opacity-100">
+            <ul class="max-h-[70vh] overflow-y-auto rounded-lg border border-line bg-surface p-1.5 shadow-xl shadow-ink/10">
+              {% for c in item.children %}<li><a href="{{ c.url }}" class="block rounded-md px-3 py-2 text-[13.5px] text-ink/85 transition hover:bg-primary/[.06] hover:text-primary">{{ c.label }}</a></li>{% endfor %}
+              <li class="mt-1 border-t border-line pt-1"><a href="{{ item.url }}" class="block rounded-md px-3 py-2 text-[13px] font-medium text-accent hover:bg-primary/[.06]">Xem tất cả</a></li>
+            </ul>
+          </div>
+          {% endif %}
         </li>
         {% endfor %}
       </ul>
@@ -85,9 +94,21 @@
       </div>
       <nav class="flex-1 overflow-y-auto px-3 py-4" aria-label="Menu di động">
         {% for item in nav %}
+        {% if item.children.length %}
+        <div x-data="{ sub: false }">
+          <div class="flex items-center rounded-md hover:bg-ink/5">
+            <a href="{{ item.url }}" class="flex-1 px-3 py-3 text-[15px] {{ 'text-primary font-medium' if currentPath == item.url else '' }}">{{ item.label }}</a>
+            <button type="button" class="px-3 py-3 text-muted" @click="sub = !sub" :aria-expanded="sub" aria-label="Mở danh sách {{ item.label }}">{{ icon('chevron-down', 'w-4 h-4 transition') }}</button>
+          </div>
+          <ul x-cloak x-show="sub" x-collapse class="ml-3 border-l border-line pl-2">
+            {% for c in item.children %}<li><a href="{{ c.url }}" class="block rounded-md px-3 py-2.5 text-sm text-ink/80 hover:bg-ink/5">{{ c.label }}</a></li>{% endfor %}
+          </ul>
+        </div>
+        {% else %}
         <a href="{{ item.url }}" class="flex items-center justify-between rounded-md px-3 py-3 text-[15px] hover:bg-ink/5 {{ 'text-primary font-medium' if currentPath == item.url else '' }}">
           {{ item.label }} {{ icon('chevron-right', 'w-4 h-4 text-muted') }}
         </a>
+        {% endif %}
         {% endfor %}
       </nav>
       <div class="space-y-2 border-t border-line p-5 text-sm">

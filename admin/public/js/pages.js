@@ -49,6 +49,22 @@ document.addEventListener('alpine:init', () => {
   // ---------------- Sản phẩm ----------------
   Alpine.data('productsList', (status = '') => ({
     ...listPage('/products', { status, sort: 'moi' }),
+    selected: [],
+    get allSelected() { return this.items.length > 0 && this.items.every((p) => this.selected.includes(p.id)); },
+    toggleAll(on) { this.selected = on ? this.items.map((p) => p.id) : []; },
+    // Ẩn / hiện / xóa nhiều sản phẩm đã tick (action: hide | show | delete)
+    async bulk(action, ids = this.selected) {
+      if (!ids.length) return;
+      const label = { hide: 'Ẩn', show: 'Hiện', delete: 'Xóa' }[action];
+      if (action === 'delete' && !(await confirmBox({ title: `Xóa ${ids.length} sản phẩm?`, message: 'Các sản phẩm này sẽ bị xóa vĩnh viễn, không khôi phục được. Nếu chỉ muốn khách không thấy, hãy chọn Ẩn.', okLabel: 'Xóa' }))) return;
+      try {
+        await api('/products/bulk', { method: 'POST', body: { ids, action } });
+        toast().show(`${label} ${ids.length} sản phẩm thành công`);
+        this.selected = [];
+        this.load();
+      } catch (e) { toast().error(e); }
+    },
+    toggleHide(p) { return this.bulk(p.status === 'published' ? 'hide' : 'show', [p.id]); },
     async remove(p) {
       if (!(await confirmBox({ title: 'Xóa sản phẩm?', message: `“${p.name}” sẽ bị xóa vĩnh viễn.` }))) return;
       try { await api(`/products/${p.id}`, { method: 'DELETE' }); toast().show('Đã xóa sản phẩm'); this.load(); } catch (e) { toast().error(e); }

@@ -5,14 +5,33 @@ import {
   searchProducts, productFacets, featuredProducts, getProduct, relatedProducts, listTerms, SORT_OPTIONS, TERM_TYPES,
 } from '../services/catalog.js';
 import { listPosts, getPost, listGallery, galleryAlbums } from '../services/content.js';
-import { buildSeo, productJsonLd, breadcrumbJsonLd, articleJsonLd } from '../lib/seo.js';
+import { buildSeo, productJsonLd, breadcrumbJsonLd, articleJsonLd, collectionJsonLd, webPageJsonLd } from '../lib/seo.js';
+import { pageUrlBuilder } from '../lib/pagination.js';
 import { formToken } from '../middleware/security.js';
 import { HttpError } from '../lib/utils.js';
 import { homeSections } from '../lib/home-layout.js';
 import { buildToc } from '../lib/toc.js';
+import { navChildren } from '../lib/nav-menu.js';
 import { footerColumns, safeLinks } from '../lib/footer-layout.js';
 
 const router = Router();
+
+// Dữ liệu có cấu trúc cho trang thường: WebPage (hoặc AboutPage, ContactPage...) + đường dẫn breadcrumb
+function pageSchema({ type, path, name, description, image }) {
+  return [
+    webPageJsonLd({ type, name, description, path, image }),
+    breadcrumbJsonLd([{ name: 'Trang chủ', url: '/' }, { name, url: path }]),
+  ];
+}
+
+// ?trang= sai (không phải số, =1, hoặc vượt quá số trang) thì chuyển về trang hợp lệ để không bị trùng nội dung
+function redirectBadPage(res, raw, result, pageUrl) {
+  if (raw === undefined) return false;
+  const n = Number(raw);
+  if (Number.isInteger(n) && n >= 2 && n <= result.pages) return false;
+  res.redirect(301, pageUrl(n > result.pages ? result.pages : 1));
+  return true;
+}
 
 // Trang gắn với tính năng bật/tắt
 const FEATURE_BY_URL = {
@@ -37,13 +56,13 @@ export function publicLocals(req, res) {
   res.locals.currentPath = req.path;
   res.locals.fontsUrl = googleFontsUrl(s.theme);
   res.locals.formToken = formToken();
+  res.locals.jadeTypes = listTerms('jade_type', { activeOnly: true });
   res.locals.nav = (s.navigation.items || []).filter((item) => {
     const feature = FEATURE_BY_URL[item.url];
     return item.label && item.url && (!feature || s.features[feature]);
-  });
+  }).map((item) => ({ ...item, children: navChildren(item, { jadeTypes: res.locals.jadeTypes }) }));
   res.locals.footerCols = footerColumns(s.footer);
   res.locals.footerLinks = safeLinks(s.footer.extra_links);
-  res.locals.jadeTypes = listTerms('jade_type', { activeOnly: true });
   res.locals.clientConfig = {
     checkout: !!s.features.checkout,
     showPrices: !!s.features.show_prices,
@@ -105,19 +124,36 @@ router.get('/san-pham', (req, res) => {
     filters[k] = typeof q[k] === 'string' ? q[k].slice(0, 20) : '';
   }
   const result = searchProducts(filters, { page: q.trang, perPage: Number(s.pages.products_per_page) || 12 });
+  const pageUrl = pageUrlBuilder('/san-pham', q);
+  if (redirectBadPage(res, q.trang, result, pageUrl)) return;
   const facets = productFacets();
   const activeType = filters.loai.length === 1 ? facets.terms.jade_type.find((t) => t.slug === filters.loai[0]) : null;
   const hasFilter = Object.entries(filters).some(([k, v]) => k !== 'sap_xep' && (Array.isArray(v) ? v.length : v));
+  // Danh sách "sạch" (tất cả, hoặc đúng 1 loại ngọc, không sắp xếp riêng) mới tự có canonical theo từng trang
+  const otherFilters = Object.entries(filters).some(([k, v]) => !['sap_xep', 'loai'].includes(k) && (Array.isArray(v) ? v.length : v))
+    || filters.loai.length > 1 || (filters.loai.length === 1 && !activeType);
+  const clean = !otherFilters && !filters.sap_xep;
+  const basePath = '/san-pham';
+  const baseQuery = activeType ? { loai: activeType.slug } : {};
 
   res.locals.seo = buildSeo(req, {
     page: hasFilter ? undefined : 'products',
     title: filters.q ? `Tìm kiếm: ${filters.q}` : activeType ? `Vòng ${activeType.name}` : s.pages.products_title,
     description: activeType?.description || s.pages.products_intro,
     // Trang tìm kiếm và trang lọc nhiều điều kiện không cần Google lập chỉ mục
-    noindex: !!filters.q || (hasFilter && !activeType) || Number(q.trang) > 1,
-    canonical: activeType ? `/san-pham?loai=${activeType.slug}` : '/san-pham',
+    noindex: !!filters.q || otherFilters || (!clean && result.page > 1),
+    canonical: pageUrlBuilder(basePath, baseQuery)(1),
+    pagination: clean ? { page: result.page, pages: result.pages, url: pageUrlBuilder(basePath, baseQuery) } : undefined,
+    jsonLd: [
+      collectionJsonLd({
+        name: activeType ? `Vòng ${activeType.name}` : s.pages.products_title, description: activeType?.description || s.pages.products_intro,
+        path: pageUrlBuilder(basePath, baseQuery)(clean ? result.page : 1), offset: (result.page - 1) * result.perPage,
+        items: result.items.map((p) => ({ name: p.name, url: `/san-pham/${p.slug}`, image: p.cover?.md })),
+      }),
+      breadcrumbJsonLd([{ name: 'Trang chủ', url: '/' }, { name: 'Sản phẩm', url: '/san-pham' }, ...(activeType ? [{ name: activeType.name, url: `/san-pham?loai=${activeType.slug}` }] : [])]),
+    ],
   });
-  res.view('pages/products.njk', { result, facets, filters, activeType, hasFilter, sortOptions: SORT_OPTIONS, termTypes: TERM_TYPES, query: q });
+  res.view('pages/products.njk', { result, pg: result, pageUrl, facets, filters, activeType, hasFilter, sortOptions: SORT_OPTIONS, termTypes: TERM_TYPES, query: q });
 });
 
 router.get('/san-pham/:slug', (req, res, next) => {
@@ -139,14 +175,20 @@ router.get('/san-pham/:slug', (req, res, next) => {
 router.get('/gallery', requireFeature('gallery'), (req, res) => {
   const s = res.locals.s;
   const album = typeof req.query.album === 'string' ? req.query.album : '';
-  res.locals.seo = buildSeo(req, { page: 'gallery', title: s.pages.gallery_title, description: s.pages.gallery_intro });
+  res.locals.seo = buildSeo(req, {
+    page: 'gallery', title: s.pages.gallery_title, description: s.pages.gallery_intro,
+    jsonLd: pageSchema({ type: 'CollectionPage', path: '/gallery', name: s.pages.gallery_title, description: s.pages.gallery_intro }),
+  });
   res.view('pages/gallery.njk', { items: listGallery({ album: album || undefined }), albums: galleryAlbums(), album });
 });
 
 // ---------------- Hướng dẫn size ----------------
 router.get('/huong-dan-size', requireFeature('size_guide'), (req, res) => {
   const g = res.locals.s.size_guide;
-  res.locals.seo = buildSeo(req, { page: 'size_guide', title: g.title, description: g.intro, image: g.image?.lg });
+  res.locals.seo = buildSeo(req, {
+    page: 'size_guide', title: g.title, description: g.intro, image: g.image?.lg,
+    jsonLd: pageSchema({ path: '/huong-dan-size', name: g.title, description: g.intro, image: g.image?.lg }),
+  });
   res.view('pages/size-guide.njk', { video: videoEmbed(g.video_url) });
 });
 
@@ -159,9 +201,22 @@ function sidebarPosts(s, excludeId) {
 
 router.get('/blog', requireFeature('blog'), (req, res) => {
   const s = res.locals.s;
-  const result = listPosts({ page: req.query.trang, perPage: 9 });
-  res.locals.seo = buildSeo(req, { page: 'blog', title: s.pages.blog_title, description: s.pages.blog_intro, noindex: Number(req.query.trang) > 1 });
-  res.view('pages/blog.njk', { result, sidebarPosts: sidebarPosts(s) });
+  const result = listPosts({ page: req.query.trang, perPage: Math.min(Math.max(Number(s.pages.blog_per_page) || 9, 2), 30) });
+  const pageUrl = pageUrlBuilder('/blog', req.query);
+  if (redirectBadPage(res, req.query.trang, result, pageUrl)) return;
+  res.locals.seo = buildSeo(req, {
+    page: 'blog', title: s.pages.blog_title, description: s.pages.blog_intro,
+    pagination: { page: result.page, pages: result.pages, url: pageUrlBuilder('/blog') },
+    jsonLd: [
+      collectionJsonLd({
+        type: 'Blog', name: s.pages.blog_title, description: s.pages.blog_intro, path: pageUrlBuilder('/blog')(result.page),
+        offset: (result.page - 1) * Math.ceil(result.total / result.pages),
+        items: result.items.map((p) => ({ name: p.title, url: `/blog/${p.slug}`, image: p.cover?.md })),
+      }),
+      breadcrumbJsonLd([{ name: 'Trang chủ', url: '/' }, { name: 'Blog', url: '/blog' }]),
+    ],
+  });
+  res.view('pages/blog.njk', { result, pg: result, pageUrl, sidebarPosts: sidebarPosts(s) });
 });
 
 router.get('/blog/:slug', requireFeature('blog'), (req, res, next) => {
@@ -192,7 +247,10 @@ router.get('/gio-hang', requireFeature('checkout'), (req, res) => {
 // ---------------- Thiết kế riêng ----------------
 router.get('/thiet-ke-rieng', requireFeature('custom_request'), (req, res) => {
   const f = res.locals.s.forms;
-  res.locals.seo = buildSeo(req, { page: 'custom', title: f.custom_title, description: f.custom_intro });
+  res.locals.seo = buildSeo(req, {
+    page: 'custom', title: f.custom_title, description: f.custom_intro,
+    jsonLd: pageSchema({ path: '/thiet-ke-rieng', name: f.custom_title, description: f.custom_intro }),
+  });
   res.view('pages/custom.njk', {
     options: {
       jade_type: listTerms('jade_type', { activeOnly: true }),
@@ -214,13 +272,19 @@ router.get('/tra-cuu-don', (req, res) => {
 // ---------------- Liên hệ / Về shop ----------------
 router.get('/lien-he', (req, res) => {
   const c = res.locals.s.contact;
-  res.locals.seo = buildSeo(req, { page: 'contact', title: c.title, description: c.intro });
+  res.locals.seo = buildSeo(req, {
+    page: 'contact', title: c.title, description: c.intro,
+    jsonLd: pageSchema({ type: 'ContactPage', path: '/lien-he', name: c.title, description: c.intro }),
+  });
   res.view('pages/contact.njk');
 });
 
 router.get('/ve-shop', (req, res) => {
   const a = res.locals.s.about;
-  res.locals.seo = buildSeo(req, { page: 'about', title: a.title, description: a.intro, image: a.image?.lg });
+  res.locals.seo = buildSeo(req, {
+    page: 'about', title: a.title, description: a.intro, image: a.image?.lg,
+    jsonLd: pageSchema({ type: 'AboutPage', path: '/ve-shop', name: a.title, description: a.intro, image: a.image?.lg }),
+  });
   res.view('pages/about.njk');
 });
 

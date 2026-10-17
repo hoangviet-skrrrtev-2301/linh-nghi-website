@@ -1,0 +1,29 @@
+// Menu sổ dọc (dropdown): nguồn danh sách con do chủ shop chọn ở Admin › Cài đặt › Menu.
+import { listTerms } from '../services/catalog.js';
+import { listPosts } from '../services/content.js';
+
+export const NAV_TERM_PARAM = { jade_type: 'loai', color: 'mau', style: 'kieu', element: 'menh' };
+
+// Chưa chọn kiểu (dữ liệu menu cũ) thì mục /san-pham mặc định sổ theo loại ngọc
+function dropdownOf(item) {
+  return item.dropdown || (item.url === '/san-pham' ? 'jade_type' : 'none');
+}
+
+function customLinks(text) {
+  return String(text || '').split(/\r?\n/).map((line) => {
+    const [label, url] = line.split('|').map((x) => x.trim());
+    return label && /^(\/|https?:\/\/)/i.test(url || '') ? { label, url } : null;
+  }).filter(Boolean).slice(0, 30);
+}
+
+// jadeTypes: danh sách loại ngọc đã có sẵn trong request (đỡ truy vấn lại)
+export function navChildren(item, { jadeTypes = [], limit = 8 } = {}) {
+  const kind = dropdownOf(item);
+  if (kind === 'none') return [];
+  if (kind === 'custom') return customLinks(item.dropdown_custom);
+  if (kind === 'posts') return listPosts({ perPage: limit }).items.map((p) => ({ label: p.title, url: `/blog/${p.slug}` }));
+  const param = NAV_TERM_PARAM[kind];
+  if (!param) return [];
+  const terms = kind === 'jade_type' ? jadeTypes : listTerms(kind, { activeOnly: true });
+  return terms.map((t) => ({ label: t.name, url: `/san-pham?${param}=${encodeURIComponent(t.slug)}` }));
+}

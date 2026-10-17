@@ -1,0 +1,11 @@
+{# Phân trang bằng liên kết thật (Google lần theo được). Biến: pg = {page, pages}, pageUrl(n), pageWindow(page, pages) #}
+{% if pg.pages > 1 %}
+<nav class="mt-14 flex flex-wrap items-center justify-center gap-1.5" aria-label="Phân trang">
+  {% if pg.page > 1 %}<a href="{{ pageUrl(pg.page - 1) }}" rel="prev" class="flex h-10 items-center rounded-full px-4 text-sm hover:bg-ink/5" aria-label="Trang trước">‹ Trước</a>{% endif %}
+  {% for n in pageWindow(pg.page, pg.pages) %}
+    {% if n == '…' %}<span class="px-1 text-muted" aria-hidden="true">…</span>
+    {% else %}<a href="{{ pageUrl(n) }}" class="flex h-10 min-w-10 items-center justify-center rounded-full px-3 text-sm transition {{ 'bg-primary text-on-primary' if n == pg.page else 'hover:bg-ink/5' }}" {{ 'aria-current=page' if n == pg.page }} aria-label="Trang {{ n }}">{{ n }}</a>{% endif %}
+  {% endfor %}
+  {% if pg.page < pg.pages %}<a href="{{ pageUrl(pg.page + 1) }}" rel="next" class="flex h-10 items-center rounded-full px-4 text-sm hover:bg-ink/5" aria-label="Trang sau">Sau ›</a>{% endif %}
+</nav>
+{% endif %}
