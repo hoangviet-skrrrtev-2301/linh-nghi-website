@@ -1,0 +1,24 @@
+{% from "partials/icons.njk" import icon %}
+{# Lưới Gallery 2 hàng × 4 cột (điện thoại 2 cột). Tối đa 8 ảnh hiện cùng lúc; nhiều hơn thì thành slider
+   (tự lướt phải → trái nếu bật trong cài đặt, tắt thì vuốt tay). Dùng biến galleryItems #}
+{% macro tile(g) %}
+{% from "partials/icons.njk" import icon %}
+{% if g.product_slug %}<a href="/san-pham/{{ g.product_slug }}" @click.prevent="$store.quick.show('{{ g.product_slug }}')"{% else %}<a href="{{ g.image.lg }}" data-pswp-width="{{ g.image.width }}" data-pswp-height="{{ g.image.height }}" data-caption="{{ g.title }}{{ ' – ' + g.caption if g.caption }}"{% endif %}
+  class="group relative block aspect-square overflow-hidden rounded-md bg-ink/5">
+  <img src="{{ g.image.sm }}" alt="{{ g.image.alt or g.title }}" loading="lazy" class="h-full w-full object-cover transition duration-700 group-hover:scale-105">
+  <span class="absolute inset-0 flex items-center justify-center bg-ink/0 text-white opacity-0 transition group-hover:bg-ink/30 group-hover:opacity-100">{{ icon('zoom', 'w-7 h-7') }}</span>
+  {% if g.title %}<span class="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/60 to-transparent px-3 pb-2 pt-6 text-xs text-white opacity-0 transition group-hover:opacity-100">{{ g.title }}</span>{% endif %}
+</a>
+{% endmacro %}
+
+{% if galleryItems.length > 8 %}
+<div class="gallery-marquee" {% if s.home.gallery_autoscroll %}data-marquee{% endif %} style="--marquee-time: {{ s.home.gallery_scroll_seconds or 45 }}s">
+  <div class="gallery-marquee-track" data-pswp>
+    <div class="gallery-group">{% for g in galleryItems %}{{ tile(g) }}{% endfor %}</div>
+  </div>
+</div>
+{% else %}
+<div class="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4" data-pswp>
+  {% for g in galleryItems %}<div class="reveal">{{ tile(g) }}</div>{% endfor %}
+</div>
+{% endif %}

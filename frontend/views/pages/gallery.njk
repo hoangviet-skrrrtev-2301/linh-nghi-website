@@ -19,23 +19,7 @@
 
 <section class="container-x py-12">
   {% if items.length %}
-  <div class="columns-2 gap-3 md:columns-3 md:gap-5 lg:columns-4" data-pswp>
-    {% for g in items %}
-    <figure class="reveal group mb-3 break-inside-avoid md:mb-5">
-      {% if g.product_slug %}<a href="/san-pham/{{ g.product_slug }}" @click.prevent="$store.quick.show('{{ g.product_slug }}')"{% else %}<a href="{{ g.image.lg }}" data-pswp-width="{{ g.image.width }}" data-pswp-height="{{ g.image.height }}" data-caption="{{ g.title }}{{ ' – ' + g.caption if g.caption }}"{% endif %}
-        class="relative block overflow-hidden rounded-md bg-ink/5">
-        <img src="{{ g.image.md }}" alt="{{ g.image.alt or g.title }}" width="{{ g.image.width }}" height="{{ g.image.height }}" loading="lazy" class="w-full transition duration-700 group-hover:scale-105">
-        <span class="absolute inset-0 flex items-center justify-center bg-ink/0 text-white opacity-0 transition group-hover:bg-ink/30 group-hover:opacity-100">{{ icon('zoom', 'w-7 h-7') }}</span>
-      </a>
-      {% if g.title or g.product_slug %}
-      <figcaption class="mt-2 flex items-center justify-between gap-2 px-0.5 text-sm">
-        <span class="truncate">{{ g.title }}</span>
-        {% if g.product_slug %}<a href="/san-pham/{{ g.product_slug }}" class="shrink-0 text-xs text-accent hover:underline">Xem mẫu</a>{% endif %}
-      </figcaption>
-      {% endif %}
-    </figure>
-    {% endfor %}
-  </div>
+  {% set galleryItems = items %}{% include "partials/gallery-grid.njk" %}
   {% else %}
   <p class="py-20 text-center text-muted">Chưa có ảnh trong mục này.</p>
   {% endif %}

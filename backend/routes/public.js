@@ -10,6 +10,7 @@ import { formToken } from '../middleware/security.js';
 import { HttpError } from '../lib/utils.js';
 import { homeSections } from '../lib/home-layout.js';
 import { buildToc } from '../lib/toc.js';
+import { footerColumns, safeLinks } from '../lib/footer-layout.js';
 
 const router = Router();
 
@@ -40,6 +41,8 @@ export function publicLocals(req, res) {
     const feature = FEATURE_BY_URL[item.url];
     return item.label && item.url && (!feature || s.features[feature]);
   });
+  res.locals.footerCols = footerColumns(s.footer);
+  res.locals.footerLinks = safeLinks(s.footer.extra_links);
   res.locals.jadeTypes = listTerms('jade_type', { activeOnly: true });
   res.locals.clientConfig = {
     checkout: !!s.features.checkout,

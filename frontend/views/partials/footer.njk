@@ -1,14 +1,20 @@
 {% from "partials/icons.njk" import icon %}
+{% set f = s.footer %}
 <footer class="mt-auto bg-footer text-white/80">
-  <div class="container-x grid gap-10 py-16 md:grid-cols-2 lg:grid-cols-12">
-    <div class="lg:col-span-4">
-      {% if s.site.logo_light %}
-        <img src="{{ s.site.logo_light.sm }}" alt="{{ s.site.name }}" class="h-24 w-auto" loading="lazy">
-      {% else %}
-        <div class="font-heading text-3xl text-white">{{ s.site.name }}</div>
+  <div class="container-x grid gap-10 py-16 md:grid-cols-2 lg:[grid-template-columns:var(--fcols)]" style="--fcols: {{ footerCols.template }}">
+    {% for col in footerCols.cols %}
+    {% if col.key == 'brand' %}
+    <div>
+      {% if f.show_logo %}
+        {% if s.site.logo_light %}
+          <img src="{{ s.site.logo_light.sm }}" alt="{{ s.site.name }}" class="h-24 w-auto" loading="lazy">
+        {% else %}
+          <div class="font-heading text-3xl text-white">{{ s.site.name }}</div>
+        {% endif %}
       {% endif %}
-      {% if s.site.slogan %}<p class="mt-2 font-heading text-lg italic text-accent">{{ s.site.slogan }}</p>{% endif %}
-      <p class="mt-4 max-w-sm text-sm leading-relaxed text-white/65">{{ s.site.footer_text }}</p>
+      {% if f.show_slogan and s.site.slogan %}<p class="mt-2 font-heading text-lg italic text-accent">{{ s.site.slogan }}</p>{% endif %}
+      {% if f.show_text and s.site.footer_text %}<p class="mt-4 max-w-sm text-sm leading-relaxed text-white/65">{{ s.site.footer_text }}</p>{% endif %}
+      {% if f.show_social %}
       <div class="mt-6 flex gap-2">
         {% for key in ['facebook', 'instagram', 'threads', 'tiktok', 'youtube'] %}
           {% if s.site[key] %}
@@ -17,41 +23,57 @@
         {% endfor %}
         {% if s.site.shopee %}<a href="{{ s.site.shopee }}" target="_blank" rel="noopener" aria-label="Shopee" class="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 transition hover:border-accent hover:text-accent">{{ icon('shop', 'w-[18px] h-[18px]') }}</a>{% endif %}
       </div>
+      {% endif %}
     </div>
 
-    <div class="lg:col-span-2">
-      <h3 class="mb-4 font-body text-xs font-semibold uppercase tracking-[0.2em] text-white">Khám phá</h3>
+    {% elif col.key == 'nav' %}
+    <div>
+      {% if col.title %}<h3 class="mb-4 font-body text-xs font-semibold uppercase tracking-[0.2em] text-white">{{ col.title }}</h3>{% endif %}
       <ul class="space-y-2.5 text-sm">
         {% for item in nav %}<li><a href="{{ item.url }}" class="transition hover:text-accent">{{ item.label }}</a></li>{% endfor %}
-        {% if features.checkout or features.custom_request %}<li><a href="/tra-cuu-don" class="transition hover:text-accent">{{ s.forms.track_title }}</a></li>{% endif %}
+        {% if f.show_track and (features.checkout or features.custom_request) %}<li><a href="/tra-cuu-don" class="transition hover:text-accent">{{ s.forms.track_title }}</a></li>{% endif %}
       </ul>
     </div>
 
-    <div class="lg:col-span-2">
-      <h3 class="mb-4 font-body text-xs font-semibold uppercase tracking-[0.2em] text-white">Dòng ngọc</h3>
+    {% elif col.key == 'jade' %}
+    <div>
+      {% if col.title %}<h3 class="mb-4 font-body text-xs font-semibold uppercase tracking-[0.2em] text-white">{{ col.title }}</h3>{% endif %}
       <ul class="space-y-2.5 text-sm">
         {% for t in jadeTypes %}<li><a href="/san-pham?loai={{ t.slug }}" class="transition hover:text-accent">{{ t.name }}</a></li>{% endfor %}
       </ul>
     </div>
 
-    <div class="lg:col-span-4">
-      <h3 class="mb-4 font-body text-xs font-semibold uppercase tracking-[0.2em] text-white">Liên hệ</h3>
-      <ul class="space-y-3 text-sm">
-        {% if s.site.address %}<li class="flex gap-3">{{ icon('map', 'w-4 h-4 mt-0.5 shrink-0 text-accent') }}<span>{{ s.site.address | nl2br }}</span></li>{% endif %}
-        {% if s.site.phone %}<li class="flex gap-3">{{ icon('phone', 'w-4 h-4 mt-0.5 shrink-0 text-accent') }}<a href="tel:{{ s.site.phone | phoneHref }}" class="hover:text-accent">{{ s.site.phone }}</a></li>{% endif %}
-        {% if s.site.email %}<li class="flex gap-3">{{ icon('mail', 'w-4 h-4 mt-0.5 shrink-0 text-accent') }}<a href="mailto:{{ s.site.email }}" class="hover:text-accent">{{ s.site.email }}</a></li>{% endif %}
-        {% if s.site.working_hours %}<li class="flex gap-3">{{ icon('clock', 'w-4 h-4 mt-0.5 shrink-0 text-accent') }}<span>{{ s.site.working_hours }}</span></li>{% endif %}
+    {% elif col.key == 'links' %}
+    <div>
+      {% if col.title %}<h3 class="mb-4 font-body text-xs font-semibold uppercase tracking-[0.2em] text-white">{{ col.title }}</h3>{% endif %}
+      <ul class="space-y-2.5 text-sm">
+        {% for l in footerLinks %}<li><a href="{{ l.url }}" {% if l.url.startsWith('http') %}target="_blank" rel="noopener"{% endif %} class="transition hover:text-accent">{{ l.label }}</a></li>{% endfor %}
       </ul>
     </div>
+
+    {% elif col.key == 'contact' %}
+    <div>
+      {% if col.title %}<h3 class="mb-4 font-body text-xs font-semibold uppercase tracking-[0.2em] text-white">{{ col.title }}</h3>{% endif %}
+      <ul class="space-y-3 text-sm">
+        {% if f.show_address and s.site.address %}<li class="flex gap-3">{{ icon('map', 'w-4 h-4 mt-0.5 shrink-0 text-accent') }}<span>{{ s.site.address | nl2br }}</span></li>{% endif %}
+        {% if f.show_phone and s.site.phone %}<li class="flex gap-3">{{ icon('phone', 'w-4 h-4 mt-0.5 shrink-0 text-accent') }}<a href="tel:{{ s.site.phone | phoneHref }}" class="hover:text-accent">{{ s.site.phone }}</a></li>{% endif %}
+        {% if f.show_email and s.site.email %}<li class="flex gap-3">{{ icon('mail', 'w-4 h-4 mt-0.5 shrink-0 text-accent') }}<a href="mailto:{{ s.site.email }}" class="hover:text-accent">{{ s.site.email }}</a></li>{% endif %}
+        {% if f.show_hours and s.site.working_hours %}<li class="flex gap-3">{{ icon('clock', 'w-4 h-4 mt-0.5 shrink-0 text-accent') }}<span>{{ s.site.working_hours }}</span></li>{% endif %}
+      </ul>
+    </div>
+    {% endif %}
+    {% endfor %}
   </div>
+  {% if f.show_bottom and (f.show_copyright or (f.show_bct and s.site.bct_image) or (f.show_bottom_slogan and s.site.slogan)) %}
   <div class="border-t border-white/10">
     <div class="container-x flex flex-col items-center justify-between gap-2 py-5 text-xs text-white/50 md:flex-row">
-      <span>{{ s.site.copyright | year }}</span>
-      {% if s.site.bct_image %}
+      <span>{% if f.show_copyright %}{{ s.site.copyright | year }}{% endif %}</span>
+      {% if f.show_bct and s.site.bct_image %}
       {% set bct %}<img src="{{ s.site.bct_image.md }}" alt="{{ s.site.bct_image.alt or 'Đã thông báo Bộ Công Thương' }}" class="no-dim h-12 w-auto" loading="lazy">{% endset %}
       {% if s.site.bct_url %}<a href="{{ s.site.bct_url }}" target="_blank" rel="noopener nofollow" class="shrink-0">{{ bct | safe }}</a>{% else %}<span class="shrink-0">{{ bct | safe }}</span>{% endif %}
       {% endif %}
-      <span>{{ s.site.slogan }}</span>
+      <span>{% if f.show_bottom_slogan %}{{ s.site.slogan }}{% endif %}</span>
     </div>
   </div>
+  {% endif %}
 </footer>
