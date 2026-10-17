@@ -78,7 +78,8 @@ export function sitemapEntries() {
   }
   if (sm.sitemap_products) {
     const rows = db.prepare(`SELECT p.slug, p.name, p.updated_at, m.variants FROM products p
-      LEFT JOIN media m ON m.id = p.cover_media_id WHERE p.status = 'published' ORDER BY p.id`).all();
+      LEFT JOIN media m ON m.id = p.cover_media_id WHERE p.status = 'published'
+      AND p.product_type_id IN (SELECT id FROM product_types WHERE active = 1) ORDER BY p.id`).all();
     for (const p of rows) {
       add({ loc: `/san-pham/${p.slug}`, lastmod: iso(p.updated_at), priority: '0.8', image: sm.sitemap_images ? coverUrl(p.variants) : '', title: p.name });
     }

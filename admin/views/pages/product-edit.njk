@@ -9,9 +9,22 @@
   <template x-if="form">
     <form @submit.prevent="save()" class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div class="min-w-0 space-y-6">
+        {# Loại sản phẩm: chọn ngay ở đầu form, đổi loại thì form đổi theo #}
+        <div class="card card-body !py-4">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="mr-1 text-sm font-medium text-slate-700">Loại sản phẩm</span>
+            <template x-for="t in types" :key="t.id">
+              <button type="button" class="rounded-full border px-4 py-1.5 text-sm transition" @click="form.product_type_id = t.id"
+                :class="Number(form.product_type_id) === t.id ? 'border-brand-600 bg-brand-600 text-white' : 'border-slate-300 hover:border-brand-500'"
+                x-text="t.name + (t.active ? '' : ' · thử nghiệm')"></button>
+            </template>
+          </div>
+          <p class="help" x-show="type && !type.active" x-cloak>Loại này đang ở chế độ thử nghiệm: sản phẩm được lưu và xem thử được trong admin, nhưng khách chưa thấy trên website.</p>
+          <p class="help" x-show="type && !isJade" x-cloak>Form bên dưới dùng các thông số bạn tự đặt cho loại “<span x-text="type?.name"></span>”; thông tin riêng của ngọc (loại ngọc, màu, ni, chứng chỉ) không dùng ở đây.</p>
+        </div>
         <div class="flex gap-1 overflow-x-auto">
           {% for t in [['info', 'Thông tin'], ['images', 'Hình ảnh'], ['specs', 'Thông số & phân loại'], ['cert', 'Chứng chỉ kiểm định'], ['seo', 'SEO']] %}
-          <button type="button" class="tab" :class="tab === '{{ t[0] }}' && 'active'" @click="tab = '{{ t[0] }}'">{{ t[1] }}</button>
+          <button type="button" class="tab" {% if t[0] == 'cert' %}x-show="isJade"{% endif %} :class="tab === '{{ t[0] }}' && 'active'" @click="tab = '{{ t[0] }}'"{% if t[0] == 'specs' %} x-text="isJade ? 'Thông số & phân loại' : 'Thông số'"{% endif %}>{{ t[1] }}</button>
           {% endfor %}
         </div>
 
@@ -38,6 +51,24 @@
 
         {# ---- Thông số ---- #}
         <div class="card card-body space-y-5" x-show="tab === 'specs'">
+          {# Loại sản phẩm không phải ngọc: các thông số do chủ shop tự đặt trong "Loại sản phẩm" #}
+          <div x-show="!isJade" x-cloak class="space-y-4">
+            <template x-if="type && (type.spec_fields || []).length">
+              <div class="grid gap-4 sm:grid-cols-2">
+                <template x-for="f in type.spec_fields" :key="f.key">
+                  <div>
+                    <label class="label" x-text="f.label"></label>
+                    <input class="input" :type="f.kind === 'number' ? 'number' : 'text'" :step="f.kind === 'number' ? 'any' : null" x-model="form.attrs[f.key]"
+                      :list="f.kind === 'select' ? 'dl_' + f.key : null" :placeholder="f.kind === 'select' ? 'Chọn hoặc gõ giá trị mới' : ''" maxlength="300">
+                    <template x-if="f.kind === 'select'"><datalist :id="'dl_' + f.key"><template x-for="o in f.options" :key="o"><option :value="o"></option></template></datalist></template>
+                    <p class="help" x-show="f.kind === 'select'">Gõ giá trị chưa có thì tự được thêm vào danh sách của loại này khi lưu.</p>
+                  </div>
+                </template>
+              </div>
+            </template>
+            <p class="rounded-lg bg-slate-50 p-3 text-sm text-slate-600" x-show="type && !(type.spec_fields || []).length">Loại “<span x-text="type?.name"></span>” chưa có thông số nào. Thêm tại <a href="{{ A }}/products" class="text-brand-600 underline">Sản phẩm › Loại sản phẩm</a>, hoặc dùng “Thông số bổ sung” bên dưới cho riêng sản phẩm này.</p>
+          </div>
+          <div x-show="isJade" class="space-y-5">
           <div class="grid gap-4 sm:grid-cols-3">
             {% for f in [['jade_type_id', 'jade_type', 'Loại ngọc'], ['color_id', 'color', 'Màu sắc'], ['style_id', 'style', 'Kiểu dáng']] %}
             <div><label class="label">{{ f[2] }}</label>
@@ -73,6 +104,7 @@
             <div><label class="label">Kích thước hạt / bản vòng</label><input class="input" x-model="form.bead_size" placeholder="Ví dụ: bản 12mm, hạt 8mm"></div>
             <div><label class="label">Xuất xứ</label><input class="input" x-model="form.origin"></div>
             <div><label class="label">Trọng lượng</label><input class="input" x-model="form.weight"></div>
+          </div>
           </div>
           <div>
             <label class="label">Thông số bổ sung</label>
@@ -126,7 +158,8 @@
           <div class="flex flex-col gap-2">
             <button type="button" class="btn btn-primary" :disabled="saving" @click="save(true)" x-text="form.status === 'published' ? 'Lưu thay đổi' : 'Lưu & hiển thị'"></button>
             <button type="button" class="btn btn-secondary" :disabled="saving" @click="save(false)" x-text="form.status === 'published' ? 'Chuyển về nháp' : 'Lưu nháp'"></button>
-            <a x-show="id && form.status === 'published'" :href="'/san-pham/' + form.slug" target="_blank" class="btn btn-ghost">{{ icon('eye', 'w-4 h-4') }} Xem trên website</a>
+            <a x-show="id && form.status === 'published' && (!type || type.active)" :href="'/san-pham/' + form.slug" target="_blank" class="btn btn-ghost">{{ icon('eye', 'w-4 h-4') }} Xem trên website</a>
+            <a x-show="id && !(form.status === 'published' && (!type || type.active))" x-cloak :href="'{{ A }}/preview/san-pham/' + id" target="_blank" class="btn btn-ghost">{{ icon('eye', 'w-4 h-4') }} Xem thử như khách</a>
           </div>
         </div>
         <div class="card card-body space-y-4">

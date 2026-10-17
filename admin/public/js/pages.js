@@ -48,8 +48,43 @@ document.addEventListener('alpine:init', () => {
 
   // ---------------- Sản phẩm ----------------
   Alpine.data('productsList', (status = '') => ({
-    ...listPage('/products', { status, sort: 'moi' }),
+    ...listPage('/products', { status, sort: 'moi', type: '' }),
     selected: [],
+    // Quản lý loại sản phẩm (Vòng tay ngọc, Pháp phục...) ngay trên trang này
+    types: [], typesOpen: false, typeForm: null, typeSaving: false,
+    init() { this.load(); this.loadTypes(); },
+    async loadTypes() { try { this.types = (await api('/product-types')).items; } catch (e) { toast().error(e); } },
+    openType(t) {
+      this.typeForm = t
+        ? { ...t, active: !!t.active, spec_fields: (t.spec_fields || []).map((f) => ({ ...f, optionsText: (f.options || []).join(', ') })) }
+        : { name: '', slug: '', description: '', active: false, sort_order: this.types.length, uses_jade_fields: false, spec_fields: [] };
+    },
+    addField() { this.typeForm.spec_fields.push({ key: '', label: '', kind: 'text', options: [], optionsText: '' }); },
+    moveField(i, d) {
+      const a = this.typeForm.spec_fields; const j = i + d;
+      if (j < 0 || j >= a.length) return;
+      [a[i], a[j]] = [a[j], a[i]];
+    },
+    async saveType() {
+      this.typeSaving = true;
+      try {
+        const f = this.typeForm;
+        const body = { ...f, spec_fields: f.spec_fields.map((s) => ({ key: s.key, label: s.label, kind: s.kind, options: s.kind === 'select' ? s.optionsText : [] })) };
+        const r = await api(f.id ? `/product-types/${f.id}` : '/product-types', { method: f.id ? 'PUT' : 'POST', body });
+        this.types = r.items; this.typeForm = null;
+        toast().show('Đã lưu loại sản phẩm');
+      } catch (e) { toast().error(e); }
+      this.typeSaving = false;
+    },
+    async removeType(t) {
+      if (!(await confirmBox({ title: `Xóa loại “${t.name}”?`, message: 'Chỉ xóa được khi loại này chưa có sản phẩm nào.', okLabel: 'Xóa' }))) return;
+      try { this.types = (await api(`/product-types/${t.id}`, { method: 'DELETE' })).items; toast().show('Đã xóa loại sản phẩm'); } catch (e) { toast().error(e); }
+    },
+    async toggleType(t) {
+      const body = { ...t, active: !t.active };
+      if (!t.active && !(await confirmBox({ title: `Bật hoạt động loại “${t.name}”?`, message: 'Các sản phẩm đang ở trạng thái “Đang hiển thị” của loại này sẽ xuất hiện ngay trên website (trang Sản phẩm, tìm kiếm, sitemap), chung với sản phẩm khác, cho đến khi có trang riêng.', okLabel: 'Bật hoạt động', danger: false }))) return;
+      try { this.types = (await api(`/product-types/${t.id}`, { method: 'PUT', body })).items; this.load(); toast().show(body.active ? 'Đã bật hoạt động' : 'Đã tắt hoạt động'); } catch (e) { toast().error(e); }
+    },
     get allSelected() { return this.items.length > 0 && this.items.every((p) => this.selected.includes(p.id)); },
     toggleAll(on) { this.selected = on ? this.items.map((p) => p.id) : []; },
     // Ẩn / hiện / xóa nhiều sản phẩm đã tick (action: hide | show | delete)
@@ -80,19 +115,25 @@ document.addEventListener('alpine:init', () => {
   const emptyProduct = () => ({
     name: '', slug: '', sku: '', short_description: '', description: '', price: '', sale_price: '',
     jade_type_id: '', color_id: '', style_id: '', element_ids: [], sizesText: '', bead_size: '', origin: '', weight: '',
+    product_type_id: 1, attrs: {},
     specs: [], stock_status: 'in_stock', is_featured: false, is_bestseller: false, is_new: false, fengshui: '', is_customizable: false, status: 'draft', sort_order: 0,
     cover_media_id: null, cover: null, image_ids: [], images: [], certificates: [], seo_title: '', seo_description: '',
   });
 
   Alpine.data('productEdit', (id) => ({
-    id: id ? Number(id) : null, form: null, terms: {}, saving: false, slugTouched: !!id, tab: 'info', adding: null, newName: '', addingBusy: false,
+    id: id ? Number(id) : null, form: null, terms: {}, types: [], saving: false, slugTouched: !!id, tab: 'info', adding: null, newName: '', addingBusy: false,
+    // Loại sản phẩm đang chọn: loại dùng bộ thuộc tính ngọc hay thông số tự đặt
+    get type() { return this.types.find((t) => t.id === Number(this.form?.product_type_id)) || this.types[0] || null; },
+    get isJade() { return !this.type || !!this.type.uses_jade_fields; },
     async init() {
       try {
         this.terms = await api('/terms');
+        this.types = (await api('/product-types')).items;
         if (this.id) {
           const p = await api(`/products/${this.id}`);
           this.form = {
             ...emptyProduct(), ...p,
+            product_type_id: p.product_type_id || 1, attrs: p.attrs || {},
             price: p.price ?? '', sale_price: p.sale_price ?? '',
             jade_type_id: p.jade_type_id ?? '', color_id: p.color_id ?? '', style_id: p.style_id ?? '',
             sizesText: (p.sizes || []).join(', '),
@@ -104,6 +145,9 @@ document.addEventListener('alpine:init', () => {
           };
         } else {
           this.form = emptyProduct();
+          // Mở từ trang danh sách với ?type=<id>: chọn sẵn loại sản phẩm
+          const t = Number(new URLSearchParams(location.search).get('type'));
+          if (t && this.types.some((x) => x.id === t)) this.form.product_type_id = t;
         }
       } catch (e) { toast().error(e); }
     },

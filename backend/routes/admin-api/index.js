@@ -120,9 +120,26 @@ router.delete('/terms/:id', h((req) => {
 
 // ---------------- Sản phẩm ----------------
 router.get('/products', h((req) => catalog.searchProducts(
-  { q: req.query.q, status: req.query.status, loai: req.query.loai, sap_xep: req.query.sort || 'moi' },
+  { q: req.query.q, status: req.query.status, type: req.query.type, loai: req.query.loai, sap_xep: req.query.sort || 'moi' },
   { page: req.query.page, perPage: Math.min(200, toInt(req.query.per_page, 30)), includeDrafts: true },
 )));
+// Loại sản phẩm (nhóm hàng): Vòng tay ngọc, Pháp phục...
+router.get('/product-types', h(() => ({ items: catalog.listProductTypes() })));
+router.post('/product-types', h((req) => {
+  const tid = catalog.saveProductType(null, req.body);
+  audit(req, 'create', 'product_type', tid, req.body.name);
+  return { id: tid, items: catalog.listProductTypes() };
+}));
+router.put('/product-types/:id', h((req) => {
+  catalog.saveProductType(id(req), req.body);
+  audit(req, 'update', 'product_type', req.params.id, req.body.name);
+  return { items: catalog.listProductTypes() };
+}));
+router.delete('/product-types/:id', h((req) => {
+  catalog.deleteProductType(id(req));
+  audit(req, 'delete', 'product_type', req.params.id);
+  return { items: catalog.listProductTypes() };
+}));
 router.get('/products/:id', h((req) => {
   const p = catalog.getProduct(id(req), { publicOnly: false });
   if (!p) throw new HttpError(404, 'Không tìm thấy sản phẩm');

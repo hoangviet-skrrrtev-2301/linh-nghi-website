@@ -15,7 +15,83 @@
     <select class="input !w-auto" x-model="filters.sort" @change="search()">
       <option value="moi">Mới nhất</option><option value="noi_bat">Thứ tự hiển thị</option><option value="ten">Tên A–Z</option><option value="gia_tang">Giá tăng</option><option value="gia_giam">Giá giảm</option>
     </select>
-    <a href="{{ A }}/products/new" class="btn btn-primary ml-auto">{{ icon('plus', 'w-4 h-4') }} Thêm sản phẩm</a>
+    <select class="input !w-auto" x-model="filters.type" @change="search()" aria-label="Lọc theo loại sản phẩm" x-show="types.length > 1">
+      <option value="">Mọi loại sản phẩm</option>
+      <template x-for="t in types" :key="t.id"><option :value="t.id" x-text="t.name + ' (' + t.product_count + ')'"></option></template>
+    </select>
+    <button type="button" class="btn btn-secondary" @click="typesOpen = !typesOpen" :aria-expanded="typesOpen">{{ icon('tag', 'w-4 h-4') }} Loại sản phẩm</button>
+    {# Thêm sản phẩm: có nhiều loại thì chọn loại trước #}
+    <div class="relative ml-auto" x-data="{ menu: false }" @click.outside="menu = false" @keydown.escape="menu = false">
+      <a x-show="types.length <= 1" href="{{ A }}/products/new" class="btn btn-primary">{{ icon('plus', 'w-4 h-4') }} Thêm sản phẩm</a>
+      <button x-cloak x-show="types.length > 1" type="button" class="btn btn-primary" @click="menu = !menu" :aria-expanded="menu">{{ icon('plus', 'w-4 h-4') }} Thêm sản phẩm {{ icon('chevron-down', 'w-4 h-4') }}</button>
+      <div x-cloak x-show="menu" x-transition class="absolute right-0 top-full z-30 mt-2 w-64 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg">
+        <template x-for="t in types" :key="t.id">
+          <a :href="'{{ A }}/products/new?type=' + t.id" class="flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm hover:bg-slate-50">
+            <span x-text="t.name"></span><span class="badge" :class="t.active ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'" x-text="t.active ? 'Đang hoạt động' : 'Thử nghiệm'"></span>
+          </a>
+        </template>
+      </div>
+    </div>
+  </div>
+
+  {# Quản lý loại sản phẩm: Vòng tay ngọc, Pháp phục... mỗi loại tự khai báo thông số #}
+  <div x-cloak x-show="typesOpen" x-collapse class="mb-5">
+    <div class="card">
+      <div class="card-head">
+        <div><h2 class="card-title">Loại sản phẩm</h2><p class="mt-0.5 text-xs text-slate-500">Mỗi loại có bộ thông số riêng. Loại ở trạng thái <b>Chưa hoạt động</b> thì sản phẩm của loại đó khách chưa thấy ở bất kỳ đâu trên website. Cứ nhập sẵn sản phẩm, khi nào sẵn sàng thì bật hoạt động.</p></div>
+        <button type="button" class="btn btn-primary btn-sm" @click="openType(null)">{{ icon('plus', 'w-3.5 h-3.5') }} Thêm loại</button>
+      </div>
+      <form x-show="typeForm" x-cloak @submit.prevent="saveType()" class="space-y-4 border-b border-slate-100 bg-slate-50/60 p-5">
+        <template x-if="typeForm">
+          <div class="space-y-4">
+            <div class="grid gap-4 md:grid-cols-2">
+              <div><label class="label">Tên loại sản phẩm *</label><input class="input" x-model="typeForm.name" required maxlength="80"></div>
+              <div><label class="label">Đường dẫn (slug)</label><input class="input" x-model="typeForm.slug" placeholder="Tự tạo từ tên"></div>
+              <div class="md:col-span-2"><label class="label">Ghi chú</label><input class="input" x-model="typeForm.description" maxlength="300" placeholder="Chỉ để bạn nhớ, không hiện ra website"></div>
+              <label class="flex items-center gap-2 text-sm" x-show="!typeForm.uses_jade_fields"><input type="checkbox" class="h-4 w-4 accent-brand-600" x-model="typeForm.active"> Đang hoạt động (khách nhìn thấy sản phẩm của loại này)</label>
+            </div>
+            <template x-if="typeForm.uses_jade_fields">
+              <p class="rounded-lg bg-white p-3 text-sm text-slate-600">Đây là loại sản phẩm chính của shop. Thông số của loại này là bộ thuộc tính ngọc có sẵn (loại ngọc, màu sắc, kiểu dáng, hợp mệnh, ni tay, chứng chỉ) nên không cần khai báo thêm, và không thể tắt hoặc xóa.</p>
+            </template>
+            <div x-show="!typeForm.uses_jade_fields">
+              <label class="label">Thông số của loại này</label>
+              <p class="help !mt-0 mb-2">Mỗi thông số chọn kiểu: <b>Ô chữ</b>, <b>Số</b> hoặc <b>Danh sách chọn</b> (ví dụ Kích cỡ: S, M, L). Khi nhập sản phẩm, gõ giá trị chưa có trong danh sách chọn thì giá trị đó tự được thêm vào danh sách.</p>
+              <div class="space-y-2">
+                <template x-for="(f, i) in typeForm.spec_fields" :key="i">
+                  <div class="flex flex-wrap items-start gap-2 rounded-lg border border-slate-200 bg-white p-3">
+                    <input class="input !w-44 shrink-0" placeholder="Tên thông số (VD: Chất liệu)" x-model="f.label" maxlength="80">
+                    <select class="input !w-40 shrink-0" x-model="f.kind"><option value="text">Ô chữ</option><option value="number">Số</option><option value="select">Danh sách chọn</option></select>
+                    <input class="input min-w-0 flex-1" x-show="f.kind === 'select'" x-model="f.optionsText" placeholder="Các lựa chọn, cách nhau dấu phẩy (VD: S, M, L, XL)">
+                    <span class="ml-auto flex shrink-0">
+                      <button type="button" class="btn btn-ghost btn-sm" @click="moveField(i, -1)" :disabled="i === 0">↑</button>
+                      <button type="button" class="btn btn-ghost btn-sm" @click="moveField(i, 1)" :disabled="i === typeForm.spec_fields.length - 1">↓</button>
+                      <button type="button" class="btn btn-ghost btn-sm text-red-600" @click="typeForm.spec_fields.splice(i, 1)">{{ icon('trash', 'w-3.5 h-3.5') }}</button>
+                    </span>
+                  </div>
+                </template>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm mt-2" @click="addField()">{{ icon('plus', 'w-3.5 h-3.5') }} Thêm thông số</button>
+            </div>
+            <div class="flex gap-2"><button class="btn btn-primary" :disabled="typeSaving">Lưu loại sản phẩm</button><button type="button" class="btn btn-ghost" @click="typeForm = null">Hủy</button></div>
+          </div>
+        </template>
+      </form>
+      <ul class="divide-y divide-slate-100">
+        <template x-for="t in types" :key="t.id">
+          <li class="flex flex-wrap items-center gap-3 px-5 py-3">
+            <div class="min-w-0 flex-1">
+              <p class="flex flex-wrap items-center gap-2 font-medium"><span x-text="t.name"></span>
+                <span class="badge" :class="t.active ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'" x-text="t.active ? 'Đang hoạt động' : 'Chưa hoạt động · thử nghiệm'"></span></p>
+              <p class="text-xs text-slate-500" x-text="t.product_count + ' sản phẩm · ' + (t.uses_jade_fields ? 'dùng bộ thuộc tính ngọc' : ((t.spec_fields || []).length + ' thông số tự đặt'))"></p>
+            </div>
+            <a :href="'{{ A }}/products/new?type=' + t.id" class="btn btn-secondary btn-sm">{{ icon('plus', 'w-3.5 h-3.5') }} Thêm sản phẩm</a>
+            <button class="btn btn-ghost btn-sm" x-show="!t.uses_jade_fields" @click="toggleType(t)" x-text="t.active ? 'Tắt hoạt động' : 'Bật hoạt động'"></button>
+            <button class="btn btn-ghost btn-sm" @click="openType(t)" title="Sửa">{{ icon('edit', 'w-4 h-4') }}</button>
+            <button class="btn btn-ghost btn-sm text-red-600" x-show="!t.uses_jade_fields" @click="removeType(t)" title="Xóa">{{ icon('trash', 'w-4 h-4') }}</button>
+          </li>
+        </template>
+      </ul>
+    </div>
   </div>
 
   {# Thanh thao tác hàng loạt: hiện khi có sản phẩm được tick #}
@@ -32,7 +108,7 @@
   <div class="card overflow-hidden">
     <div class="overflow-x-auto">
       <table class="table table-stack">
-        <thead><tr><th class="w-10"><input type="checkbox" class="h-4 w-4 accent-brand-600" :checked="allSelected" @change="toggleAll($event.target.checked)" aria-label="Chọn tất cả"></th><th class="w-16"></th><th class="stack-title">Sản phẩm</th><th>Loại ngọc</th><th>Giá</th><th>Tình trạng</th><th>Hiển thị</th><th class="w-32"></th></tr></thead>
+        <thead><tr><th class="w-10"><input type="checkbox" class="h-4 w-4 accent-brand-600" :checked="allSelected" @change="toggleAll($event.target.checked)" aria-label="Chọn tất cả"></th><th class="w-16"></th><th class="stack-title">Sản phẩm</th><th>Loại</th><th>Giá</th><th>Tình trạng</th><th>Hiển thị</th><th class="w-32"></th></tr></thead>
         <tbody>
           <template x-for="p in items" :key="p.id">
             <tr :class="p.status !== 'published' && 'opacity-70'">
@@ -42,12 +118,12 @@
                 <a :href="'{{ A }}/products/' + p.id" class="font-medium text-slate-900 hover:text-brand-600" x-text="p.name"></a>
                 <div class="mt-0.5 flex gap-1.5 text-xs text-slate-500"><span x-text="p.sku"></span><span x-show="p.is_bestseller" class="badge bg-slate-900 text-white">Best Seller</span><span x-show="p.is_featured" class="badge bg-amber-50 text-amber-700">Nổi bật</span><span x-show="p.show_new" class="badge bg-emerald-50 text-emerald-700">Mới</span></div>
               </td>
-              <td x-text="p.jade_type?.name || '—'"></td>
+              <td><span x-text="p.product_type?.uses_jade_fields === false ? p.product_type.name : (p.jade_type?.name || '—')"></span></td>
               <td><span x-text="p.final_price != null ? $fmt.vnd(p.final_price) : 'Liên hệ'"></span><span x-show="p.on_sale" class="ml-1 text-xs text-slate-400 line-through" x-text="$fmt.vnd(p.price)"></span></td>
               <td x-text="p.stock_label"></td>
-              <td><span class="badge" :class="p.status === 'published' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'" x-text="p.status === 'published' ? 'Đang hiển thị' : 'Bản nháp'"></span></td>
+              <td><span class="badge" :class="p.status !== 'published' ? 'bg-slate-100 text-slate-500' : p.type_active ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'" x-text="p.status !== 'published' ? 'Bản nháp' : p.type_active ? 'Đang hiển thị' : 'Thử nghiệm (khách chưa thấy)'"></span></td>
               <td class="text-right whitespace-nowrap">
-                <a :href="'/san-pham/' + p.slug" target="_blank" class="btn btn-ghost btn-sm" title="Xem trên web" x-show="p.status === 'published'">{{ icon('eye', 'w-4 h-4') }}</a>
+                <a :href="p.status === 'published' && p.type_active ? '/san-pham/' + p.slug : '{{ A }}/preview/san-pham/' + p.id" target="_blank" class="btn btn-ghost btn-sm" :title="p.status === 'published' && p.type_active ? 'Xem trên website' : 'Xem thử như khách (khách chưa thấy sản phẩm này)'">{{ icon('eye', 'w-4 h-4') }}</a>
                 <button class="btn btn-ghost btn-sm" :title="p.status === 'published' ? 'Ẩn sản phẩm (khách không thấy)' : 'Hiện lại sản phẩm'" @click="toggleHide(p)"><span x-show="p.status === 'published'">{{ icon('eye-off', 'w-4 h-4') }}</span><span x-cloak x-show="p.status !== 'published'">{{ icon('eye', 'w-4 h-4') }}</span></button>
                 <button class="btn btn-ghost btn-sm" title="Nhân bản" @click="duplicate(p)">{{ icon('copy', 'w-4 h-4') }}</button>
                 <button class="btn btn-ghost btn-sm text-red-600" title="Xóa" @click="remove(p)">{{ icon('trash', 'w-4 h-4') }}</button>

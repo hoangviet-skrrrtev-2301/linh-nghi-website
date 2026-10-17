@@ -8,7 +8,8 @@ import { verifyPassword, verifyTotp, DUMMY_HASH } from '../lib/security.js';
 import { findByEmail, isLocked, recordFailure, recordSuccess, getTotpSecret, getUserWithSecrets, audit, ROLES } from '../services/users.js';
 import { getPublicSettings } from '../services/settings.js';
 import { SETTINGS_SCHEMA, SCHEMA_BY_KEY } from '../config/settings-schema.js';
-import { TERM_TYPES, STOCK_LABEL } from '../services/catalog.js';
+import { TERM_TYPES, STOCK_LABEL, getProduct, relatedProducts } from '../services/catalog.js';
+import { publicLocals } from './public.js';
 import { INQUIRY_TYPES, INQUIRY_STATUS } from '../services/inquiries.js';
 import { HttpError } from '../lib/utils.js';
 import apiRouter from './admin-api/index.js';
@@ -117,6 +118,18 @@ router.get('/', page('pages/dashboard.njk'));
 router.get('/products', page('pages/products.njk'));
 router.get('/products/new', page('pages/product-edit.njk'));
 router.get('/products/:id', page('pages/product-edit.njk'));
+// Xem thử sản phẩm đúng như khách nhìn thấy, kể cả bản nháp hoặc loại sản phẩm chưa hoạt động (chỉ người đã đăng nhập admin xem được)
+router.get('/preview/san-pham/:id', (req, res, next) => {
+  const product = getProduct(Number(req.params.id), { publicOnly: false });
+  if (!product) return next(new HttpError(404, 'Không tìm thấy sản phẩm'));
+  publicLocals(req, res);
+  res.locals.seo = { ...res.locals.seo, robots: 'noindex, nofollow' };
+  const why = [product.status !== 'published' && 'đang là bản nháp', !product.type_active && 'thuộc loại sản phẩm chưa hoạt động'].filter(Boolean).join(' và ');
+  res.view('pages/product-detail.njk', {
+    product, related: relatedProducts(product),
+    previewNote: why ? `Chế độ xem thử: sản phẩm này ${why}, khách chưa nhìn thấy trên website.` : 'Chế độ xem thử: sản phẩm này đang hiển thị với khách.',
+  });
+});
 router.get('/terms', page('pages/terms.njk'));
 router.get('/gallery', page('pages/gallery.njk'));
 router.get('/posts', page('pages/posts.njk'));

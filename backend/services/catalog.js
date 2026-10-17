@@ -67,12 +67,15 @@ export function deleteTerm(id) {
 
 // ---------------- Products ----------------
 const EFFECTIVE_PRICE = 'COALESCE(p.sale_price, p.price)';
+// Sản phẩm thuộc loại "chưa hoạt động" không được hiện ở bất kỳ đâu phía khách hàng (danh sách, tìm kiếm, sitemap, giỏ hàng...)
+export const TYPE_ACTIVE = 'p.product_type_id IN (SELECT id FROM product_types WHERE active = 1)';
 
 function hydrate(rows, { withImages = false } = {}) {
   if (!rows.length) return [];
   const ids = rows.map((r) => r.id);
   const marks = ids.map(() => '?').join(',');
   const terms = Object.fromEntries(db.prepare('SELECT * FROM terms').all().map((t) => [t.id, t]));
+  const types = Object.fromEntries(db.prepare('SELECT * FROM product_types').all().map((t) => [t.id, { ...t, spec_fields: safeJson(t.spec_fields, []) }]));
   const elements = db.prepare(`SELECT product_id, term_id FROM product_elements WHERE product_id IN (${marks})`).all(...ids);
   const images = db.prepare(`SELECT product_id, media_id FROM product_images WHERE product_id IN (${marks}) ORDER BY sort_order`).all(...ids);
   const newDays = Number(getRaw('pages').new_days) || 0;
@@ -83,8 +86,15 @@ function hydrate(rows, { withImages = false } = {}) {
     const pick = (tid) => (terms[tid] ? { id: terms[tid].id, name: terms[tid].name, slug: terms[tid].slug, color_hex: terms[tid].color_hex } : null);
     const gallery = images.filter((i) => i.product_id === r.id).map((i) => media[i.media_id]).filter(Boolean);
     const cover = media[r.cover_media_id] || gallery[0] || null;
+    const type = types[r.product_type_id] || null;
+    const attrs = safeJson(r.attrs, {});
     return {
       ...r,
+      product_type: type ? { id: type.id, name: type.name, slug: type.slug, uses_jade_fields: !!type.uses_jade_fields, active: !!type.active } : null,
+      type_active: type ? !!type.active : true,
+      attrs,
+      // Thông số tự đặt của loại sản phẩm, đã ghép nhãn + giá trị để hiển thị
+      spec_values: (type?.spec_fields || []).map((f) => ({ label: f.label, value: attrs[f.key] })).filter((v) => v.value !== undefined && v.value !== ''),
       sizes: safeJson(r.sizes, []),
       specs: safeJson(r.specs, []),
       jade_type: pick(r.jade_type_id),
@@ -112,8 +122,11 @@ function termIdBySlug(type, slug) {
 function buildFilter(f, { includeDrafts = false } = {}) {
   const where = [];
   const params = [];
-  if (!includeDrafts) where.push(`p.status = 'published'`);
+  if (!includeDrafts) where.push(`p.status = 'published'`, TYPE_ACTIVE);
   else if (f.status) { where.push('p.status = ?'); params.push(f.status); }
+  // Lọc theo loại sản phẩm: admin truyền id (type), phía khách dùng slug (nhom)
+  if (f.type) { where.push('p.product_type_id = ?'); params.push(toInt(f.type, -1)); }
+  if (f.nhom) { where.push('p.product_type_id IN (SELECT id FROM product_types WHERE slug = ?)'); params.push(String(f.nhom)); }
 
   if (f.q) {
     const like = `%${String(f.q).trim().slice(0, 100)}%`;
@@ -181,7 +194,7 @@ export function searchProducts(filters = {}, { page = 1, perPage = 12, includeDr
 }
 
 export function featuredProducts(limit = 8) {
-  const rows = db.prepare(`SELECT * FROM products p WHERE status = 'published' AND (is_featured = 1 OR is_bestseller = 1)
+  const rows = db.prepare(`SELECT * FROM products p WHERE status = 'published' AND ${TYPE_ACTIVE} AND (is_featured = 1 OR is_bestseller = 1)
     ORDER BY is_bestseller DESC, sort_order, id DESC LIMIT ?`).all(limit);
   return hydrate(rows);
 }
@@ -190,20 +203,20 @@ export function featuredProducts(limit = 8) {
 export function productFacets() {
   const counts = Object.fromEntries(db.prepare(`
     SELECT t.id, COUNT(DISTINCT p.id) AS c FROM terms t
-    LEFT JOIN products p ON p.status = 'published' AND (p.jade_type_id = t.id OR p.color_id = t.id OR p.style_id = t.id
+    LEFT JOIN products p ON p.status = 'published' AND ${TYPE_ACTIVE} AND (p.jade_type_id = t.id OR p.color_id = t.id OR p.style_id = t.id
       OR p.id IN (SELECT product_id FROM product_elements WHERE term_id = t.id))
     GROUP BY t.id`).all().map((r) => [r.id, r.c]));
   const terms = allTermsGrouped({ activeOnly: true });
   for (const list of Object.values(terms)) for (const t of list) t.count = counts[t.id] || 0;
   const sizes = db.prepare(`SELECT DISTINCT CAST(j.value AS INTEGER) AS s FROM products p, json_each(p.sizes) j
-    WHERE p.status = 'published' ORDER BY s`).pluck().all().filter((s) => s > 0);
-  const price = db.prepare(`SELECT MIN(${EFFECTIVE_PRICE}) AS min, MAX(${EFFECTIVE_PRICE}) AS max FROM products p WHERE status = 'published'`).get();
+    WHERE p.status = 'published' AND ${TYPE_ACTIVE} ORDER BY s`).pluck().all().filter((s) => s > 0);
+  const price = db.prepare(`SELECT MIN(${EFFECTIVE_PRICE}) AS min, MAX(${EFFECTIVE_PRICE}) AS max FROM products p WHERE status = 'published' AND ${TYPE_ACTIVE}`).get();
   return { terms, sizes, price };
 }
 
 export function getProduct(idOrSlug, { publicOnly = true } = {}) {
   const col = typeof idOrSlug === 'number' ? 'id' : 'slug';
-  const row = db.prepare(`SELECT * FROM products p WHERE ${col} = ? ${publicOnly ? `AND status = 'published'` : ''}`).get(idOrSlug);
+  const row = db.prepare(`SELECT * FROM products p WHERE ${col} = ? ${publicOnly ? `AND status = 'published' AND ${TYPE_ACTIVE}` : ''}`).get(idOrSlug);
   if (!row) return null;
   const [product] = hydrate([row], { withImages: true });
   const certs = db.prepare('SELECT * FROM certificates WHERE product_id = ? ORDER BY sort_order, id').all(row.id);
@@ -216,8 +229,9 @@ export function getProduct(idOrSlug, { publicOnly = true } = {}) {
 }
 
 export function relatedProducts(product, limit = 4) {
-  const rows = db.prepare(`SELECT * FROM products p WHERE status = 'published' AND id != ?
-    ORDER BY (jade_type_id = ?) DESC, is_featured DESC, id DESC LIMIT ?`).all(product.id, product.jade_type_id || 0, limit);
+  // Gợi ý cùng loại sản phẩm (pháp phục gợi ý pháp phục, ngọc gợi ý ngọc)
+  const rows = db.prepare(`SELECT * FROM products p WHERE status = 'published' AND ${TYPE_ACTIVE} AND id != ? AND product_type_id = ?
+    ORDER BY (jade_type_id = ?) DESC, is_featured DESC, id DESC LIMIT ?`).all(product.id, product.product_type_id || 1, product.jade_type_id || 0, limit);
   return hydrate(rows);
 }
 
@@ -225,8 +239,101 @@ export function relatedProducts(product, limit = 4) {
 export function productsByIds(ids) {
   const list = [...new Set(ids.map(Number).filter(Number.isInteger))];
   if (!list.length) return [];
-  const rows = db.prepare(`SELECT * FROM products p WHERE status = 'published' AND id IN (${list.map(() => '?').join(',')})`).all(...list);
+  const rows = db.prepare(`SELECT * FROM products p WHERE status = 'published' AND ${TYPE_ACTIVE} AND id IN (${list.map(() => '?').join(',')})`).all(...list);
   return hydrate(rows);
+}
+
+// ---------------- Loại sản phẩm ----------------
+const SPEC_KINDS = ['text', 'number', 'select'];
+
+function parseType(row) {
+  return row && { ...row, uses_jade_fields: !!row.uses_jade_fields, active: !!row.active, spec_fields: safeJson(row.spec_fields, []) };
+}
+
+export function getProductType(id) {
+  if (!id) return null;
+  return parseType(db.prepare('SELECT * FROM product_types WHERE id = ?').get(id));
+}
+
+// product_count: số sản phẩm thuộc loại (kể cả bản nháp)
+export function listProductTypes({ activeOnly = false } = {}) {
+  return db.prepare(`SELECT t.*, (SELECT COUNT(*) FROM products p WHERE p.product_type_id = t.id) AS product_count
+    FROM product_types t ${activeOnly ? 'WHERE t.active = 1' : ''} ORDER BY t.sort_order, t.id`).all().map(parseType);
+}
+
+const cleanOptions = (value) => [...new Set((Array.isArray(value) ? value : String(value || '').split(/[\n,;]+/))
+  .map((o) => cleanText(o, 60)).filter(Boolean))].slice(0, 50);
+
+// Chuẩn hóa danh sách thông số do chủ shop khai báo: nhãn, kiểu (ô chữ / số / danh sách chọn), mã duy nhất
+function cleanSpecFields(list) {
+  const used = new Set();
+  return (Array.isArray(list) ? list : []).slice(0, 30).map((f) => {
+    const label = cleanText(f?.label, 80);
+    if (!label) return null;
+    const base = (cleanText(f.key, 40) || slugify(label).replace(/-/g, '_') || 'thong_so');
+    let key = base;
+    for (let i = 2; used.has(key); i++) key = `${base}_${i}`;
+    used.add(key);
+    const kind = SPEC_KINDS.includes(f.kind) ? f.kind : 'text';
+    return { key, label, kind, options: kind === 'select' ? cleanOptions(f.options) : [] };
+  }).filter(Boolean);
+}
+
+export function saveProductType(id, data) {
+  const name = cleanText(data.name, 80);
+  if (!name) throw new HttpError(400, 'Vui lòng nhập tên loại sản phẩm');
+  const current = id ? getProductType(id) : null;
+  if (id && !current) throw new HttpError(404, 'Không tìm thấy loại sản phẩm');
+  const active = bool(data.active ?? true);
+  if (current?.uses_jade_fields && !active) throw new HttpError(400, 'Không thể tắt loại sản phẩm chính của shop (Vòng tay ngọc)');
+  const values = {
+    name,
+    slug: uniqueSlug('product_types', slugify(data.slug || name), id),
+    description: cleanText(data.description, 300),
+    active: active ? 1 : 0,
+    sort_order: toInt(data.sort_order, 0),
+    // Loại dùng bộ thuộc tính ngọc chỉ có loại chính; không cho đổi từ giao diện
+    spec_fields: JSON.stringify(current?.uses_jade_fields ? [] : cleanSpecFields(data.spec_fields)),
+  };
+  if (id) {
+    db.prepare('UPDATE product_types SET name=@name, slug=@slug, description=@description, active=@active, sort_order=@sort_order, spec_fields=@spec_fields WHERE id=@id').run({ ...values, id });
+    return id;
+  }
+  return db.prepare(`INSERT INTO product_types (name, slug, description, uses_jade_fields, spec_fields, active, sort_order)
+    VALUES (@name, @slug, @description, 0, @spec_fields, @active, @sort_order)`).run(values).lastInsertRowid;
+}
+
+export function deleteProductType(id) {
+  const t = getProductType(id);
+  if (!t) throw new HttpError(404, 'Không tìm thấy loại sản phẩm');
+  if (t.uses_jade_fields) throw new HttpError(400, 'Không thể xóa loại sản phẩm chính của shop');
+  const n = db.prepare('SELECT COUNT(*) FROM products WHERE product_type_id = ?').pluck().get(id);
+  if (n) throw new HttpError(409, `Loại này còn ${n} sản phẩm. Hãy chuyển hoặc xóa các sản phẩm đó trước.`);
+  db.prepare('DELETE FROM product_types WHERE id = ?').run(id);
+}
+
+// Làm sạch giá trị thông số tự đặt theo khai báo của loại. Giá trị mới ở thông số dạng danh sách chọn
+// được tự thêm vào danh sách (trả về fields mới để lưu lại, hoặc null nếu không đổi).
+function sanitizeAttrs(type, input) {
+  const src = input && typeof input === 'object' ? input : {};
+  const attrs = {};
+  let changed = false;
+  const fields = (type.spec_fields || []).map((f) => ({ ...f, options: [...(f.options || [])] }));
+  for (const f of fields) {
+    const raw = src[f.key];
+    if (raw === undefined || raw === null || raw === '') continue;
+    let value;
+    if (f.kind === 'number') {
+      const n = Number(String(raw).replace(',', '.'));
+      value = Number.isFinite(n) ? String(n) : '';
+    } else {
+      value = cleanText(raw, f.kind === 'select' ? 100 : 300);
+    }
+    if (!value) continue;
+    if (f.kind === 'select' && !f.options.includes(value) && f.options.length < 50) { f.options.push(value); changed = true; }
+    attrs[f.key] = value;
+  }
+  return { attrs, fields: changed ? fields : null };
 }
 
 const priceOrNull = (v) => {
@@ -245,26 +352,33 @@ export function saveProduct(id, data) {
     .map((s) => ({ label: cleanText(s?.label, 100), value: cleanText(s?.value, 300) }))
     .filter((s) => s.label && s.value).slice(0, 30);
 
+  // Loại sản phẩm: loại không dùng bộ thuộc tính ngọc thì các trường riêng của ngọc được xóa trắng, thông số tự đặt lưu ở attrs
+  const type = getProductType(toInt(data.product_type_id)) || getProductType(1);
+  const jade = !!type.uses_jade_fields;
+  const { attrs, fields: typeFields } = sanitizeAttrs(type, jade ? {} : data.attrs);
+
   const values = {
     name, slug,
+    product_type_id: type.id,
+    attrs: JSON.stringify(attrs),
     sku: cleanText(data.sku, 60),
     short_description: cleanText(data.short_description, 500),
     description: cleanHtml(data.description),
     price: priceOrNull(data.price),
     sale_price: priceOrNull(data.sale_price),
-    jade_type_id: toInt(data.jade_type_id),
-    color_id: toInt(data.color_id),
-    style_id: toInt(data.style_id),
-    sizes: JSON.stringify([...new Set(sizes)].sort((a, b) => a - b)),
-    bead_size: cleanText(data.bead_size, 100),
-    origin: cleanText(data.origin, 150),
-    weight: cleanText(data.weight, 60),
+    jade_type_id: jade ? toInt(data.jade_type_id) : null,
+    color_id: jade ? toInt(data.color_id) : null,
+    style_id: jade ? toInt(data.style_id) : null,
+    sizes: JSON.stringify(jade ? [...new Set(sizes)].sort((a, b) => a - b) : []),
+    bead_size: jade ? cleanText(data.bead_size, 100) : '',
+    origin: jade ? cleanText(data.origin, 150) : '',
+    weight: jade ? cleanText(data.weight, 60) : '',
     specs: JSON.stringify(specs),
     stock_status: STOCK_LABEL[data.stock_status] ? data.stock_status : 'in_stock',
     is_featured: bool(data.is_featured) ? 1 : 0,
     is_bestseller: bool(data.is_bestseller) ? 1 : 0,
     is_new: bool(data.is_new) ? 1 : 0,
-    fengshui: cleanText(data.fengshui, 3000),
+    fengshui: jade ? cleanText(data.fengshui, 3000) : '',
     is_customizable: bool(data.is_customizable) ? 1 : 0,
     status: data.status === 'published' ? 'published' : 'draft',
     sort_order: toInt(data.sort_order, 0),
@@ -286,7 +400,7 @@ export function saveProduct(id, data) {
 
     db.prepare('DELETE FROM product_elements WHERE product_id = ?').run(pid);
     const insEl = db.prepare('INSERT OR IGNORE INTO product_elements (product_id, term_id) VALUES (?, ?)');
-    for (const tid of [].concat(data.element_ids || []).map((x) => toInt(x)).filter(Boolean)) insEl.run(pid, tid);
+    if (jade) for (const tid of [].concat(data.element_ids || []).map((x) => toInt(x)).filter(Boolean)) insEl.run(pid, tid);
 
     db.prepare('DELETE FROM product_images WHERE product_id = ?').run(pid);
     const insImg = db.prepare('INSERT OR IGNORE INTO product_images (product_id, media_id, sort_order) VALUES (?, ?, ?)');
@@ -295,7 +409,10 @@ export function saveProduct(id, data) {
     db.prepare('DELETE FROM certificates WHERE product_id = ?').run(pid);
     const insCert = db.prepare(`INSERT INTO certificates (product_id, issuer, code, issued_date, note, media_id, sort_order)
       VALUES (?, ?, ?, ?, ?, ?, ?)`);
-    (Array.isArray(data.certificates) ? data.certificates : []).slice(0, 10).forEach((c, i) => {
+    // Tự thêm giá trị mới của thông số dạng danh sách chọn vào loại sản phẩm (lần sau chọn lại được)
+    if (typeFields) db.prepare('UPDATE product_types SET spec_fields = ? WHERE id = ?').run(JSON.stringify(typeFields), type.id);
+
+    (jade && Array.isArray(data.certificates) ? data.certificates : []).slice(0, 10).forEach((c, i) => {
       if (!c?.code && !c?.issuer && !c?.media_id) return;
       insCert.run(pid, cleanText(c.issuer, 200), cleanText(c.code, 100), cleanText(c.issued_date, 30), cleanText(c.note, 500), toInt(c.media_id), i);
     });

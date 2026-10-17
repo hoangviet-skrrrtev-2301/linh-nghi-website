@@ -129,7 +129,7 @@ export function listGallery({ activeOnly = true, album, limit } = {}) {
   if (album) { where.push('g.album = ?'); params.push(album); }
   else if (activeOnly) where.push('g.active = 1');
   const rows = db.prepare(`SELECT g.*, p.slug AS product_slug, p.name AS product_name FROM gallery_items g
-    LEFT JOIN products p ON p.id = g.product_id AND p.status = 'published'
+    LEFT JOIN products p ON p.id = g.product_id AND p.status = 'published' AND p.product_type_id IN (SELECT id FROM product_types WHERE active = 1)
     ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY g.sort_order, g.id DESC ${limit ? 'LIMIT ' + Number(limit) : ''}`).all(...params);
   const media = getMediaMap(rows.map((r) => r.media_id));
   return rows.map((r) => ({ ...r, image: media[r.media_id] || null })).filter((r) => r.image);

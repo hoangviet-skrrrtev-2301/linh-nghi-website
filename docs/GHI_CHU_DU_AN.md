@@ -25,6 +25,8 @@ _Cập nhật lần cuối: 16/10/2026_
 | Form custom | **Không cho khách upload file/ảnh** | Yêu cầu của chủ dự án; khách gửi ảnh mẫu qua Zalo |
 | Tài khoản | Nhiều tài khoản, 2 vai trò **Chủ shop / Nhân viên**, 2FA tùy chọn | |
 | Chứng chỉ | Theo từng sản phẩm (ảnh + nơi cấp + mã số + ngày cấp) **và** khối mẫu giấy kiểm định ở trang chủ | |
+| Loại sản phẩm | Có bảng `product_types`: Vòng tay ngọc (chính) và **Pháp phục** (tạo sẵn, **chưa hoạt động**: nhập được trong admin nhưng khách chưa thấy). Mỗi loại tự khai báo thông số (ô chữ / số / danh sách chọn) | Ngày 17/10/2026. Bật hoạt động sẽ hiện chung trong trang Sản phẩm cho đến khi có trang riêng, xem DANH_CHO_LAP_TRINH_VIEN.md |
+| Blog | Chia theo chuyên mục; trang chuyên mục `noindex, follow`, không có trong sitemap (tắt được) | Để tránh nội dung trùng khi viết bài SEO nhiều chủ đề |
 | Bộ lọc | Loại ngọc, giá (khoảng giá cấu hình được), ni tay, màu, kiểu dáng, mệnh | Danh mục quản lý trong admin |
 | Chế độ tối | Có, khách tự chuyển; mặc định theo thiết bị; chủ shop chỉnh màu tối / tắt trong Admin › Giao diện | Biến CSS `:root[data-theme="dark"]` sinh tại `/theme.css` |
 | Đơn của shop tự tạo | Admin tạo khách / đơn / custom thủ công; đơn lên từ custom có mã DH riêng (parent_id); giá đơn sửa được sau khi liên hệ, tổng = dòng hàng + điều chỉnh | Khách tra cứu bằng mã + SĐT |

@@ -73,6 +73,15 @@ Chạy `npm run migrate` (trên VPS, `deploy/update.sh` tự chạy). Mỗi file
 | `gallery_items`, `posts` | Gallery, blog |
 | `customers`, `inquiries` | Khách hàng, đơn hàng / custom / liên hệ |
 | `audit_logs` | Nhật ký thao tác |
+| `product_types` | Loại sản phẩm (Vòng tay ngọc, Pháp phục...): tên, thông số tự đặt `spec_fields` (JSON), `active`, `uses_jade_fields` |
+| `post_categories` | Chuyên mục blog (`posts.category_id`) |
+
+## Loại sản phẩm (nhóm hàng)
+
+- Mỗi sản phẩm có `products.product_type_id` (mặc định 1 = Vòng tay ngọc). Loại có `uses_jade_fields = 1` dùng bộ thuộc tính ngọc (loại ngọc, màu, kiểu dáng, mệnh, ni, chứng chỉ). Loại khác dùng thông số tự đặt: khai báo ở `product_types.spec_fields`, giá trị lưu ở `products.attrs` (mã thông số → giá trị).
+- Thông số có 3 kiểu: `text`, `number`, `select`. Giá trị mới ở thông số `select` tự được thêm vào danh sách khi lưu sản phẩm (`sanitizeAttrs` trong `catalog.js`).
+- **Loại `active = 0` (chưa hoạt động) bị ẩn hoàn toàn phía khách.** Mọi truy vấn phía khách phải có điều kiện `TYPE_ACTIVE` (xuất từ `catalog.js`): danh sách, tìm kiếm, chi tiết, gợi ý, giỏ hàng (`productsByIds`), sitemap, link sản phẩm trong Gallery. Truy vấn mới về sản phẩm phía khách nhớ thêm điều kiện này.
+- Việc còn lại khi muốn mở bán một loại mới (ví dụ Pháp phục): trang danh sách riêng (có sẵn bộ lọc `?nhom=<slug>` trong `buildFilter`), mục menu, bộ lọc theo thông số tự đặt, chọn kích cỡ khi đặt hàng (giỏ hàng hiện chỉ hiểu "ni" dạng số), schema SEO cho loại không phải ngọc.
 
 ## Kiểm tra trước khi bàn giao bản sửa
 
