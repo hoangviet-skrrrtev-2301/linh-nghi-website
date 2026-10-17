@@ -37,6 +37,8 @@ Ví dụ thêm "Link Messenger" vào Thông tin shop:
 1. `backend/config/settings-schema.js` › nhóm `site` › thêm `{ name: 'messenger', label: 'Link Messenger', type: 'url' }`
 2. Dùng trong template: `{{ s.site.messenger }}`
 
+Nhóm có nhiều trường có thể chia thành các phần thu gọn / mở ra: khai báo `sections: [{ key, label, hint, toggle }]` ở cấp nhóm (như nhóm `home`), rồi thêm `section: '<key>'` vào từng trường. `toggle` (tùy chọn) là tên trường bật/tắt để hiện nhãn "Đang hiện / Đang ẩn". Trường không có `section` rơi vào phần đầu tiên.
+
 Không cần sửa database hay trang admin. Kiểu trường hỗ trợ: `text, textarea, richtext, email, url, number, color, toggle, select, image, secret, list`.
 
 ## Thay đổi cấu trúc database

@@ -511,9 +511,20 @@ document.addEventListener('alpine:init', () => {
   }));
 
   // ---------------- Cài đặt ----------------
-  Alpine.data('settingsPage', (key) => ({
-    key, values: null, media: {}, saving: false, testing: false,
+  Alpine.data('settingsPage', (key, secKeys = []) => ({
+    key, values: null, media: {}, saving: false, testing: false, openSec: {}, secKeys,
+    // Các phần thu gọn / mở ra (nhóm cài đặt có "sections"); lưu lựa chọn trên trình duyệt này
+    isOpen(k) { return !!this.openSec[k]; },
+    toggle(k) { this.openSec[k] = !this.openSec[k]; this.saveSec(); },
+    toggleAll(on) { this.secKeys.forEach((k) => { this.openSec[k] = on; }); this.saveSec(); },
+    saveSec() { try { localStorage.setItem('ln_admin_sec_' + key, JSON.stringify(this.openSec)); } catch { /* chế độ riêng tư */ } },
+    initSec() {
+      let saved = {};
+      try { saved = JSON.parse(localStorage.getItem('ln_admin_sec_' + key)) || {}; } catch { /* bỏ qua */ }
+      this.secKeys.forEach((k, i) => { this.openSec[k] = k in saved ? !!saved[k] : i === 0; });
+    },
     async init() {
+      this.initSec();
       try {
         const r = await api(`/settings/${key}`);
         this.media = r.media || {};
