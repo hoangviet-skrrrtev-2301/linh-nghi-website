@@ -34,6 +34,10 @@ npm run migrate | backup | restore -- <thư-mục>
 - Trạng thái yêu cầu theo từng loại ở `INQUIRY_FLOW` (`services/inquiries.js`); doanh thu tính theo `completed_at`. Nhóm cài đặt dài thì chia phần bằng `sectionize()` cuối `settings-schema.js` (trường chưa xếp phần sẽ báo lỗi khi khởi động).
 - Menu bên trái admin và danh sách nhóm cài đặt giữ nguyên dạng phẳng (chủ dự án không muốn gập menu); chỉ gập phần nội dung trong trang.
 
+- **URL và SEO:** đường dẫn sản phẩm / bài viết chỉ lấy từ `p.url` / `post.url` (`backend/lib/urls.js`), không tự ghép chuỗi `/san-pham/<slug>` ở nơi khác. Đổi đường dẫn của trang phải tự tạo 301 (`addAutoRedirect` trong `services/redirects.js`). Mỗi trang khách đúng 1 H1, không nhảy cấp tiêu đề; ảnh có width / height, ảnh LCP có `fetchpriority=high`. Chữ trên trang 404 / lỗi lấy từ cài đặt, không viết cứng.
+- Lên đơn = đổi `type` của chính bản ghi (`convertToOrder`), không tạo bản ghi thứ hai.
+- `npm run dev` có thể không tự khởi động lại; tính năng mới không chạy thì nhờ chủ dự án khởi động lại (đừng tắt node của họ).
+
 ## An toàn: sao lưu trước mỗi thay đổi
 
 Trước khi bắt đầu **mỗi** thay đổi (sửa code, template, schema, migration, dữ liệu mẫu, hay thao tác ghi vào database/uploads):

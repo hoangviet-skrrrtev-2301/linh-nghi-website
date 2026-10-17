@@ -496,17 +496,17 @@ export const SETTINGS_SCHEMA = [
       { name: 'products_intro', section: 'products', label: 'Mô tả ngắn trang Sản phẩm', type: 'textarea', default: 'Vòng ngọc tự nhiên được tuyển chọn, đầy đủ chứng chỉ kiểm định.' },
       { name: 'products_per_page', section: 'products', label: 'Số sản phẩm mỗi trang', type: 'number', default: 12 },
       {
-        name: 'price_ranges', section: 'products', label: 'Khoảng giá trong bộ lọc', type: 'list',
+        name: 'price_ranges', section: 'products', label: 'Khoảng giá trong bộ lọc', type: 'list', help: 'Các nút chọn nhanh ở ô “Khoảng giá” của bộ lọc. Thêm, xóa, đổi tên và đổi mức giá tùy ý khi bảng giá sản phẩm thay đổi. Để trống “Từ” = từ 0, để trống “Đến” = không giới hạn.',
         fields: [
           { name: 'label', label: 'Tên hiển thị', type: 'text' },
           { name: 'min', label: 'Từ (VNĐ, để trống = 0)', type: 'number' },
           { name: 'max', label: 'Đến (VNĐ, để trống = không giới hạn)', type: 'number' },
         ],
         default: [
-          { label: 'Dưới 2 triệu', min: 0, max: 2000000 },
-          { label: '2 – 5 triệu', min: 2000000, max: 5000000 },
-          { label: '5 – 15 triệu', min: 5000000, max: 15000000 },
-          { label: 'Trên 15 triệu', min: 15000000, max: 0 },
+          { label: 'Dưới 1 triệu', min: 0, max: 1000000 },
+          { label: '1 – 3 triệu', min: 1000000, max: 3000000 },
+          { label: '3 – 5 triệu', min: 3000000, max: 5000000 },
+          { label: 'Trên 5 triệu', min: 5000000, max: 0 },
         ],
       },
       { name: 'new_days', section: 'products', label: 'Tự gắn nhãn "Mới" cho sản phẩm đăng trong vòng (ngày)', type: 'number', default: 30, help: 'Đặt 0 để chỉ dùng ô "Sản phẩm mới" trong từng sản phẩm' },

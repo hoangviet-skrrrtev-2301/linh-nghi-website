@@ -53,6 +53,10 @@ Chạy `npm run migrate` (trên VPS, `deploy/update.sh` tự chạy). Mỗi file
 
 ## Quy ước
 
+- Địa chỉ sản phẩm / bài viết lấy từ `p.url` / `post.url`; đổi cách đặt đường dẫn phải đi qua `lib/urls.js` + `addAutoRedirect` (xem mục "Địa chỉ trang (URL) và chuyển hướng").
+- Nội dung soạn thảo hiển thị qua filter `headings(n) | imgdims | safe` (không nhảy cấp tiêu đề, ảnh có kích thước). Trang khách mỗi trang đúng 1 H1.
+- Lên đơn (custom / liên hệ → đơn hàng) là đổi `type` của chính bản ghi (`convertToOrder`), mã cũ giữ ở `origin_code`; không tạo bản ghi thứ hai.
+
 - ES Modules, Node ≥ 22.12, Express 5 (lỗi trong handler async tự chuyển tới error handler).
 - Mọi truy vấn dùng prepared statement của better-sqlite3.
 - HTML từ trình soạn thảo luôn đi qua `cleanHtml()` (`backend/lib/sanitize.js`) trước khi lưu; template mặc định escape, chỉ dùng `| safe` cho nội dung đã làm sạch.

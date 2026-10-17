@@ -2,7 +2,7 @@
 
 Tài liệu "sổ tay" để tiếp tục phát triển: bối cảnh, các quyết định đã chốt, những gì đã xong, việc còn chờ. Cập nhật file này mỗi khi có quyết định hoặc thay đổi lớn.
 
-_Cập nhật lần cuối: 17/10/2026_
+_Cập nhật lần cuối: 17/10/2026 (cuối ngày)_
 
 ---
 
@@ -71,6 +71,10 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 - 2 sản phẩm Pháp phục mẫu (mã `PP-TEST-01`, `PP-TEST-02`, tên có "(mẫu thử)", ảnh tạm lấy từ ảnh mẫu). Loại Pháp phục đang **chưa hoạt động** nên khách không thấy; xóa bằng tick chọn rồi Xóa ở Admin › Sản phẩm.
 - Vài đơn / khách thử do chủ dự án tự tạo khi thử tính năng (có thể xóa trong admin).
 
+**Đã làm thêm ngày 17/10/2026 (đã commit `de2eba2`, `11a3925`):** nút Quay lại theo lịch sử trang, chọn 20/30/50 dòng, thêm đơn thủ công, mô tả cách hoạt động (ẩn/hiện), dashboard tách đơn / custom / liên hệ, **lên đơn trên cùng một bản ghi**, trình soạn thảo đầy đủ (bảng, màu, ảnh alt / kích thước / căn lề), **URL phân cấp + chuyển hướng 301/302/410 + nhật ký 404**, trang 404 cấu hình được, tiêu đề không nhảy cấp, ảnh có width/height + fetchpriority, cache, Permissions-Policy, nhãn ảnh sản phẩm trong hơn, rà responsive 34 trang (xem CHANGELOG.md).
+
+**Việc đầu tiên của phiên sau:** nhắc chủ dự án **khởi động lại `npm run dev`** (Ctrl+C rồi chạy lại). Bộ tự khởi động lại của `node --watch` trên máy này đã không nạp mã mới (server vẫn chạy bản 16:33 ngày 17/10, chưa có bảng `redirects`, trang Chuyển hướng & 404 chưa dùng được). Khi khởi động lại, migration 009 và 010 tự chạy; bản sao lưu trước migration ở `database/backups/2026-10-17-11-26`.
+
 ## 4. Việc tiếp theo
 
 - [ ] Nhận mẫu giao diện + tông màu từ chủ dự án → chỉnh `frontend/src/css/app.css`, các template trong `frontend/views/`, và giá trị mặc định nhóm `theme` trong `settings-schema.js` (bố cục chưa chốt)
@@ -80,10 +84,16 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 - [ ] Thay dữ liệu mẫu bằng sản phẩm, ảnh, giấy kiểm định thật; xóa ảnh mẫu (Thư viện ảnh, thư mục "sample") và 2 mẫu Pháp phục thử
 - [ ] Nhập nội dung thật: Về shop, chính sách, SEO từng trang, chuyên mục + banner blog
 - [ ] Gửi sitemap lên Google Search Console, kiểm tra Rich Results
+- [ ] Sau khi có tên miền: kiểm tra www → tên miền chính (301 trong `deploy/nginx.conf`), HTTPS, tốc độ bằng PageSpeed Insights (LCP / CLS thật), xem tab "Trang bị lỗi 404" để tạo chuyển hướng
+- [ ] Thử trình soạn thảo bằng bài thật (bảng dài, nhiều ảnh) và xem bài trên điện thoại thật
 
 **Khi muốn mở bán Pháp phục** (loại đã có sẵn, đang thử nghiệm): nhập sản phẩm thật, kiểm tra bằng "Xem thử như khách", rồi Admin › Sản phẩm › Loại sản phẩm › Bật hoạt động. Còn thiếu trước khi mở bán thật: chọn **kích cỡ** (S/M/L...) khi đặt hàng (giỏ hàng hiện chỉ hiểu "ni" dạng số), thanh toán/chuyển khoản nếu cần, schema SEO riêng cho loại không phải ngọc.
 
 **Ý tưởng có thể làm sau (chưa ai yêu cầu):**
+- Menu máy tính mở submenu bằng chạm cho iPad nằm ngang (hiện chỉ rê chuột / bàn phím)
+- Tự lưu font Google trên máy chủ, thêm AVIF và Brotli (tối ưu tốc độ thêm)
+- Bảng trong trình soạn thảo: gộp ô, dòng tiêu đề (cần thư viện bảng riêng, Quill 2 chỉ có bảng cơ bản)
+- Nút Quay lại giữ riêng loại đơn khi mở thẳng danh sách (hiện về /inquiries tất cả loại); trang Khách hàng chưa ghi bộ lọc vào URL
 - Trạng thái thanh toán và trừ kho tự động khi có đơn (hiện chưa có)
 - Tách "khách hàng" khỏi "người chỉ nhắn hỏi" (mọi lời nhắn liên hệ hiện đều tạo hồ sơ khách)
 - Gộp "SEO Google & chia sẻ" vào cùng trang với nội dung từng trang (hiện tách 2 nhóm, đã ghi rõ ô nào lấy từ đâu)
@@ -104,6 +114,8 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 | **Migration chạy tự động mỗi lần server khởi động** | Kể cả `npm run dev` tự khởi động lại khi sửa file `backend`. Luôn `npm run backup` trước khi thêm migration |
 | `.npmrc` đặt `ignore-scripts=true` | Thư viện native (better-sqlite3, sharp, tailwind) dùng bản build sẵn, máy mới không cần Python / trình biên dịch. Nếu sau này thêm thư viện **bắt buộc** chạy script cài đặt thì cần xem lại |
 | Giỏ hàng chỉ hiểu "ni" dạng số | Loại hàng khác ngọc (Pháp phục) chưa chọn được kích cỡ khi đặt hàng |
+| `npm run dev` có thể không tự khởi động lại khi sửa file `backend` (đã gặp 17/10/2026) | Nếu thấy tính năng mới không chạy, kiểm tra thời gian khởi động tiến trình (`Get-Process -Id <PID>`) rồi khởi động lại thủ công. Không dùng `taskkill /IM node.exe` |
+| CSP cần `'unsafe-eval'` (Alpine), font Google tải ngoài, `npm audit` mức thấp của Quill 2.0.3 | Xem mục 5b |
 | Ảnh đơn hàng cho khách vẽ trên trình duyệt | Cần font đã tải; nếu trình duyệt khách quá cũ có thể không tạo được ảnh (khách vẫn đặt hàng bình thường) |
 | Tìm kiếm tiếng Việt quét toàn bảng (`vn()`) | Không dùng chỉ mục; nhanh với vài nghìn dòng, cần xem lại nếu lên hàng chục nghìn |
 | Danh sách admin ghi bộ lọc vào URL | `listPage` trong `pages.js` dùng `history.replaceState` để nút Quay lại giữ bộ lọc / trang; trang khách hàng có hàm tải riêng nên chưa giữ |
@@ -153,6 +165,8 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 - **Không bao giờ `taskkill /IM node.exe`:** lệnh này tắt cả `npm run dev` của chủ dự án. Chỉ dừng máy chủ thử theo PID cổng 3100 (`netstat -ano | grep :3100` → `taskkill /F /PID <số>`).
 - **Git Bash trên Windows:** đặt `MSYS_NO_PATHCONV=1` khi truyền đường dẫn bắt đầu bằng `/` (nếu không bị đổi thành `C:/Program Files/Git/...`; lúc đó `taskkill` dùng một dấu `/F`). Dùng `cp -r`, không dùng `robocopy`.
 - **Ghi script sửa file bằng công cụ Write rồi chạy `node script.mjs`:** đừng nhét code có dấu backtick hoặc `${...}` vào `node -e "..."` hoặc heredoc (shell nuốt mất, đã gây lỗi nhiều lần).
+- **Kiểm tra giao diện bằng Chrome CDP:** Chrome ở `C:/Program Files/Google/Chrome/Application/chrome.exe`, bật `--headless=new --remote-debugging-port=9333`, nói chuyện qua WebSocket (Node 24 có sẵn `WebSocket`, `fetch`, `node:sqlite` để đọc database bản sao). Mẫu kịch bản: đăng nhập admin thử, `Emulation.setDeviceMetricsOverride` đổi độ rộng, đo `scrollWidth > clientWidth`, chụp màn hình, kiểm tra thứ tự H1–H6. Kịch bản dài (hơn 7 phút) thì chạy nền.
+- **Sửa file có `${...}` hoặc backtick:** dùng công cụ Edit; script sửa nhiều chỗ thì ghi bằng Write rồi `node script.mjs` (heredoc làm mất dấu `\` và `$`, đã gây lỗi nhiều lần).
 - Luôn `npm run backup` trước khi sửa; chỉ commit khi chủ dự án đồng ý; ghi `CHANGELOG.md` và file này khi xong việc lớn.
 
 ## 7. Lịch sử thay đổi

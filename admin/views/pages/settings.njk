@@ -53,6 +53,7 @@
                   {% if f.collapsible %}<span class="ml-auto mr-2 flex gap-1"><button type="button" class="btn btn-ghost btn-sm" @click="toggleItems('{{ f.name }}', true)">Mở tất cả</button><button type="button" class="btn btn-ghost btn-sm" @click="toggleItems('{{ f.name }}', false)">Thu gọn</button></span>{% endif %}
                   {% if not f.fixed %}<button type="button" class="btn btn-secondary btn-sm" @click="addItem('{{ f.name }}', {{ f.fields | blankItem | attrjson }})">{{ icon('plus', 'w-3.5 h-3.5') }} Thêm</button>{% endif %}
                 </div>
+                {% if f.help %}<p class="help mb-2 !mt-0">{{ f.help }}</p>{% endif %}
                 <div class="space-y-3">
                   <template x-for="(item, i) in values.{{ f.name }}" :key="i">
                     <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4" :class="{% if f.fixed %}item.enabled === false && 'opacity-60'{% else %}''{% endif %}">
