@@ -69,7 +69,7 @@ export function productJsonLd(p) {
     description: truncate(stripHtml(p.short_description || p.description), 300),
     image: (p.images || []).map((i) => abs(i.lg)),
     brand: { '@type': 'Brand', name: s.site.name },
-    category: p.jade_type?.name,
+    category: p.jade_type?.name || p.product_type?.name,
     material: p.jade_type?.name,
     color: p.color?.name,
   };

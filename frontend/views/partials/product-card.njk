@@ -27,7 +27,7 @@
     <button type="button" class="quick btn btn-light btn-sm" @click="$store.quick.show('{{ p.slug }}')">{{ icon('eye', 'w-4 h-4') }} Xem nhanh</button>
   </div>
   <div class="mt-4 px-0.5">
-    {% if p.jade_type %}<p class="text-[11px] uppercase tracking-[0.16em] text-muted">{{ p.jade_type.name }}</p>{% endif %}
+    {% if p.jade_type %}<p class="text-[11px] uppercase tracking-[0.16em] text-muted">{{ p.jade_type.name }}</p>{% elif p.product_type and not p.product_type.uses_jade_fields %}<p class="text-[11px] uppercase tracking-[0.16em] text-muted">{{ p.product_type.name }}</p>{% endif %}
     <h3 class="mt-1 font-heading text-[1.15rem] font-medium leading-snug">
       <a href="/san-pham/{{ p.slug }}" class="transition hover:text-primary">{{ p.name }}</a>
     </h3>

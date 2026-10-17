@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import sharp from 'sharp';
-import { db } from '../lib/db.js';
+import { db, likeVn } from '../lib/db.js';
 import { config } from '../config/index.js';
 import { HttpError, safeJson } from '../lib/utils.js';
 import { cleanText } from '../lib/sanitize.js';
@@ -97,7 +97,7 @@ export function listMedia({ folder, page = 1, perPage = 40, q } = {}) {
   const where = [];
   const params = [];
   if (folder) { where.push('folder = ?'); params.push(folder); }
-  if (q) { where.push('(original_name LIKE ? OR alt LIKE ?)'); params.push(`%${q}%`, `%${q}%`); }
+  if (q) { where.push('(vn(original_name) LIKE ? OR vn(alt) LIKE ?)'); params.push(likeVn(q), likeVn(q)); }
   const sqlWhere = where.length ? `WHERE ${where.join(' AND ')}` : '';
   const total = db.prepare(`SELECT COUNT(*) FROM media ${sqlWhere}`).pluck().get(...params);
   const rows = db.prepare(`SELECT * FROM media ${sqlWhere} ORDER BY id DESC LIMIT ? OFFSET ?`)

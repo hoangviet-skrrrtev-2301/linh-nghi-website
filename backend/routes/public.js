@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import { getPublicSettings, getRaw } from '../services/settings.js';
 import {
-  searchProducts, productFacets, featuredProducts, getProduct, relatedProducts, listTerms, SORT_OPTIONS, TERM_TYPES,
+  searchProducts, productFacets, featuredProducts, getProduct, relatedProducts, listTerms, listProductTypes, SORT_OPTIONS, TERM_TYPES,
 } from '../services/catalog.js';
 import { listPosts, getPost, listGallery, galleryAlbums, listPostCategories, getPostCategory } from '../services/content.js';
 import { buildSeo, productJsonLd, breadcrumbJsonLd, articleJsonLd, collectionJsonLd, webPageJsonLd } from '../lib/seo.js';
@@ -113,16 +113,21 @@ router.get('/', (req, res) => {
 });
 
 // ---------------- Sản phẩm ----------------
-router.get('/san-pham', (req, res) => {
+router.get('/san-pham', (req, res, next) => {
   const s = res.locals.s;
   const q = req.query;
   const filters = {
     q: typeof q.q === 'string' ? q.q.slice(0, 100) : '',
     loai: [].concat(q.loai || []), mau: [].concat(q.mau || []), kieu: [].concat(q.kieu || []), menh: [].concat(q.menh || []),
   };
-  for (const k of ['gia_tu', 'gia_den', 'ni', 'sap_xep', 'con_hang', 'custom']) {
+  for (const k of ['gia_tu', 'gia_den', 'ni', 'sap_xep', 'con_hang', 'custom', 'nhom']) {
     filters[k] = typeof q[k] === 'string' ? q[k].slice(0, 20) : '';
   }
+  // ?nhom=<slug>: xem riêng một loại sản phẩm (Pháp phục...). Loại chưa hoạt động coi như không tồn tại.
+  const group = filters.nhom ? listProductTypes({ activeOnly: true }).find((t) => t.slug === filters.nhom) : null;
+  if (filters.nhom && !group) return next(new HttpError(404, 'Không tìm thấy loại sản phẩm'));
+  // Bộ lọc (loại ngọc, màu, ni...) chỉ dành cho ngọc: loại khác chỉ có tìm nhanh và sắp xếp
+  const showFilters = !group || group.uses_jade_fields;
   const result = searchProducts(filters, { page: q.trang, perPage: Number(s.pages.products_per_page) || 12 });
   const pageUrl = pageUrlBuilder('/san-pham', q);
   if (redirectBadPage(res, q.trang, result, pageUrl)) return;
@@ -130,30 +135,33 @@ router.get('/san-pham', (req, res) => {
   const activeType = filters.loai.length === 1 ? facets.terms.jade_type.find((t) => t.slug === filters.loai[0]) : null;
   const hasFilter = Object.entries(filters).some(([k, v]) => k !== 'sap_xep' && (Array.isArray(v) ? v.length : v));
   // Danh sách "sạch" (tất cả, hoặc đúng 1 loại ngọc, không sắp xếp riêng) mới tự có canonical theo từng trang
-  const otherFilters = Object.entries(filters).some(([k, v]) => !['sap_xep', 'loai'].includes(k) && (Array.isArray(v) ? v.length : v))
-    || filters.loai.length > 1 || (filters.loai.length === 1 && !activeType);
+  const otherFilters = Object.entries(filters).some(([k, v]) => !['sap_xep', 'loai', 'nhom'].includes(k) && (Array.isArray(v) ? v.length : v))
+    || filters.loai.length > 1 || (filters.loai.length === 1 && !activeType) || (!!group && filters.loai.length > 0);
   const clean = !otherFilters && !filters.sap_xep;
   const basePath = '/san-pham';
-  const baseQuery = activeType ? { loai: activeType.slug } : {};
+  const baseQuery = activeType ? { loai: activeType.slug } : group ? { nhom: group.slug } : {};
 
+  // Mô tả cho Google: loại không phải ngọc dùng mô tả của loại đó, chưa có thì ghi tên loại + tên shop
+  const metaDescription = activeType?.description
+    || (group && !group.uses_jade_fields ? group.description || `${group.name} tại ${s.site.name}` : group?.description || s.pages.products_intro);
   res.locals.seo = buildSeo(req, {
     page: hasFilter ? undefined : 'products',
-    title: filters.q ? `Tìm kiếm: ${filters.q}` : activeType ? `Vòng ${activeType.name}` : s.pages.products_title,
-    description: activeType?.description || s.pages.products_intro,
+    title: filters.q ? `Tìm kiếm: ${filters.q}` : activeType ? `Vòng ${activeType.name}` : group ? group.name : s.pages.products_title,
+    description: metaDescription,
     // Trang tìm kiếm và trang lọc nhiều điều kiện không cần Google lập chỉ mục
     noindex: !!filters.q || otherFilters || (!clean && result.page > 1),
     canonical: pageUrlBuilder(basePath, baseQuery)(1),
     pagination: clean ? { page: result.page, pages: result.pages, url: pageUrlBuilder(basePath, baseQuery) } : undefined,
     jsonLd: [
       collectionJsonLd({
-        name: activeType ? `Vòng ${activeType.name}` : s.pages.products_title, description: activeType?.description || s.pages.products_intro,
+        name: activeType ? `Vòng ${activeType.name}` : group ? group.name : s.pages.products_title, description: metaDescription,
         path: pageUrlBuilder(basePath, baseQuery)(clean ? result.page : 1), offset: (result.page - 1) * result.perPage,
         items: result.items.map((p) => ({ name: p.name, url: `/san-pham/${p.slug}`, image: p.cover?.md })),
       }),
-      breadcrumbJsonLd([{ name: 'Trang chủ', url: '/' }, { name: 'Sản phẩm', url: '/san-pham' }, ...(activeType ? [{ name: activeType.name, url: `/san-pham?loai=${activeType.slug}` }] : [])]),
+      breadcrumbJsonLd([{ name: 'Trang chủ', url: '/' }, { name: 'Sản phẩm', url: '/san-pham' }, ...(activeType ? [{ name: activeType.name, url: `/san-pham?loai=${activeType.slug}` }] : group ? [{ name: group.name, url: `/san-pham?nhom=${group.slug}` }] : [])]),
     ],
   });
-  res.view('pages/products.njk', { result, pg: result, pageUrl, facets, filters, activeType, hasFilter, sortOptions: SORT_OPTIONS, termTypes: TERM_TYPES, query: q });
+  res.view('pages/products.njk', { result, pg: result, pageUrl, facets, filters, activeType, activeGroup: group, showFilters, hasFilter, sortOptions: SORT_OPTIONS, termTypes: TERM_TYPES, query: q });
 });
 
 router.get('/san-pham/:slug', (req, res, next) => {

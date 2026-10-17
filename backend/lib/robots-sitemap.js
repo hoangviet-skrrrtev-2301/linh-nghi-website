@@ -3,6 +3,7 @@ import { db } from './db.js';
 import { config } from '../config/index.js';
 import { getRaw } from '../services/settings.js';
 import { safeJson } from './utils.js';
+import { listPublicProductGroups } from '../services/catalog.js';
 
 const AI_BOTS = ['GPTBot', 'ChatGPT-User', 'OAI-SearchBot', 'ClaudeBot', 'anthropic-ai', 'CCBot', 'Google-Extended', 'PerplexityBot', 'Bytespider', 'Applebot-Extended'];
 const DIRECTIVE = /^(user-agent|allow|disallow|crawl-delay|sitemap|host)\s*:\s*\S*/i;
@@ -75,6 +76,8 @@ export function sitemapEntries() {
     for (const t of db.prepare(`SELECT slug FROM terms WHERE type = 'jade_type' AND active = 1`).all()) {
       add({ loc: `/san-pham?loai=${t.slug}`, priority: '0.8' });
     }
+    // Trang theo loại sản phẩm đang hoạt động (ví dụ Pháp phục)
+    for (const g of listPublicProductGroups({ onlyNonJade: true })) add({ loc: `/san-pham?nhom=${g.slug}`, priority: '0.8' });
   }
   if (sm.sitemap_products) {
     const rows = db.prepare(`SELECT p.slug, p.name, p.updated_at, m.variants FROM products p

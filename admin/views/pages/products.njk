@@ -47,8 +47,11 @@
             <div class="grid gap-4 md:grid-cols-2">
               <div><label class="label">Tên loại sản phẩm *</label><input class="input" x-model="typeForm.name" required maxlength="80"></div>
               <div><label class="label">Đường dẫn (slug)</label><input class="input" x-model="typeForm.slug" placeholder="Tự tạo từ tên"></div>
-              <div class="md:col-span-2"><label class="label">Ghi chú</label><input class="input" x-model="typeForm.description" maxlength="300" placeholder="Chỉ để bạn nhớ, không hiện ra website"></div>
-              <label class="flex items-center gap-2 text-sm" x-show="!typeForm.uses_jade_fields"><input type="checkbox" class="h-4 w-4 accent-brand-600" x-model="typeForm.active"> Đang hoạt động (khách nhìn thấy sản phẩm của loại này)</label>
+              <div class="md:col-span-2"><label class="label">Mô tả ngắn (hiện ở đầu trang của loại này khi hoạt động)</label><input class="input" x-model="typeForm.description" maxlength="300" placeholder="Để trống nếu không cần"></div>
+              <div class="space-y-2 md:col-span-2" x-show="!typeForm.uses_jade_fields">
+                <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="h-4 w-4 accent-brand-600" x-model="typeForm.active"> Đang hoạt động (khách nhìn thấy sản phẩm của loại này)</label>
+                <label class="flex items-start gap-2 text-sm"><input type="checkbox" class="mt-0.5 h-4 w-4 accent-brand-600" x-model="typeForm.in_main_list"><span>Hiện chung trong trang “Tất cả sản phẩm”<span class="help block !mt-0">Bỏ tick (mặc định): sản phẩm loại này chỉ xem được khi khách bấm vào đường dẫn riêng của loại (menu Sản phẩm, <code>/san-pham?nhom=<span x-text="typeForm.slug || 'ten-loai'"></span></code>) hoặc khi tìm kiếm.</span></span></label>
+              </div>
             </div>
             <template x-if="typeForm.uses_jade_fields">
               <p class="rounded-lg bg-white p-3 text-sm text-slate-600">Đây là loại sản phẩm chính của shop. Thông số của loại này là bộ thuộc tính ngọc có sẵn (loại ngọc, màu sắc, kiểu dáng, hợp mệnh, ni tay, chứng chỉ) nên không cần khai báo thêm, và không thể tắt hoặc xóa.</p>

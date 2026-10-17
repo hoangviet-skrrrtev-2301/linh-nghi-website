@@ -1,5 +1,5 @@
 // Danh mục phân loại (terms) và sản phẩm.
-import { db, tx } from '../lib/db.js';
+import { db, tx, likeVn } from '../lib/db.js';
 import { slugify, safeJson, HttpError, toInt, bool, stripHtml, truncate } from '../lib/utils.js';
 import { cleanHtml, cleanText } from '../lib/sanitize.js';
 import { getMediaMap } from './media.js';
@@ -69,6 +69,8 @@ export function deleteTerm(id) {
 const EFFECTIVE_PRICE = 'COALESCE(p.sale_price, p.price)';
 // Sản phẩm thuộc loại "chưa hoạt động" không được hiện ở bất kỳ đâu phía khách hàng (danh sách, tìm kiếm, sitemap, giỏ hàng...)
 export const TYPE_ACTIVE = 'p.product_type_id IN (SELECT id FROM product_types WHERE active = 1)';
+// Trang "Tất cả sản phẩm" chỉ gồm các loại được bật "hiện chung" (mặc định chỉ ngọc); loại khác xem qua đường dẫn riêng ?nhom=<slug>
+const IN_MAIN_LIST = 'p.product_type_id IN (SELECT id FROM product_types WHERE in_main_list = 1)';
 
 function hydrate(rows, { withImages = false } = {}) {
   if (!rows.length) return [];
@@ -123,15 +125,17 @@ function buildFilter(f, { includeDrafts = false } = {}) {
   const where = [];
   const params = [];
   if (!includeDrafts) where.push(`p.status = 'published'`, TYPE_ACTIVE);
+  // Không chọn loại và không tìm kiếm thì chỉ hiện các loại "hiện chung"; khách chủ động tìm kiếm thì tìm trên mọi loại đang hoạt động
+  if (!includeDrafts && !f.nhom && !f.q) where.push(IN_MAIN_LIST);
   else if (f.status) { where.push('p.status = ?'); params.push(f.status); }
   // Lọc theo loại sản phẩm: admin truyền id (type), phía khách dùng slug (nhom)
   if (f.type) { where.push('p.product_type_id = ?'); params.push(toInt(f.type, -1)); }
   if (f.nhom) { where.push('p.product_type_id IN (SELECT id FROM product_types WHERE slug = ?)'); params.push(String(f.nhom)); }
 
   if (f.q) {
-    const like = `%${String(f.q).trim().slice(0, 100)}%`;
-    where.push(`(p.name LIKE ? OR p.sku LIKE ? OR p.short_description LIKE ? OR p.origin LIKE ?
-      OR p.jade_type_id IN (SELECT id FROM terms WHERE name LIKE ?))`);
+    const like = likeVn(String(f.q).slice(0, 100));
+    where.push(`(vn(p.name) LIKE ? OR vn(p.sku) LIKE ? OR vn(p.short_description) LIKE ? OR vn(p.origin) LIKE ?
+      OR p.jade_type_id IN (SELECT id FROM terms WHERE vn(name) LIKE ?))`);
     params.push(like, like, like, like, like);
   }
   for (const [key, col, type] of [['loai', 'jade_type_id', 'jade_type'], ['mau', 'color_id', 'color'], ['kieu', 'style_id', 'style']]) {
@@ -210,7 +214,7 @@ export function productFacets() {
   for (const list of Object.values(terms)) for (const t of list) t.count = counts[t.id] || 0;
   const sizes = db.prepare(`SELECT DISTINCT CAST(j.value AS INTEGER) AS s FROM products p, json_each(p.sizes) j
     WHERE p.status = 'published' AND ${TYPE_ACTIVE} ORDER BY s`).pluck().all().filter((s) => s > 0);
-  const price = db.prepare(`SELECT MIN(${EFFECTIVE_PRICE}) AS min, MAX(${EFFECTIVE_PRICE}) AS max FROM products p WHERE status = 'published' AND ${TYPE_ACTIVE}`).get();
+  const price = db.prepare(`SELECT MIN(${EFFECTIVE_PRICE}) AS min, MAX(${EFFECTIVE_PRICE}) AS max FROM products p WHERE status = 'published' AND ${TYPE_ACTIVE} AND ${IN_MAIN_LIST}`).get();
   return { terms, sizes, price };
 }
 
@@ -247,7 +251,7 @@ export function productsByIds(ids) {
 const SPEC_KINDS = ['text', 'number', 'select'];
 
 function parseType(row) {
-  return row && { ...row, uses_jade_fields: !!row.uses_jade_fields, active: !!row.active, spec_fields: safeJson(row.spec_fields, []) };
+  return row && { ...row, uses_jade_fields: !!row.uses_jade_fields, in_main_list: !!row.in_main_list, active: !!row.active, spec_fields: safeJson(row.spec_fields, []) };
 }
 
 export function getProductType(id) {
@@ -259,6 +263,14 @@ export function getProductType(id) {
 export function listProductTypes({ activeOnly = false } = {}) {
   return db.prepare(`SELECT t.*, (SELECT COUNT(*) FROM products p WHERE p.product_type_id = t.id) AS product_count
     FROM product_types t ${activeOnly ? 'WHERE t.active = 1' : ''} ORDER BY t.sort_order, t.id`).all().map(parseType);
+}
+
+// Các loại sản phẩm đang hoạt động và có ít nhất 1 sản phẩm đang bán (dùng cho menu, sitemap, trang theo loại).
+// onlyNonJade = true: bỏ loại ngọc (ngọc đã có menu theo loại ngọc riêng).
+export function listPublicProductGroups({ onlyNonJade = false } = {}) {
+  return db.prepare(`SELECT t.*, (SELECT COUNT(*) FROM products p WHERE p.product_type_id = t.id AND p.status = 'published') AS public_count
+    FROM product_types t WHERE t.active = 1 ${onlyNonJade ? 'AND t.uses_jade_fields = 0' : ''} ORDER BY t.sort_order, t.id`).all()
+    .map(parseType).filter((t) => t.public_count > 0);
 }
 
 const cleanOptions = (value) => [...new Set((Array.isArray(value) ? value : String(value || '').split(/[\n,;]+/))
@@ -291,16 +303,18 @@ export function saveProductType(id, data) {
     slug: uniqueSlug('product_types', slugify(data.slug || name), id),
     description: cleanText(data.description, 300),
     active: active ? 1 : 0,
+    // Loại chính (ngọc) luôn hiện trong "Tất cả sản phẩm"; loại khác tùy chủ shop, mặc định không
+    in_main_list: current?.uses_jade_fields || bool(data.in_main_list) ? 1 : 0,
     sort_order: toInt(data.sort_order, 0),
     // Loại dùng bộ thuộc tính ngọc chỉ có loại chính; không cho đổi từ giao diện
     spec_fields: JSON.stringify(current?.uses_jade_fields ? [] : cleanSpecFields(data.spec_fields)),
   };
   if (id) {
-    db.prepare('UPDATE product_types SET name=@name, slug=@slug, description=@description, active=@active, sort_order=@sort_order, spec_fields=@spec_fields WHERE id=@id').run({ ...values, id });
+    db.prepare('UPDATE product_types SET name=@name, slug=@slug, description=@description, active=@active, in_main_list=@in_main_list, sort_order=@sort_order, spec_fields=@spec_fields WHERE id=@id').run({ ...values, id });
     return id;
   }
-  return db.prepare(`INSERT INTO product_types (name, slug, description, uses_jade_fields, spec_fields, active, sort_order)
-    VALUES (@name, @slug, @description, 0, @spec_fields, @active, @sort_order)`).run(values).lastInsertRowid;
+  return db.prepare(`INSERT INTO product_types (name, slug, description, uses_jade_fields, spec_fields, active, in_main_list, sort_order)
+    VALUES (@name, @slug, @description, 0, @spec_fields, @active, @in_main_list, @sort_order)`).run(values).lastInsertRowid;
 }
 
 export function deleteProductType(id) {

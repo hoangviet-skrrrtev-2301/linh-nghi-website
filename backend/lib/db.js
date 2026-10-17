@@ -12,6 +12,18 @@ db.pragma('foreign_keys = ON');
 db.pragma('busy_timeout = 5000');
 db.pragma('synchronous = NORMAL');
 
+// Tìm kiếm tiếng Việt không phân biệt hoa/thường và dấu: "áo", "Áo", "ao" đều khớp "Áo dài".
+// SQLite chỉ so khớp chữ hoa/thường với ký tự không dấu, nên dùng hàm tự đăng ký vn(cột) LIKE foldVn(từ khóa).
+export function foldVn(value) {
+  return String(value ?? '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd').replace(/Đ/g, 'd')
+    .toLowerCase();
+}
+db.function('vn', { deterministic: true }, (value) => foldVn(value));
+// Mẫu cho LIKE: %từ khóa%
+export const likeVn = (q) => `%${foldVn(String(q).trim())}%`;
+
 export function migrate({ log = console.log } = {}) {
   db.exec(`CREATE TABLE IF NOT EXISTS _migrations (
     name TEXT PRIMARY KEY,

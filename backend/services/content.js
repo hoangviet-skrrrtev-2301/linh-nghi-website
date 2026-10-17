@@ -1,5 +1,5 @@
 // Blog và Gallery.
-import { db } from '../lib/db.js';
+import { db, likeVn } from '../lib/db.js';
 import { slugify, HttpError, toInt, bool, stripHtml, truncate } from '../lib/utils.js';
 import { cleanHtml, cleanText } from '../lib/sanitize.js';
 import { getMediaMap } from './media.js';
@@ -24,7 +24,7 @@ export function listPosts({ page = 1, perPage = 9, includeDrafts = false, q, sta
   const params = [];
   if (!includeDrafts) where.push(`status = 'published' AND published_at <= datetime('now')`);
   else if (status) { where.push('status = ?'); params.push(status); }
-  if (q) { where.push('(title LIKE ? OR excerpt LIKE ?)'); params.push(`%${q}%`, `%${q}%`); }
+  if (q) { where.push('(vn(title) LIKE ? OR vn(excerpt) LIKE ?)'); params.push(likeVn(q), likeVn(q)); }
   if (categoryId === 'none') where.push('category_id IS NULL');
   else if (categoryId) { where.push('category_id = ?'); params.push(Number(categoryId)); }
   const sql = where.length ? `WHERE ${where.join(' AND ')}` : '';

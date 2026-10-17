@@ -57,7 +57,7 @@ document.addEventListener('alpine:init', () => {
     openType(t) {
       this.typeForm = t
         ? { ...t, active: !!t.active, spec_fields: (t.spec_fields || []).map((f) => ({ ...f, optionsText: (f.options || []).join(', ') })) }
-        : { name: '', slug: '', description: '', active: false, sort_order: this.types.length, uses_jade_fields: false, spec_fields: [] };
+        : { name: '', slug: '', description: '', active: false, in_main_list: false, sort_order: this.types.length, uses_jade_fields: false, spec_fields: [] };
     },
     addField() { this.typeForm.spec_fields.push({ key: '', label: '', kind: 'text', options: [], optionsText: '' }); },
     moveField(i, d) {

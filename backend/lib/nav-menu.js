@@ -1,5 +1,5 @@
 // Menu sổ dọc (dropdown): nguồn danh sách con do chủ shop chọn ở Admin › Cài đặt › Menu.
-import { listTerms } from '../services/catalog.js';
+import { listTerms, listPublicProductGroups } from '../services/catalog.js';
 import { listPosts, listPostCategories } from '../services/content.js';
 
 export const NAV_TERM_PARAM = { jade_type: 'loai', color: 'mau', style: 'kieu', element: 'menh' };
@@ -21,10 +21,16 @@ export function navChildren(item, { jadeTypes = [], limit = 8 } = {}) {
   const kind = dropdownOf(item);
   if (kind === 'none') return [];
   if (kind === 'custom') return customLinks(item.dropdown_custom);
+  const groupLink = (g) => ({ label: g.name, url: `/san-pham?nhom=${encodeURIComponent(g.slug)}` });
+  // Theo loại sản phẩm: Vòng tay ngọc, Pháp phục... (chỉ loại đang hoạt động và có sản phẩm)
+  if (kind === 'product_type') return listPublicProductGroups().map(groupLink);
   if (kind === 'blog_category') return listPostCategories({ activeOnly: true }).map((c) => ({ label: c.name, url: `/blog/chuyen-muc/${c.slug}` }));
   if (kind === 'posts') return listPosts({ perPage: limit }).items.map((p) => ({ label: p.title, url: `/blog/${p.slug}` }));
   const param = NAV_TERM_PARAM[kind];
   if (!param) return [];
   const terms = kind === 'jade_type' ? jadeTypes : listTerms(kind, { activeOnly: true });
-  return terms.map((t) => ({ label: t.name, url: `/san-pham?${param}=${encodeURIComponent(t.slug)}` }));
+  const links = terms.map((t) => ({ label: t.name, url: `/san-pham?${param}=${encodeURIComponent(t.slug)}` }));
+  // Menu Sản phẩm sổ theo ngọc thì thêm các loại hàng khác đang hoạt động (ví dụ Pháp phục) ở cuối danh sách
+  if (String(item.url).startsWith('/san-pham')) links.push(...listPublicProductGroups({ onlyNonJade: true }).map(groupLink));
+  return links;
 }

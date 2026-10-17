@@ -151,7 +151,7 @@ export const SETTINGS_SCHEMA = [
             options: [
               { value: 'none', label: 'Không có' }, { value: 'jade_type', label: 'Theo loại ngọc' }, { value: 'color', label: 'Theo màu sắc' },
               { value: 'style', label: 'Theo kiểu dáng' }, { value: 'element', label: 'Theo mệnh phong thủy' },
-              { value: 'blog_category', label: 'Chuyên mục blog' }, { value: 'posts', label: 'Bài viết blog mới nhất' }, { value: 'custom', label: 'Tự nhập danh sách' },
+              { value: 'product_type', label: 'Theo loại sản phẩm (Vòng ngọc, Pháp phục...)' }, { value: 'blog_category', label: 'Chuyên mục blog' }, { value: 'posts', label: 'Bài viết blog mới nhất' }, { value: 'custom', label: 'Tự nhập danh sách' },
             ],
           },
           { name: 'dropdown_custom', label: 'Danh sách tự nhập (mỗi dòng: Tên | /đường-dẫn)', type: 'textarea', showIf: "item.dropdown == 'custom'" },

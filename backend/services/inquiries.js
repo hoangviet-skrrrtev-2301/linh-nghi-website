@@ -1,6 +1,6 @@
 // Đơn đặt hàng, yêu cầu custom, lời nhắn liên hệ và danh sách khách hàng.
 import { z } from 'zod';
-import { db, tx } from '../lib/db.js';
+import { db, tx, likeVn } from '../lib/db.js';
 import { inquiryCode, safeJson, HttpError, toInt } from '../lib/utils.js';
 import { cleanText } from '../lib/sanitize.js';
 import { productsByIds } from './catalog.js';
@@ -257,8 +257,8 @@ export function listInquiries({ type, status, q, page = 1, perPage = 30, custome
   if (from) { where.push('date(created_at) >= date(?)'); params.push(from); }
   if (to) { where.push('date(created_at) <= date(?)'); params.push(to); }
   if (q) {
-    where.push('(code LIKE ? OR name LIKE ? OR phone LIKE ? OR email LIKE ? OR message LIKE ?)');
-    params.push(...Array(5).fill(`%${q}%`));
+    where.push('(vn(code) LIKE ? OR vn(name) LIKE ? OR vn(phone) LIKE ? OR vn(email) LIKE ? OR vn(message) LIKE ?)');
+    params.push(...Array(5).fill(likeVn(q)));
   }
   const sql = where.length ? `WHERE ${where.join(' AND ')}` : '';
   const total = db.prepare(`SELECT COUNT(*) FROM inquiries ${sql}`).pluck().get(...params);
@@ -366,10 +366,10 @@ function customerQuery({ q, months, by = 'active', source } = {}) {
     having = 'HAVING COUNT(i.id) > 0';
   }
   if (q) {
-    where.push('(c.name LIKE ? OR c.phone LIKE ? OR c.email LIKE ? OR c.tags LIKE ? OR c.source LIKE ?)');
-    params.push(...Array(5).fill(`%${q}%`));
+    where.push('(vn(c.name) LIKE ? OR vn(c.phone) LIKE ? OR vn(c.email) LIKE ? OR vn(c.tags) LIKE ? OR vn(c.source) LIKE ?)');
+    params.push(...Array(5).fill(likeVn(q)));
   }
-  if (source) { where.push('c.source LIKE ?'); params.push(`%${source}%`); }
+  if (source) { where.push('vn(c.source) LIKE ?'); params.push(likeVn(source)); }
   const sql = `WITH f AS (
     SELECT c.*, COUNT(i.id) AS inquiry_count, MAX(i.created_at) AS last_inquiry_at,
       COALESCE(SUM(CASE WHEN i.type = 'order' AND i.status = 'completed' THEN i.total END), 0) AS total_spent
