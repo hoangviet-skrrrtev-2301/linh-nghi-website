@@ -83,7 +83,13 @@ document.addEventListener('alpine:init', () => {
     selected: [],
     // Quản lý loại sản phẩm (Vòng tay ngọc, Pháp phục...) ngay trên trang này
     types: [], typesOpen: false, typeForm: null, typeSaving: false,
-    init() { this.load(); this.loadTypes(); },
+    // Mặc định luôn xem Vòng tay ngọc (loại chính); muốn xem loại khác hoặc tất cả thì chọn ở ô lọc
+    async init() {
+      await this.loadTypes();
+      const main = this.types.find((t) => t.uses_jade_fields);
+      if (main && this.filters.type === '') this.filters.type = main.id;
+      this.load();
+    },
     async loadTypes() { try { this.types = (await api('/product-types')).items; } catch (e) { toast().error(e); } },
     openType(t) {
       this.typeForm = t
