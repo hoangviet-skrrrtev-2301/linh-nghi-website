@@ -20,8 +20,8 @@
 
   <div class="card overflow-hidden">
     <div class="overflow-x-auto">
-      <table class="table">
-        <thead><tr><th class="w-16"></th><th>Sản phẩm</th><th>Loại ngọc</th><th>Giá</th><th>Tình trạng</th><th>Hiển thị</th><th class="w-32"></th></tr></thead>
+      <table class="table table-stack">
+        <thead><tr><th class="w-16"></th><th class="stack-title">Sản phẩm</th><th>Loại ngọc</th><th>Giá</th><th>Tình trạng</th><th>Hiển thị</th><th class="w-32"></th></tr></thead>
         <tbody>
           <template x-for="p in items" :key="p.id">
             <tr>

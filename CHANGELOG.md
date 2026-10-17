@@ -4,6 +4,8 @@ Ghi lại các thay đổi đáng chú ý, mới nhất ở trên cùng.
 
 ## Chưa phát hành
 
+- Admin trên điện thoại: bảng (sản phẩm, đơn hàng, khách, bài viết, tài khoản, danh mục, nhật ký, báo giá đơn) chuyển thành danh sách thẻ có nhãn cột thay vì cuộn ngang (class `table-stack`, nhãn gắn bởi `admin/public/js/core.js`); sửa trang sửa sản phẩm / chi tiết đơn bị tràn ngang (lưới thiếu `grid-cols-1`); ô nhập chữ 16px để iPhone không tự phóng to; tiêu đề trang sửa sản phẩm / bài viết gọn hơn
+- Sửa: menu điện thoại (và ô tìm kiếm) bị cắt, không lướt được sau khi cuộn trang, do hiệu ứng nền mờ đặt trên chính thanh header. Nền mờ chuyển sang lớp riêng
 - Gallery dùng chung một lưới ở trang chủ và trang Gallery (`partials/gallery-grid.njk`): tối đa 8 ảnh dạng 2 hàng × 4 cột, nhiều hơn 8 ảnh thì thành slider (tự lướt phải sang trái, hoặc vuốt tay nếu tắt tự lướt). Bỏ kiểu xếp gạch cũ của trang Gallery
 - Chân trang tùy chỉnh (Admin › Cài đặt › Chân trang): bật/tắt và đổi thứ tự các cột (giới thiệu, menu, dòng ngọc, liên kết tự thêm, liên hệ), đổi tiêu đề cột, bật/tắt từng thông tin (logo, slogan, mô tả, mạng xã hội, link tra cứu đơn, địa chỉ, SĐT, email, giờ làm việc) và các mục thanh dưới (bản quyền, ảnh Bộ Công Thương, slogan). Mã: `backend/lib/footer-layout.js`, `frontend/views/partials/footer.njk`
 - Blog chia 2 cột: bài viết bên trái, cột phải gồm mục lục (tự tạo từ H2/H3, đánh dấu mục đang đọc; điện thoại gập lại phía trên bài), gợi ý bài viết và banner dọc có link. Trang danh sách blog cũng có cột phải (gợi ý + banner). Tiêu đề, số bài gợi ý, bật/tắt mục lục và banner chỉnh ở Admin › Cài đặt › Trang Sản phẩm / Gallery / Blog. Mã: `backend/lib/toc.js`, `frontend/views/partials/blog-sidebar.njk`

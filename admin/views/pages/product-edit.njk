@@ -2,13 +2,13 @@
 {% from "partials/icons.njk" import icon %}
 {% from "partials/fields.njk" import imageField, imageList, richText, switch %}
 {% block title %}{{ 'Sửa sản phẩm' if params.id else 'Thêm sản phẩm' }}{% endblock %}
-{% block heading %}<a href="{{ A }}/products" class="mr-2 text-slate-400 hover:text-slate-600">Sản phẩm /</a>{{ 'Sửa sản phẩm' if params.id else 'Thêm sản phẩm' }}{% endblock %}
+{% block heading %}<a href="{{ A }}/products" class="mr-2 hidden text-slate-400 hover:text-slate-600 sm:inline">Sản phẩm /</a>{{ 'Sửa sản phẩm' if params.id else 'Thêm sản phẩm' }}{% endblock %}
 {% block content %}
 <div x-data="productEdit({{ (params.id or '') | dump }})">
   <template x-if="!form"><div class="py-20 text-center text-slate-500">Đang tải...</div></template>
   <template x-if="form">
-    <form @submit.prevent="save()" class="grid gap-6 lg:grid-cols-[1fr_320px]">
-      <div class="space-y-6">
+    <form @submit.prevent="save()" class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div class="min-w-0 space-y-6">
         <div class="flex gap-1 overflow-x-auto">
           {% for t in [['info', 'Thông tin'], ['images', 'Hình ảnh'], ['specs', 'Thông số & phân loại'], ['cert', 'Chứng chỉ kiểm định'], ['seo', 'SEO']] %}
           <button type="button" class="tab" :class="tab === '{{ t[0] }}' && 'active'" @click="tab = '{{ t[0] }}'">{{ t[1] }}</button>

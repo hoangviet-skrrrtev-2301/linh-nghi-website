@@ -11,7 +11,7 @@
     <label class="btn btn-primary ml-auto cursor-pointer">{{ icon('upload', 'w-4 h-4') }} Tải ảnh lên<input type="file" accept="image/*" multiple class="hidden" @change="upload($event.target.files); $event.target.value = ''"></label>
   </div>
 
-  <div class="grid gap-6 lg:grid-cols-[210px_minmax(0,1fr)_300px]">
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-[210px_minmax(0,1fr)_300px]">
     {# ---- Thư mục ---- #}
     <aside class="card h-fit p-2 lg:sticky lg:top-24">
       <p class="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Thư mục</p>

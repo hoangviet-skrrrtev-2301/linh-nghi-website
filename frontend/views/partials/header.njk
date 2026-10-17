@@ -3,9 +3,13 @@
 <div class="panel-primary text-center text-[12.5px] tracking-wide py-2 px-4">{{ features.announcement }}</div>
 {% endif %}
 
+{# Lưu ý: không đặt backdrop-filter / transform lên chính <header>, vì khi đó khung menu và ô tìm kiếm
+   (position: fixed) bên trong bị giới hạn trong chiều cao header → menu điện thoại bị cắt, không lướt được. Nền mờ nằm ở lớp riêng bên dưới. #}
 <header x-data="siteHeader" @scroll.window.passive="onScroll"
-  :class="scrolled ? 'bg-surface/90 shadow-[0_1px_0_var(--c-border)] backdrop-blur-md' : 'bg-bg'"
-  class="sticky top-0 z-50 transition-colors duration-300">
+  :class="scrolled && 'shadow-[0_1px_0_var(--c-border)]'"
+  class="sticky top-0 z-50">
+  <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10 transition-colors duration-300"
+    :class="scrolled ? 'bg-surface/90 backdrop-blur-md' : 'bg-bg'"></div>
   <div class="container-x flex h-[var(--header-h)] items-center gap-4">
     <button class="icon-btn -ml-2 lg:hidden" @click="menuOpen = true" aria-label="Mở menu">{{ icon('menu', 'w-6 h-6') }}</button>
 

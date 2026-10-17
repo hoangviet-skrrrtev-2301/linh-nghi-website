@@ -52,8 +52,8 @@
   <div class="card mt-6">
     <div class="card-head"><h2 class="card-title">Mới nhận</h2><a href="{{ A }}/inquiries" class="text-sm text-brand-600 hover:underline">Xem tất cả</a></div>
     <div class="overflow-x-auto">
-      <table class="table">
-        <thead><tr><th>Mã</th><th>Loại</th><th>Khách</th><th>Điện thoại</th><th>Trạng thái</th><th>Thời gian</th></tr></thead>
+      <table class="table table-stack">
+        <thead><tr><th>Mã</th><th>Loại</th><th class="stack-title">Khách</th><th>Điện thoại</th><th>Trạng thái</th><th>Thời gian</th></tr></thead>
         <tbody>
           <template x-for="i in d?.latest || []" :key="i.id">
             <tr class="cursor-pointer" @click="location.href = '{{ A }}/inquiries/' + i.id">

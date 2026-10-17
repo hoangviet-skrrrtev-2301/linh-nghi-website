@@ -5,7 +5,7 @@
 {% block content %}
 <div x-data="customerDetail({{ params.id | dump }})">
   <template x-if="c">
-    <div class="grid gap-6 lg:grid-cols-[360px_1fr]">
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
       <form class="card card-body space-y-4 self-start" @submit.prevent="save()">
         <div><label class="label">Họ tên</label><input class="input" x-model="c.name"></div>
         <div><label class="label">Điện thoại</label><div class="flex gap-2"><input class="input bg-slate-50" :value="c.phone" disabled><a :href="'tel:' + c.phone" class="btn btn-secondary">{{ icon('phone', 'w-4 h-4') }}</a></div></div>
@@ -27,7 +27,7 @@
             <button type="button" class="btn btn-secondary btn-sm" :disabled="saving" @click="newInquiry('custom')">{{ icon('sparkle', 'w-3.5 h-3.5') }} Ghi nhận yêu cầu custom</button>
           </div>
         </div>
-        <table class="table">
+        <table class="table table-stack">
           <thead><tr><th>Mã</th><th>Loại</th><th>Nội dung</th><th>Trạng thái</th><th>Thời gian</th></tr></thead>
           <tbody>
             <tr x-show="!c.inquiries.length"><td colspan="5" class="py-10 text-center text-slate-500">Chưa có đơn hay yêu cầu nào. Dùng nút phía trên để tạo cho khách này.</td></tr>

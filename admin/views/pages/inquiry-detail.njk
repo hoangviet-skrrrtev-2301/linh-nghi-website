@@ -5,7 +5,7 @@
 {% block content %}
 <div x-data="inquiryDetail({{ params.id | dump }})">
   <template x-if="d">
-    <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
       <div class="space-y-6">
         <div class="card">
           <div class="card-head">
@@ -40,8 +40,8 @@
             <span class="text-xs text-slate-500">Giá chỉnh được sau khi thỏa thuận với khách</span>
           </div>
           <div class="overflow-x-auto">
-            <table class="table min-w-[700px]">
-              <thead><tr><th class="min-w-[220px]">Sản phẩm</th><th class="w-24">Ni</th><th class="w-20">SL</th><th class="w-40">Đơn giá (₫)</th><th class="w-32 text-right">Thành tiền</th><th class="w-10"></th></tr></thead>
+            <table class="table table-stack md:min-w-[700px]">
+              <thead><tr><th class="stack-title md:min-w-[220px]">Sản phẩm</th><th class="w-24">Ni</th><th class="w-20">SL</th><th class="w-40">Đơn giá (₫)</th><th class="w-32 text-right">Thành tiền</th><th class="w-10"></th></tr></thead>
               <tbody>
                 <template x-for="(it, i) in edit.items" :key="i">
                   <tr>

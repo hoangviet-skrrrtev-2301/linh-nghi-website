@@ -17,8 +17,8 @@
   </div>
   <div class="card overflow-hidden">
     <div class="overflow-x-auto">
-      <table class="table">
-        <thead><tr><th>Mã</th>{% if not query.type %}<th>Loại</th>{% endif %}<th>Khách hàng</th><th>Nội dung</th>{% if query.type == 'order' %}<th>Tạm tính</th>{% endif %}<th>Trạng thái</th><th>Email</th><th>Thời gian</th></tr></thead>
+      <table class="table table-stack">
+        <thead><tr><th>Mã</th>{% if not query.type %}<th>Loại</th>{% endif %}<th class="stack-title">Khách hàng</th><th>Nội dung</th>{% if query.type == 'order' %}<th>Tạm tính</th>{% endif %}<th>Trạng thái</th><th>Email</th><th>Thời gian</th></tr></thead>
         <tbody>
           <template x-for="i in items" :key="i.id">
             <tr class="cursor-pointer" @click="location.href = '{{ A }}/inquiries/' + i.id">

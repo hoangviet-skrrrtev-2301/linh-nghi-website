@@ -251,3 +251,32 @@
     }));
   });
 })();
+
+// Bảng dạng thẻ trên điện thoại: gắn nhãn cột (lấy từ thead) vào từng ô để CSS .table-stack hiển thị "Nhãn: giá trị".
+// Dòng do Alpine (x-for) sinh ra sau nên theo dõi thay đổi của tbody.
+(function () {
+  function label(table) {
+    var heads = Array.prototype.map.call(table.querySelectorAll('thead th'), function (th) {
+      return th.classList.contains('stack-title') ? '' : th.textContent.trim();
+    });
+    Array.prototype.forEach.call(table.querySelectorAll('tbody tr'), function (tr) {
+      Array.prototype.forEach.call(tr.children, function (td, i) {
+        if (td.hasAttribute('data-label')) return;
+        td.setAttribute('data-label', heads[i] || '');
+        if (heads[i] === '' && table.querySelectorAll('thead th')[i] && table.querySelectorAll('thead th')[i].classList.contains('stack-title')) td.classList.add('stack-title');
+      });
+    });
+  }
+  var queued = false;
+  function labelAll() {
+    queued = false;
+    Array.prototype.forEach.call(document.querySelectorAll('table.table-stack'), label);
+  }
+  function init() {
+    labelAll();
+    // Bảng có thể xuất hiện muộn (trong x-if) hoặc dòng sinh thêm (x-for): theo dõi cả trang, gom lại mỗi khung hình
+    new MutationObserver(function () { if (!queued) { queued = true; requestAnimationFrame(labelAll); } })
+      .observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.readyState !== 'loading') init(); else document.addEventListener('DOMContentLoaded', init);
+})();

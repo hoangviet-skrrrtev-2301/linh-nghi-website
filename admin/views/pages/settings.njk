@@ -4,7 +4,7 @@
 {% block title %}Cài đặt · {{ group.label }}{% endblock %}
 {% block heading %}Cài đặt website{% endblock %}
 {% block content %}
-<div class="grid gap-6 lg:grid-cols-[220px_1fr]">
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
   <nav class="flex gap-1 overflow-x-auto lg:flex-col">
     {% for g in groups %}<a href="{{ A }}/settings/{{ g.key }}" class="tab {{ 'active' if g.key == group.key }}">{{ g.label }}</a>{% endfor %}
     {% if currentUser.role == 'owner' %}

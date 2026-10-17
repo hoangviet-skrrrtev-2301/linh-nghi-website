@@ -64,8 +64,8 @@
 
   <div class="card overflow-hidden">
     <div class="overflow-x-auto">
-      <table class="table">
-        <thead><tr><th>Khách hàng</th><th>Liên hệ</th><th>Nguồn</th><th>Ni tay</th><th>Nhãn</th><th>Số yêu cầu</th><th>Đã mua</th><th>Gần nhất</th></tr></thead>
+      <table class="table table-stack">
+        <thead><tr><th class="stack-title">Khách hàng</th><th>Liên hệ</th><th>Nguồn</th><th>Ni tay</th><th>Nhãn</th><th>Số yêu cầu</th><th>Đã mua</th><th>Gần nhất</th></tr></thead>
         <tbody>
           <template x-for="c in items" :key="c.id">
             <tr class="cursor-pointer" @click="location.href = '{{ A }}/customers/' + c.id">

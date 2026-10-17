@@ -11,8 +11,8 @@
     <a href="{{ A }}/posts/new" class="btn btn-primary ml-auto">{{ icon('plus', 'w-4 h-4') }} Viết bài mới</a>
   </div>
   <div class="card overflow-hidden">
-    <table class="table">
-      <thead><tr><th class="w-20"></th><th>Tiêu đề</th><th>Trạng thái</th><th>Ngày đăng</th><th class="w-24"></th></tr></thead>
+    <table class="table table-stack">
+      <thead><tr><th class="w-20"></th><th class="stack-title">Tiêu đề</th><th>Trạng thái</th><th>Ngày đăng</th><th class="w-24"></th></tr></thead>
       <tbody>
         <template x-for="p in items" :key="p.id">
           <tr>

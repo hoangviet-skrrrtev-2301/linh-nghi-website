@@ -29,19 +29,40 @@
   .btn-sm { @apply px-2.5 py-1.5 text-xs; }
 
   .card { @apply rounded-xl border border-slate-200 bg-white shadow-sm; }
-  .card-head { @apply flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4; }
+  .card-head { @apply flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4; }
   .card-title { @apply text-[15px] font-semibold text-slate-900; }
   .card-body { @apply p-5; }
 
   .label { @apply mb-1 block text-[13px] font-medium text-slate-700; }
   .help { @apply mt-1 text-xs text-slate-500; }
   .input { @apply block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 disabled:bg-slate-100; }
+  /* Dưới 640px dùng chữ 16px để iPhone không tự phóng to khi bấm vào ô nhập */
+  @media (max-width: 639px) { .input, select.input, textarea.input { font-size: 16px; } }
   textarea.input { @apply min-h-[90px]; }
 
   .table { @apply w-full text-left text-sm; }
   .table th { @apply border-b border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-slate-500; }
   .table td { @apply border-b border-slate-100 px-4 py-3 align-middle; }
   .table tbody tr:hover td { @apply bg-slate-50/70; }
+
+  /* Điện thoại: bảng chuyển thành danh sách thẻ (nhãn cột gắn bằng JS trong core.js) */
+  @media (max-width: 767px) {
+    .table-stack, .table-stack tbody, .table-stack tr, .table-stack td { display: block; width: 100%; }
+    .table-stack thead { display: none; }
+    .table-stack tr { @apply border-b border-slate-200 px-4 py-3; }
+    .table-stack tbody tr:last-child { border-bottom: 0; }
+    .table-stack td { @apply flex items-center justify-between gap-3 border-0 px-0 py-1 text-right; }
+    .table-stack td::before { content: attr(data-label); @apply max-w-[40%] shrink-0 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-400; }
+    .table-stack td[data-label=""]::before { display: none; }
+    .table-stack td[data-label=""] { @apply justify-start text-left; }
+    .table-stack td.stack-title { @apply block text-left text-[15px]; }
+    .table-stack td input.input { width: 58%; }
+    .table-stack td.stack-title input.input { width: 100%; }
+    .table-stack td[colspan] { @apply justify-center text-center; }
+    .table-stack tbody tr:hover td { background: transparent; }
+    .table-stack td p, .table-stack td > div { text-align: inherit; }
+    .table-stack td.max-w-xs { max-width: none; }
+  }
 
   .badge { @apply inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium; }
   .nav-link { @apply flex items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] text-slate-300 transition hover:bg-white/5 hover:text-white; }
