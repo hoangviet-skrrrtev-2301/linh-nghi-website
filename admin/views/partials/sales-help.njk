@@ -2,7 +2,7 @@
    Ẩn / hiện được, lựa chọn nhớ riêng cho từng trang trên trình duyệt này. #}
 {% from "partials/icons.njk" import icon %}
 <div class="mb-5" x-data="{ open: true, key: '{{ helpKey }}',
-    init() { try { this.open = localStorage.getItem('ln_admin_help_' + this.key) !== 'hidden'; } catch (e) {} },
+    init() { this.open = innerWidth >= 768; /* điện thoại: mặc định thu gọn cho đỡ dài */ try { const v = localStorage.getItem('ln_admin_help_' + this.key); if (v) this.open = v !== 'hidden'; } catch (e) {} },
     toggle() { this.open = !this.open; try { localStorage.setItem('ln_admin_help_' + this.key, this.open ? 'shown' : 'hidden'); } catch (e) {} } }">
   <button type="button" class="inline-flex items-center gap-1.5 text-sm text-brand-600 hover:underline" @click="toggle()" :aria-expanded="open">
     {{ icon('alert', 'w-4 h-4') }} <span x-text="open ? 'Ẩn mô tả cách hoạt động' : 'Xem mô tả cách hoạt động của trang này'"></span>

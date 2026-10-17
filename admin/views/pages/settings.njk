@@ -47,8 +47,8 @@
               {% if (f.section or secs[0].key) == sec.key %}
               {% if f.type == 'list' %}
               {# ---- Danh sách lặp (slide, khối thông tin, bảng size...) ---- #}
-              <div class="md:col-span-2">
-                <div class="mb-2 flex items-center justify-between">
+              <div class="min-w-0 md:col-span-2">
+                <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
                   <label class="label !mb-0">{{ f.label }}</label>
                   {% if f.collapsible %}<span class="ml-auto mr-2 flex gap-1"><button type="button" class="btn btn-ghost btn-sm" @click="toggleItems('{{ f.name }}', true)">Mở tất cả</button><button type="button" class="btn btn-ghost btn-sm" @click="toggleItems('{{ f.name }}', false)">Thu gọn</button></span>{% endif %}
                   {% if not f.fixed %}<button type="button" class="btn btn-secondary btn-sm" @click="addItem('{{ f.name }}', {{ f.fields | blankItem | attrjson }})">{{ icon('plus', 'w-3.5 h-3.5') }} Thêm</button>{% endif %}

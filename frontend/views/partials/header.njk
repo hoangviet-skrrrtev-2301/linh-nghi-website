@@ -94,10 +94,11 @@
       </div>
       <nav class="flex-1 overflow-y-auto px-3 py-4" aria-label="Menu di động">
         {% for item in nav %}
+        {% set mActive = (item.url == '/' and currentPath == '/') or (item.url != '/' and currentPath.startsWith(item.url)) %}
         {% if item.children.length %}
-        <div x-data="{ sub: false }">
+        <div x-data="{ sub: {{ 'true' if mActive else 'false' }} }">
           <div class="flex items-center rounded-md hover:bg-ink/5">
-            <a href="{{ item.url }}" class="flex-1 px-3 py-3 text-[15px] {{ 'text-primary font-medium' if currentPath == item.url else '' }}">{{ item.label }}</a>
+            <a href="{{ item.url }}" class="flex-1 px-3 py-3 text-[15px] {{ 'text-primary font-medium' if mActive else '' }}" {{ 'aria-current=page' if mActive }}>{{ item.label }}</a>
             <button type="button" class="px-3 py-3 text-muted" @click="sub = !sub" :aria-expanded="sub" aria-label="Mở danh sách {{ item.label }}">{{ icon('chevron-down', 'w-4 h-4 transition') }}</button>
           </div>
           <ul x-cloak x-show="sub" x-collapse class="ml-3 border-l border-line pl-2">
@@ -105,7 +106,7 @@
           </ul>
         </div>
         {% else %}
-        <a href="{{ item.url }}" class="flex items-center justify-between rounded-md px-3 py-3 text-[15px] hover:bg-ink/5 {{ 'text-primary font-medium' if currentPath == item.url else '' }}">
+        <a href="{{ item.url }}" class="flex items-center justify-between rounded-md px-3 py-3 text-[15px] hover:bg-ink/5 {{ 'text-primary font-medium' if mActive else '' }}" {{ 'aria-current=page' if mActive }}>
           {{ item.label }} {{ icon('chevron-right', 'w-4 h-4 text-muted') }}
         </a>
         {% endif %}

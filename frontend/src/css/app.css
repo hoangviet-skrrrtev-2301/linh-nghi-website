@@ -142,10 +142,12 @@
   .product-card .media img { @apply h-full w-full object-cover transition duration-700 ease-out; }
   .product-card:hover .media img { transform: scale(1.06); }
   .product-card .media .hover-img { transition: opacity .5s ease, transform .7s ease-out; }
-  /* Nút Xem nhanh luôn hiện (nền màu chủ đạo + viền trắng + đổ bóng) để nổi trên mọi ảnh; di chuột thì nổi lên và sáng hơn */
-  .product-card .quick { @apply absolute bottom-3 left-1/2 z-10 inline-flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full bg-primary px-4 py-2 text-[13px] font-semibold text-on-primary shadow-lg shadow-black/30 ring-2 ring-white/80 transition duration-300; }
-  .product-card .quick:hover, .product-card .quick:focus-visible { @apply -translate-y-0.5 shadow-xl brightness-110; }
-  .product-card:hover .quick { @apply bg-accent text-on-accent; }
+  /* Nút Xem nhanh luôn hiện nhưng hơi trong (nền màu chủ đạo ~70% + làm mờ nền) để không đè lên sản phẩm; di chuột thì đặc hơn */
+  .product-card .quick { @apply absolute bottom-3 left-1/2 z-10 inline-flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full bg-primary/70 px-4 py-2 text-[13px] font-semibold text-on-primary shadow-md shadow-black/20 ring-1 ring-white/50 backdrop-blur-sm transition duration-300; }
+  /* Điện thoại: nút nhỏ gọn hơn để không che sản phẩm trong thẻ hẹp 2 cột */
+  @media (max-width: 639px) { .product-card .quick { @apply bottom-2 gap-1 px-3 py-1.5 text-[12px]; } .product-card .quick svg { @apply h-3.5 w-3.5; } }
+  .product-card .quick:hover, .product-card .quick:focus-visible { @apply -translate-y-0.5 bg-primary shadow-lg; }
+  .product-card:hover .quick { @apply bg-primary/85; }
 
   /* Khung viền thẻ sản phẩm (Admin › Giao diện › Khung viền thẻ sản phẩm) */
   .frame-thin .product-card, .frame-inset .product-card {
