@@ -390,6 +390,39 @@ export const SETTINGS_SCHEMA = [
     ],
   },
   {
+    key: 'sitemap',
+    label: 'Sitemap & robots.txt',
+    description: 'Quản lý những gì Google được thu thập. Xem kết quả tại /robots.txt và /sitemap.xml của website. Sau khi có tên miền, gửi địa chỉ sitemap.xml vào Google Search Console. Việc bật/tắt cho Google lập chỉ mục toàn website nằm ở nhóm "SEO & mã theo dõi".',
+    fields: [
+      { name: 'sitemap_enabled', label: 'Bật sitemap.xml', type: 'toggle', default: true },
+      { name: 'sitemap_pages', label: 'Đưa các trang chính vào sitemap', type: 'toggle', default: true, help: 'Trang chủ, Sản phẩm, Về shop, Liên hệ, Gallery, Chọn size, Thiết kế riêng, Blog (trang nào đang tắt tính năng sẽ tự bỏ)' },
+      { name: 'sitemap_categories', label: 'Đưa trang lọc theo loại ngọc vào sitemap', type: 'toggle', default: true },
+      { name: 'sitemap_products', label: 'Đưa sản phẩm đang hiển thị vào sitemap', type: 'toggle', default: true, help: 'Sản phẩm bản nháp không bao giờ được đưa vào' },
+      { name: 'sitemap_posts', label: 'Đưa bài blog đã đăng vào sitemap', type: 'toggle', default: true },
+      { name: 'sitemap_images', label: 'Kèm ảnh đại diện sản phẩm / bài viết', type: 'toggle', default: true, help: 'Giúp ảnh ngọc dễ xuất hiện trên Google Hình ảnh' },
+      { name: 'sitemap_exclude', label: 'Bỏ các đường dẫn khỏi sitemap', type: 'textarea', help: 'Mỗi dòng một đường dẫn, ví dụ /san-pham/vong-cu hoặc /blog/* (dấu * ở cuối: bỏ tất cả đường dẫn bắt đầu như vậy)' },
+      {
+        name: 'sitemap_extra', label: 'Thêm đường dẫn vào sitemap', type: 'list',
+        help: 'Chỉ nhận đường dẫn của chính website này, ví dụ /chinh-sach-doi-tra',
+        fields: [
+          { name: 'url', label: 'Đường dẫn', type: 'text' },
+          {
+            name: 'priority', label: 'Mức ưu tiên', type: 'select', default: '0.5',
+            options: ['1.0', '0.9', '0.8', '0.7', '0.6', '0.5', '0.4', '0.3', '0.2', '0.1'].map((v) => ({ value: v, label: v })),
+          },
+          {
+            name: 'changefreq', label: 'Tần suất đổi', type: 'select', default: 'monthly',
+            options: [{ value: 'daily', label: 'Hằng ngày' }, { value: 'weekly', label: 'Hằng tuần' }, { value: 'monthly', label: 'Hằng tháng' }, { value: 'yearly', label: 'Hằng năm' }],
+          },
+        ],
+        default: [],
+      },
+      { name: 'robots_disallow', label: 'Không cho Google thu thập các đường dẫn (robots.txt)', type: 'textarea', default: '/gio-hang\n/tra-cuu-don\n/api/', help: 'Mỗi dòng một đường dẫn bắt đầu bằng /. Trang quản trị đã được ẩn riêng và không bao giờ bị liệt kê ở đây. Lưu ý: chặn thu thập không đảm bảo trang biến mất khỏi Google.' },
+      { name: 'robots_block_ai', label: 'Chặn các bot AI thu thập nội dung (GPTBot, ClaudeBot, CCBot...)', type: 'toggle', default: false, help: 'Không ảnh hưởng đến Google Search' },
+      { name: 'robots_extra', label: 'Quy tắc robots.txt nâng cao (tùy chọn)', type: 'textarea', help: 'Dán nguyên văn theo cú pháp robots.txt (User-agent, Allow, Disallow, Crawl-delay, Sitemap). Dòng sai cú pháp sẽ bị bỏ qua.' },
+    ],
+  },
+  {
     key: 'mail',
     label: 'Email (SMTP)',
     ownerOnly: true,

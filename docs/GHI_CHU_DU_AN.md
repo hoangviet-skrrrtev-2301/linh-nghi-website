@@ -95,6 +95,7 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 | Logic sản phẩm, bộ lọc, sắp xếp | `backend/services/catalog.js` |
 | Đơn hàng, khách hàng, kiểm tra dữ liệu form | `backend/services/inquiries.js` |
 | Nội dung email | `backend/services/mailer.js` |
+| robots.txt, sitemap.xml | `backend/lib/robots-sitemap.js` (cài đặt nhóm `sitemap` trong `settings-schema.js`) |
 | Thẻ meta SEO, JSON-LD | `backend/lib/seo.js`, `frontend/views/layouts/base.njk` |
 | Trang admin | `admin/views/pages/*.njk` + component tương ứng trong `admin/public/js/pages.js` |
 | API admin | `backend/routes/admin-api/index.js` |

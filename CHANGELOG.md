@@ -4,6 +4,7 @@ Ghi lại các thay đổi đáng chú ý, mới nhất ở trên cùng.
 
 ## Chưa phát hành
 
+- robots.txt và sitemap.xml quản lý được trong Admin › Cài đặt › Sitemap & robots.txt: chọn loại trang đưa vào sitemap (trang chính, trang lọc loại ngọc, sản phẩm, bài blog), bỏ từng đường dẫn hoặc cả nhóm (`/blog/*`), thêm đường dẫn riêng, kèm ảnh đại diện sản phẩm/bài viết (image sitemap), chặn đường dẫn trong robots.txt, chặn bot AI, quy tắc robots.txt nâng cao (lọc dòng sai cú pháp). Đường dẫn trang quản trị không bao giờ xuất hiện trong robots.txt. Logic nằm ở `backend/lib/robots-sitemap.js`
 - Thư viện ảnh theo thư mục: tạo / đổi tên / xóa thư mục (xóa thì ảnh về "Chung"), tải ảnh vào thư mục đang chọn hoặc kéo thả vào thư mục, duyệt theo thư mục, chọn nhiều ảnh để chuyển thư mục, đổi thư mục từng ảnh. Hộp chọn ảnh (khi gắn ảnh cho sản phẩm, blog...) cũng duyệt và tải lên theo thư mục
 - Chân trang: ô ảnh "Đã thông báo Bộ Công Thương" kèm link (Admin › Thông tin shop)
 - Trang Chọn size: video hướng dẫn nhận link TikTok (dạng đầy đủ /@tên/video/số) hoặc YouTube; TikTok hiển thị khung dọc
