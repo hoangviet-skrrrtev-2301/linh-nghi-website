@@ -7,6 +7,8 @@ import QRCode from 'qrcode';
 import { config } from '../../config/index.js';
 import { db } from '../../lib/db.js';
 import { requireOwner } from '../../middleware/auth.js';
+import { apiPermission, can, SETTINGS_PERMISSION, PERMISSION_GROUPS } from '../../config/permissions.js';
+import * as roles from '../../services/roles.js';
 import { HttpError, toInt } from '../../lib/utils.js';
 import { verifyPassword, verifyTotp, generateTotpSecret, totpUri } from '../../lib/security.js';
 import * as media from '../../services/media.js';
@@ -23,6 +25,9 @@ import { SETTINGS_SCHEMA, SCHEMA_BY_KEY } from '../../config/settings-schema.js'
 import { verifyConnection, sendMail, mailReady } from '../../services/mailer.js';
 
 const router = Router();
+
+// Phân quyền theo vai trò (backend/config/permissions.js): chặn trước khi vào từng đường dẫn
+router.use((req, res, next) => (apiPermission(req.user, req.method, req.path) ? next() : next(new HttpError(403, 'Bạn chưa được cấp quyền thực hiện thao tác này'))));
 const { audit } = users;
 const id = (req) => {
   const n = toInt(req.params.id);
@@ -132,23 +137,23 @@ router.get('/products', h((req) => catalog.searchProducts(
 // ---------------- Chuyển hướng 301 & nhật ký 404 (chỉ Chủ shop được sửa) ----------------
 router.get('/redirects', h((req) => redirects.listRedirects({ q: req.query.q, auto: req.query.auto, page: toInt(req.query.page, 1), perPage: Math.min(100, Math.max(1, toInt(req.query.per_page, 30))) })));
 router.get('/redirects/not-found', h(() => ({ items: redirects.listNotFound({ limit: 50 }) })));
-router.delete('/redirects/not-found', requireOwner, h((req) => { redirects.clearNotFound(req.query.path ? String(req.query.path) : ''); audit(req, 'delete', 'not_found_log', req.query.path || 'all'); return { ok: true }; }));
-router.post('/redirects/bulk', requireOwner, h((req) => {
+router.delete('/redirects/not-found', h((req) => { redirects.clearNotFound(req.query.path ? String(req.query.path) : ''); audit(req, 'delete', 'not_found_log', req.query.path || 'all'); return { ok: true }; }));
+router.post('/redirects/bulk', h((req) => {
   const r = redirects.bulkRedirects(String(req.body?.text || ''), { status: toInt(req.body?.status, 301) });
   audit(req, 'import', 'redirects', '', `${r.created} mới, ${r.updated} cập nhật, ${r.errors.length} lỗi`);
   return r;
 }));
-router.post('/redirects', requireOwner, h((req) => {
+router.post('/redirects', h((req) => {
   const r = redirects.saveRedirect(null, req.body || {});
   audit(req, 'create', 'redirect', r.id, `${r.from_path} → ${r.to_url || '410'}`);
   return r;
 }));
-router.put('/redirects/:id', requireOwner, h((req) => {
+router.put('/redirects/:id', h((req) => {
   const r = redirects.saveRedirect(id(req), req.body || {});
   audit(req, 'update', 'redirect', r.id, `${r.from_path} → ${r.to_url || '410'}`);
   return r;
 }));
-router.delete('/redirects/:id', requireOwner, h((req) => { redirects.deleteRedirect(id(req)); audit(req, 'delete', 'redirect', req.params.id); return { ok: true }; }));
+router.delete('/redirects/:id', h((req) => { redirects.deleteRedirect(id(req)); audit(req, 'delete', 'redirect', req.params.id); return { ok: true }; }));
 
 // Loại sản phẩm (nhóm hàng): Vòng tay ngọc, Pháp phục...
 router.get('/product-types', h(() => ({ items: catalog.listProductTypes() })));
@@ -238,6 +243,23 @@ router.delete('/gallery/:id', h((req) => {
 // ---------------- Blog ----------------
 router.get('/posts', h((req) => content.listPosts({ includeDrafts: true, q: req.query.q, status: req.query.status, categoryId: req.query.category, page: req.query.page, perPage: Math.min(100, Math.max(1, toInt(req.query.per_page, 20))) })));
 // Chuyên mục blog
+// Tác giả blog (khung giới thiệu cuối bài + schema); quyền "Blog và tác giả"
+router.get('/authors', h(() => ({ items: content.listAuthors() })));
+router.post('/authors', h((req) => {
+  const aid = content.saveAuthor(null, req.body || {});
+  audit(req, 'create', 'author', aid, req.body?.name);
+  return { items: content.listAuthors(), id: aid };
+}));
+router.put('/authors/:id', h((req) => {
+  content.saveAuthor(id(req), req.body || {});
+  audit(req, 'update', 'author', req.params.id, req.body?.name);
+  return { items: content.listAuthors() };
+}));
+router.delete('/authors/:id', h((req) => {
+  content.deleteAuthor(id(req));
+  audit(req, 'delete', 'author', req.params.id);
+  return { items: content.listAuthors() };
+}));
 router.get('/post-categories', h(() => ({ items: content.listPostCategories() })));
 router.post('/post-categories', h((req) => {
   const cid = content.savePostCategory(null, req.body);
@@ -309,14 +331,14 @@ router.post('/inquiries/:id/resend', h(async (req) => {
   await inquiries.resendNotification(id(req));
   return inquiries.getInquiry(id(req));
 }));
-router.delete('/inquiries/:id', requireOwner, h((req) => {
+router.delete('/inquiries/:id', h((req) => {
   inquiries.deleteInquiry(id(req));
   audit(req, 'delete', 'inquiry', req.params.id);
   return { ok: true };
 }));
 
 // ---------------- Khách hàng ----------------
-router.get('/customers/export.csv', requireOwner, (req, res) => {
+router.get('/customers/export.csv', (req, res) => {
   audit(req, 'export', 'customers');
   res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="khach-hang-${new Date().toISOString().slice(0, 10)}.csv"` });
   res.send(inquiries.customersCsv({ q: req.query.q, months: req.query.months, by: req.query.by, source: req.query.source }));
@@ -353,21 +375,22 @@ router.put('/customers/:id', h((req) => {
   audit(req, 'update', 'customer', req.params.id);
   return c;
 }));
-router.delete('/customers/:id', requireOwner, h((req) => {
+router.delete('/customers/:id', h((req) => {
   inquiries.deleteCustomer(id(req));
   audit(req, 'delete', 'customer', req.params.id);
   return { ok: true };
 }));
 
 // ---------------- Cài đặt ----------------
+const groupAllowed = (req, key) => can(req.user, SETTINGS_PERMISSION[key] || 'owner-only');
 const canEdit = (req, key) => {
   const g = SCHEMA_BY_KEY[key];
   if (!g) throw new HttpError(404, 'Nhóm cấu hình không tồn tại');
-  if (g.ownerOnly && req.user.role !== 'owner') throw new HttpError(403, 'Chỉ Chủ shop được sửa mục này');
+  if (!groupAllowed(req, key)) throw new HttpError(403, 'Bạn chưa được cấp quyền sửa mục cài đặt này');
   return g;
 };
 
-router.get('/settings', h((req) => SETTINGS_SCHEMA.filter((g) => !g.ownerOnly || req.user.role === 'owner')));
+router.get('/settings', h((req) => SETTINGS_SCHEMA.filter((g) => groupAllowed(req, g.key))));
 router.get('/settings/:key', h((req) => {
   const group = canEdit(req, req.params.key);
   const values = settings.getForAdmin(req.params.key);
@@ -386,7 +409,7 @@ router.put('/settings/:key', h((req) => {
   audit(req, 'update', 'settings', req.params.key);
   return { values };
 }));
-router.post('/settings/mail/test', requireOwner, h(async (req) => {
+router.post('/settings/mail/test', h(async (req) => {
   await verifyConnection();
   const m = settings.getRaw('mail');
   const to = (m.notify_to || m.user).split(',')[0].trim();
@@ -396,7 +419,7 @@ router.post('/settings/mail/test', requireOwner, h(async (req) => {
 }));
 
 // Tải bản sao lưu database (chỉ Chủ shop)
-router.get('/backup', requireOwner, h(async (req, res) => {
+router.get('/backup', h(async (req, res) => {
   fs.mkdirSync(config.paths.backups, { recursive: true });
   const file = path.join(config.paths.backups, `download-${Date.now()}.sqlite`);
   await db.backup(file);
@@ -444,6 +467,23 @@ router.post('/account/2fa/disable', h(async (req) => {
 }));
 
 // ---------------- Quản lý tài khoản (Chủ shop) ----------------
+// Vai trò và phân quyền (chỉ Chủ shop)
+router.get('/roles', requireOwner, h(() => ({ items: roles.listRoles(), groups: PERMISSION_GROUPS })));
+router.post('/roles', requireOwner, h((req) => {
+  const rid = roles.saveRole(null, req.body || {});
+  audit(req, 'create', 'role', rid, req.body?.name);
+  return { items: roles.listRoles(), id: rid };
+}));
+router.put('/roles/:id', requireOwner, h((req) => {
+  roles.saveRole(id(req), req.body || {});
+  audit(req, 'update', 'role', req.params.id, req.body?.name);
+  return { items: roles.listRoles() };
+}));
+router.delete('/roles/:id', requireOwner, h((req) => {
+  roles.deleteRole(id(req));
+  audit(req, 'delete', 'role', req.params.id);
+  return { items: roles.listRoles() };
+}));
 router.get('/users', requireOwner, h(() => users.listUsers()));
 router.post('/users', requireOwner, h(async (req) => {
   const uid = await users.createUser(req.body);
@@ -466,6 +506,6 @@ router.delete('/users/:id', requireOwner, h((req) => {
   return { ok: true };
 }));
 
-router.get('/audit', requireOwner, h((req) => users.listAudit({ page: toInt(req.query.page, 1) })));
+router.get('/audit', h((req) => users.listAudit({ page: toInt(req.query.page, 1) })));
 
 export default router;

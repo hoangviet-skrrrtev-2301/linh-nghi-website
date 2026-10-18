@@ -23,7 +23,6 @@
   <script type="application/json" id="admin-meta">{{ meta | jsonScript }}</script>
   <script type="application/json" id="admin-user">{{ currentUser | jsonScript }}</script>
   <link rel="stylesheet" href="/vendor/quill/quill.snow.css">
-  <script defer src="/vendor/quill/quill.js"></script>
   <script defer src="/admin-assets/js/core.js?v={{ assetVersion }}"></script>
   <script defer src="/admin-assets/js/pages.js?v={{ assetVersion }}"></script>
   {% block scripts %}{% endblock %}
@@ -46,29 +45,36 @@
     {% set p = currentPath %}
     {% macro link(href, label, ic, active) %}{% from "partials/icons.njk" import icon %}<a href="{{ href }}" class="nav-link {{ 'active' if active }}">{{ icon(ic, 'w-[18px] h-[18px]') }} {{ label }}</a>{% endmacro %}
     <nav class="flex-1 overflow-y-auto px-3 py-4">
-      {{ link(A, 'Tổng quan', 'home', p == '/') }}
-      <p class="nav-section">Bán hàng</p>
+      {# Mục menu chỉ hiện khi tài khoản có quyền tương ứng (backend/config/permissions.js) #}
+      {% if can('orders') %}{{ link(A, 'Tổng quan', 'home', p == '/') }}{% endif %}
+      {% if can('orders') or can('customers') %}<p class="nav-section">Bán hàng</p>{% endif %}
+      {% if can('orders') %}
       {{ link(A + '/inquiries?type=order', 'Đơn hàng', 'bag', p.startsWith('/inquiries') and query.type == 'order') }}
       {{ link(A + '/inquiries?type=custom', 'Yêu cầu custom', 'sparkle', p.startsWith('/inquiries') and query.type == 'custom') }}
       {{ link(A + '/inquiries?type=contact', 'Liên hệ', 'mail', p.startsWith('/inquiries') and query.type == 'contact') }}
-      {{ link(A + '/customers', 'Khách hàng', 'users', p.startsWith('/customers')) }}
-      <p class="nav-section">Sản phẩm</p>
-      {{ link(A + '/products', 'Sản phẩm', 'box', p.startsWith('/products')) }}
-      {{ link(A + '/terms', 'Danh mục & bộ lọc', 'tag', p.startsWith('/terms')) }}
-      <p class="nav-section">Nội dung</p>
-      {{ link(A + '/gallery', 'Gallery', 'image', p.startsWith('/gallery')) }}
-      {{ link(A + '/posts', 'Blog', 'doc', p.startsWith('/posts')) }}
-      {{ link(A + '/media', 'Thư viện ảnh', 'folder', p.startsWith('/media')) }}
-      <p class="nav-section">Hệ thống</p>
-      {{ link(A + '/settings/site', 'Cài đặt website', 'settings', p.startsWith('/settings')) }}
-      {% if currentUser.role == 'owner' %}
-      {{ link(A + '/redirects', 'Chuyển hướng & 404', 'external', p.startsWith('/redirects')) }}
-      {{ link(A + '/users', 'Tài khoản quản trị', 'shield', p.startsWith('/users')) }}
-      {{ link(A + '/audit', 'Nhật ký hoạt động', 'clock', p.startsWith('/audit')) }}
       {% endif %}
+      {% if can('customers') or can('orders') %}{{ link(A + '/customers', 'Khách hàng', 'users', p.startsWith('/customers')) }}{% endif %}
+      {% if can('products') or can('terms') %}<p class="nav-section">Sản phẩm</p>{% endif %}
+      {% if can('products') %}{{ link(A + '/products', 'Sản phẩm', 'box', p.startsWith('/products')) }}{% endif %}
+      {% if can('terms') %}{{ link(A + '/terms', 'Danh mục & bộ lọc', 'tag', p.startsWith('/terms')) }}{% endif %}
+      {% if can('gallery') or can('posts') or can('media') %}<p class="nav-section">Nội dung</p>{% endif %}
+      {% if can('gallery') %}{{ link(A + '/gallery', 'Gallery', 'image', p.startsWith('/gallery')) }}{% endif %}
+      {% if can('posts') %}
+      {{ link(A + '/posts', 'Blog', 'doc', p.startsWith('/posts')) }}
+      {{ link(A + '/authors', 'Tác giả blog', 'user', p.startsWith('/authors')) }}
+      {% endif %}
+      {% if can('products') or can('posts') or can('gallery') or can('media') or can('terms') %}{{ link(A + '/media', 'Thư viện ảnh', 'folder', p.startsWith('/media')) }}{% endif %}
+      {% if can('settings_site') or can('settings_pages') or can('settings_design') or can('settings_seo') or can('mail') or can('redirects') or can('audit') or currentUser.role == 'owner' %}<p class="nav-section">Hệ thống</p>{% endif %}
+      {% if can('settings_site') or can('settings_pages') or can('settings_design') or can('settings_seo') or can('mail') %}{{ link(A + '/settings', 'Cài đặt website', 'settings', p.startsWith('/settings')) }}{% endif %}
+      {% if can('redirects') %}{{ link(A + '/redirects', 'Chuyển hướng & 404', 'external', p.startsWith('/redirects')) }}{% endif %}
+      {% if currentUser.role == 'owner' %}
+      {{ link(A + '/users', 'Tài khoản quản trị', 'shield', p.startsWith('/users')) }}
+      {{ link(A + '/roles', 'Vai trò & phân quyền', 'shield', p.startsWith('/roles')) }}
+      {% endif %}
+      {% if can('audit') %}{{ link(A + '/audit', 'Nhật ký hoạt động', 'clock', p.startsWith('/audit')) }}{% endif %}
     </nav>
     <div class="border-t border-white/10 p-3">
-      <a href="/" target="_blank" class="nav-link">{{ icon('external', 'w-[18px] h-[18px]') }} Xem website</a>
+      <a href="/" target="_blank" rel="noopener" class="nav-link">{{ icon('external', 'w-[18px] h-[18px]') }} Xem website</a>
     </div>
   </aside>
 
@@ -85,7 +91,7 @@
         </button>
         <button class="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-slate-100" @click="open = !open" @click.outside="open = false">
           <span class="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700">{{ currentUser.name | first | upper }}</span>
-          <span class="hidden text-left sm:block"><span class="block text-sm font-medium leading-tight">{{ currentUser.name }}</span><span class="block text-[11px] text-slate-500">{{ meta.roles[currentUser.role] }}</span></span>
+          <span class="hidden text-left sm:block"><span class="block text-sm font-medium leading-tight">{{ currentUser.name }}</span><span class="block text-[11px] text-slate-500">{{ currentUser.role_label }}</span></span>
           {{ icon('chevron-down', 'w-4 h-4 text-slate-400') }}
         </button>
         <div x-cloak x-show="open" x-transition class="absolute right-4 top-14 w-52 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg md:right-8">

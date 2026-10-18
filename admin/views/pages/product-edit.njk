@@ -159,8 +159,8 @@
           <div class="flex flex-col gap-2">
             <button type="button" class="btn btn-primary" :disabled="saving" @click="save(true)" x-text="form.status === 'published' ? 'Lưu thay đổi' : 'Lưu & hiển thị'"></button>
             <button type="button" class="btn btn-secondary" :disabled="saving" @click="save(false)" x-text="form.status === 'published' ? 'Chuyển về nháp' : 'Lưu nháp'"></button>
-            <a x-show="id && form.status === 'published' && (!type || type.active)" :href="publicPath" target="_blank" class="btn btn-ghost">{{ icon('eye', 'w-4 h-4') }} Xem trên website</a>
-            <a x-show="id && !(form.status === 'published' && (!type || type.active))" x-cloak :href="'{{ A }}/preview/san-pham/' + id" target="_blank" class="btn btn-ghost">{{ icon('eye', 'w-4 h-4') }} Xem thử như khách</a>
+            <a x-show="id && form.status === 'published' && (!type || type.active)" :href="publicPath" target="_blank" rel="noopener" class="btn btn-ghost">{{ icon('eye', 'w-4 h-4') }} Xem trên website</a>
+            <a x-show="id && !(form.status === 'published' && (!type || type.active))" x-cloak :href="'{{ A }}/preview/san-pham/' + id" target="_blank" rel="noopener" class="btn btn-ghost">{{ icon('eye', 'w-4 h-4') }} Xem thử như khách</a>
           </div>
         </div>
         <div class="card card-body space-y-4">

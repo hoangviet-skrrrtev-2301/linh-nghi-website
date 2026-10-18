@@ -2,6 +2,10 @@
 
 Đăng nhập tại `https://tenmien.vn/<đường-dẫn-admin>` (đường dẫn được tạo lúc cài đặt).
 
+## Phân quyền tùy chỉnh
+
+Ngoài **Chủ shop** (toàn quyền), mỗi nhân viên được gán một **vai trò** quyết định họ làm được gì. Vào **Vai trò & phân quyền** (chỉ Chủ shop) để tạo vai trò mới (VD "Biên tập viên chỉ viết blog", "Quản lý bán hàng") và tick các quyền: đơn hàng, khách hàng, sản phẩm, danh mục, blog và tác giả, gallery, thư viện ảnh, từng mục cài đặt (thông tin chung, nội dung trang, giao diện, SEO), chuyển hướng, email, nhật ký, sao lưu, xóa / xuất dữ liệu khách. Rồi gán vai trò cho từng người ở **Tài khoản quản trị**. Đổi quyền có hiệu lực ngay, menu tự ẩn mục không có quyền. Quản lý tài khoản và vai trò luôn chỉ Chủ shop làm. Bảng dưới là quyền của vai trò "Nhân viên" có sẵn:
+
 ## Hai loại tài khoản
 
 | Quyền | Chủ shop | Nhân viên |
@@ -115,6 +119,11 @@ Bấm **Thêm ảnh** để chọn nhiều ảnh cùng lúc. Với mỗi ảnh c
 - Ảnh **không gắn sản phẩm**: khách bấm vào sẽ phóng to ảnh.
 
 ## 7. Blog
+
+**Tác giả:** vào **Tác giả blog** (menu Nội dung) để thêm người viết: tên, chức danh, giới thiệu, ảnh đại diện, liên kết (Facebook, website...). Chọn tác giả ở cột phải khi viết bài; thông tin hiện ở đầu bài, khung "Về tác giả" cuối bài và trong dữ liệu schema cho Google. Bài chưa chọn tác giả ghi là của shop. Không có trang tác giả riêng.
+
+**Liên kết trong bài:** chọn chữ, bấm nút liên kết (Ctrl+K), dán địa chỉ; tick **Mở trong tab mới** nếu muốn khách đọc tiếp bài này ở tab cũ (nên dùng cho liên kết ra website khác). Mặc định liên kết mở cùng tab. Mọi liên kết ra ngoài đều tự gắn rel="noopener" để an toàn.
+
 
 Viết bài với trình soạn thảo (tiêu đề, in đậm, danh sách, chèn ảnh từ thư viện, chèn link). Có thể **hẹn giờ đăng** bằng cách chọn ngày đăng trong tương lai. Bật/tắt toàn bộ trang Blog tại Cài đặt › Bật/tắt tính năng.
 

@@ -118,6 +118,13 @@ KHÁCH TRÊN WEBSITE                       SHOP TỰ NHẬP (admin)
 - Đổi slug / loại / chuyên mục trong `catalog.js` và `content.js` phải gọi `addAutoRedirect` (đã làm sẵn trong các hàm lưu). Thêm kiểu trang mới có đường dẫn đổi được thì làm tương tự.
 - Thứ tự middleware trong `app.js`: file tĩnh → `applyRedirects` → `canonicalUrl` → route.
 
+## Phân quyền, tác giả, truy cập
+
+- **Phân quyền** (`backend/config/permissions.js`): quyền khai báo ở `PERMISSION_GROUPS` (hiện trong trang Vai trò). Vai trò lưu ở bảng `roles` (`permissions` là JSON danh sách mã quyền), `users.role = 'owner' | 'staff'`, nhân viên có `role_id` (không có thì vai trò 1 "Nhân viên" có sẵn). `getUser` trả thêm `permissions` và `role_label`; Chủ shop có mọi quyền. `apiPermission` (middleware đầu `routes/admin-api/index.js`) và `pagePermission` (`routes/admin.js`) chặn theo `API_RULES` / `PAGE_RULES`; template dùng `can('quyền')`. GET dùng nhóm quyền `read` (VD sản phẩm cần đọc danh mục), ghi dùng `write`. Đường dẫn chưa khai báo: chỉ Chủ shop. Quyền cài đặt theo nhóm: `SETTINGS_PERMISSION`.
+- **Tác giả**: bảng `authors`, `posts.writer_id`; `content.hydratePosts` gắn `post.writer` (chỉ tác giả đang hiển thị) và `post.author` (tên). Schema ở `articleJsonLd`. Không có trang tác giả riêng.
+- **Liên kết trong bài**: `SmartLink` (core.js) lưu `{ href, newTab }`; `cleanHtml` (sanitize.js) quyết định `target` / `rel` khi lưu.
+- **Truy cập**: nút chỉ có biểu tượng cần `aria-label`; `core.js` có bộ tự gắn nhãn dự phòng cho phần tử Alpine sinh muộn (`label.label` → ô nhập kế tiếp, title / placeholder → tên) nhưng nên ghi nhãn ngay trong template.
+
 ## SEO kỹ thuật: index, canonical, schema, tốc độ
 
 - **Chính sách địa chỉ có tham số** (`hasRealParams`, `buildSeo` trong `backend/lib/seo.js`): trang sạch → `index, follow` + canonical tự trỏ; chỉ có tham số theo dõi (utm_*, fbclid, gclid...) → như trang sạch, canonical về địa chỉ không tham số; có bất kỳ tham số nào khác (lọc, sắp xếp, tìm kiếm, `?trang=N`, album...) → `noindex, follow` và **không in canonical** (`seo.canonical = null`, template bỏ thẻ). `seo.url` luôn là địa chỉ sạch (dùng cho og:url). Tham số mới thêm sau này tự rơi vào nhóm thứ ba, không cần sửa gì.

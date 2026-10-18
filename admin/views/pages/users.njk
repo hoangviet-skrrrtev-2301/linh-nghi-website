@@ -7,7 +7,7 @@
 <div x-data="usersPage">
   {% set helpKey = 'users' %}{% include "partials/page-help.njk" %}
   <div class="mb-5 flex flex-wrap items-center gap-3">
-    <p class="flex-1 text-sm text-slate-600"><b>Chủ shop</b>: toàn quyền (cấu hình email, tài khoản, xóa dữ liệu, sao lưu). <b>Nhân viên</b>: quản lý sản phẩm, nội dung, xem và xử lý đơn hàng.</p>
+    <p class="flex-1 text-sm text-slate-600"><b>Chủ shop</b>: toàn quyền, duy nhất làm được việc quản lý tài khoản và vai trò. Các vai trò còn lại giới hạn theo từng quyền; tạo và chỉnh vai trò tại <a href="{{ A }}/roles" class="text-brand-600 underline">Vai trò &amp; phân quyền</a>.</p>
     <button class="btn btn-primary" @click="open()">{{ icon('plus', 'w-4 h-4') }} Thêm tài khoản</button>
   </div>
   <div class="card overflow-hidden">
@@ -17,14 +17,14 @@
         <template x-for="u in users" :key="u.id">
           <tr>
             <td class="font-medium" x-text="u.name"></td><td x-text="u.email"></td>
-            <td x-text="$meta.roles[u.role]"></td>
+            <td x-text="u.role_label"></td>
             <td><span class="badge" :class="u.totp_enabled ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'" x-text="u.totp_enabled ? 'Đã bật' : 'Chưa bật'"></span></td>
             <td><span class="badge" :class="u.active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'" x-text="u.active ? 'Hoạt động' : 'Đã khóa'"></span></td>
             <td class="text-slate-500" x-text="$fmt.date(u.last_login_at) || '—'"></td>
             <td class="whitespace-nowrap text-right">
-              <button class="btn btn-ghost btn-sm" @click="open(u)">{{ icon('edit', 'w-4 h-4') }}</button>
+              <button class="btn btn-ghost btn-sm" @click="open(u)" :aria-label="'Sửa tài khoản ' + u.name" title="Sửa">{{ icon('edit', 'w-4 h-4') }}</button>
               <button class="btn btn-ghost btn-sm" x-show="u.totp_enabled" @click="reset2fa(u)" title="Tắt 2FA">{{ icon('shield', 'w-4 h-4') }}</button>
-              <button class="btn btn-ghost btn-sm text-red-600" x-show="u.id !== Admin.ME.id" @click="remove(u)">{{ icon('trash', 'w-4 h-4') }}</button>
+              <button class="btn btn-ghost btn-sm text-red-600" x-show="u.id !== Admin.ME.id" @click="remove(u)" :aria-label="'Xóa tài khoản ' + u.name" title="Xóa">{{ icon('trash', 'w-4 h-4') }}</button>
             </td>
           </tr>
         </template>
@@ -40,7 +40,7 @@
         <div class="card-body space-y-4">
           <div><label class="label">Email đăng nhập</label><input type="email" class="input" x-model="editing.email" :disabled="!!editing.id" required></div>
           <div><label class="label">Tên hiển thị</label><input class="input" x-model="editing.name" required></div>
-          <div><label class="label">Vai trò</label><select class="input" x-model="editing.role">{% for k, v in meta.roles %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
+          <div><label class="label">Vai trò</label><select class="input" x-model="editing.roleChoice"><option value="owner">Chủ shop (toàn quyền)</option><template x-for="r in roles" :key="r.id"><option :value="String(r.id)" x-text="r.name" :selected="String(r.id) === editing.roleChoice"></option></template></select><p class="help">Chọn vai trò giới hạn quyền cho nhân viên. Xem chi tiết từng vai trò ở trang Vai trò &amp; phân quyền.</p></div>
           <div><label class="label" x-text="editing.id ? 'Đặt mật khẩu mới (để trống nếu không đổi)' : 'Mật khẩu'"></label><input type="password" class="input" autocomplete="new-password" x-model="editing.password" :required="!editing.id"><p class="help">Tối thiểu 10 ký tự, có cả chữ và số.</p></div>
           <template x-if="editing.id">{{ switch('editing.active', 'Cho phép đăng nhập', 'Tắt để khóa tài khoản ngay lập tức') }}</template>
         </div>

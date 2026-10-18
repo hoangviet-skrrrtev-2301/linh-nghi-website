@@ -29,8 +29,8 @@
             <td x-text="t.sort_order"></td>
             <td><span class="badge" :class="t.active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'" x-text="t.active ? 'Hiện' : 'Ẩn'"></span></td>
             <td class="whitespace-nowrap text-right">
-              <button class="btn btn-ghost btn-sm" @click="open(t)">{{ icon('edit', 'w-4 h-4') }}</button>
-              <button class="btn btn-ghost btn-sm text-red-600" @click="remove(t)">{{ icon('trash', 'w-4 h-4') }}</button>
+              <button class="btn btn-ghost btn-sm" @click="open(t)" :aria-label="'Sửa ' + t.name" title="Sửa">{{ icon('edit', 'w-4 h-4') }}</button>
+              <button class="btn btn-ghost btn-sm text-red-600" @click="remove(t)" :aria-label="'Xóa ' + t.name" title="Xóa">{{ icon('trash', 'w-4 h-4') }}</button>
             </td>
           </tr>
         </template>

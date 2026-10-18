@@ -232,6 +232,20 @@
     ];
     const WIDTHS = [['25%', '25%'], ['50%', '50%'], ['75%', '75%'], ['100%', '100%'], ['', 'Gốc']];
     let blotsReady = false;
+    // Quill (khoảng 200KB) chỉ tải khi trang có ô soạn thảo, không tải ở các trang khác của admin
+    let quillLoading = null;
+    const loadQuill = () => {
+      if (window.Quill) return Promise.resolve();
+      quillLoading = quillLoading || new Promise((resolve, reject) => {
+        const el = document.createElement('script');
+        el.src = '/vendor/quill/quill.js';
+        el.onload = resolve;
+        el.onerror = () => reject(new Error('Không tải được trình soạn thảo'));
+        document.head.append(el);
+      });
+      return quillLoading;
+    };
+    let BaseLink = null;
 
     Alpine.data('richText', () => {
       // Quill và phần tử ảnh đang chọn giữ ngoài dữ liệu của Alpine: nếu để trong đối tượng phản ứng (Proxy) thì Quill bị lỗi
@@ -247,7 +261,8 @@
         img: null, // { alt, width, align } của ảnh đang chọn
         widths: WIDTHS,
         stats: { words: 0, noAlt: 0 },
-        init() {
+        async init() {
+          try { await loadQuill(); } catch (e) { Alpine.store('toast').show(e.message, 'error'); return; }
           const Quill = window.Quill;
           if (!Quill) return;
           if (!blotsReady) {
@@ -258,6 +273,27 @@
             Divider.blotName = 'divider';
             Divider.tagName = 'hr';
             Quill.register(Divider);
+            // Liên kết có tùy chọn "Mở trong tab mới": giá trị liên kết là { href, newTab } thay vì chỉ địa chỉ.
+            // Quill mặc định ép mọi liên kết mở tab mới; ở đây mặc định mở cùng tab, chỉ mở tab mới khi người soạn tick.
+            BaseLink = Quill.import('formats/link');
+            class SmartLink extends BaseLink {
+              static create(value) {
+                const node = super.create(typeof value === 'string' ? value : value.href);
+                SmartLink.applyTarget(node, !!(value && value.newTab));
+                return node;
+              }
+              static applyTarget(node, newTab) {
+                if (newTab) { node.setAttribute('target', '_blank'); node.setAttribute('rel', 'noopener noreferrer'); } else { node.removeAttribute('target'); node.setAttribute('rel', 'noopener'); }
+              }
+              static formats(node) { return { href: node.getAttribute('href'), newTab: node.getAttribute('target') === '_blank' }; }
+              format(name, value) {
+                if (name !== this.statics.blotName || !value) return super.format(name, value);
+                this.domNode.setAttribute('href', this.constructor.sanitize(typeof value === 'string' ? value : value.href));
+                SmartLink.applyTarget(this.domNode, !!(value && value.newTab));
+                return undefined;
+              }
+            }
+            Quill.register(SmartLink, true);
           }
           quill = new Quill(this.$refs.editor, {
             theme: 'snow',
@@ -312,9 +348,37 @@
               },
             },
           });
+          // Hộp liên kết: thêm ô tick "Mở trong tab mới"
+          const tip = quill.theme && quill.theme.tooltip;
+          if (tip) {
+            const label = document.createElement('label');
+            label.className = 'ql-newtab';
+            label.innerHTML = '<input type="checkbox"> Mở trong tab mới';
+            const box = label.querySelector('input');
+            tip.textbox.after(label);
+            const show = tip.show.bind(tip);
+            tip.show = () => {
+              show();
+              // Liên kết đang sửa: lấy lại lựa chọn cũ; liên kết mới: mặc định mở cùng tab
+              const node = tip.linkRange ? quill.scroll.descendant(BaseLink, tip.linkRange.index)[0]?.domNode : null;
+              box.checked = !!node && node.getAttribute('target') === '_blank';
+            };
+            const save = tip.save.bind(tip);
+            tip.save = () => {
+              if (tip.root.getAttribute('data-mode') !== 'link') return save();
+              const newTab = box.checked;
+              const f1 = quill.formatText; const f2 = quill.format;
+              quill.formatText = (r, n, v, s) => f1.call(quill, r, n, n === 'link' && v ? { href: v, newTab } : v, s);
+              quill.format = (n, v, s) => f2.call(quill, n, n === 'link' && v ? { href: v, newTab } : v, s);
+              try { return save(); } finally { delete quill.formatText; delete quill.format; }
+            };
+          }
           const tb = quill.getModule('toolbar').container;
           for (const [name, svg] of Object.entries(ICONS)) { const b = tb.querySelector('.ql-' + name); if (b) b.innerHTML = svg; }
           for (const [sel, title] of TITLES) tb.querySelectorAll(sel).forEach((el) => { el.title = title; });
+          // Ô chọn của Quill (tiêu đề, cỡ chữ, màu, căn lề) là <span role=button>: đặt tên truy cập theo tiêu đề đã gắn
+          tb.querySelectorAll('.ql-picker').forEach((pk) => { const lb = pk.querySelector('.ql-picker-label'); if (lb && pk.title) lb.setAttribute('aria-label', pk.title); });
+          if (tip) tip.root.querySelector('a.ql-preview')?.setAttribute('aria-label', 'Mở liên kết để kiểm tra');
 
           // Thanh công cụ + các thanh phụ (bảng, ảnh) nằm chung một khối dính ở đầu khi cuộn bài dài
           const sticky = document.createElement('div');
@@ -480,4 +544,44 @@
       .observe(document.body, { childList: true, subtree: true });
   }
   if (document.readyState !== 'loading') init(); else document.addEventListener('DOMContentLoaded', init);
+})();
+
+// ---- Truy cập (a11y): gắn nhãn cho ô nhập / nút mà Alpine sinh ra sau khi trang đã tải ----
+// 1) <label class="label"> chưa có "for" thì gắn với ô nhập đứng ngay sau nó
+// 2) ô nhập chưa có nhãn thì lấy placeholder / title làm tên; nút chỉ có biểu tượng thì lấy title làm tên
+(function () {
+  var seq = 0;
+  var queued = false;
+  var CTL = 'input:not([type=hidden]):not([type=checkbox]):not([type=radio]), select, textarea, button[role=switch]';
+  function nextControl(label) {
+    var el = label.nextElementSibling;
+    while (el) {
+      if (el.matches && el.matches('label.label')) return null;
+      var ctl = el.matches && el.matches(CTL) ? el : el.querySelector && el.querySelector(CTL);
+      if (ctl) return ctl;
+      el = el.nextElementSibling;
+    }
+    return null;
+  }
+  function enhance() {
+    queued = false;
+    Array.prototype.forEach.call(document.querySelectorAll('label.label:not([for])'), function (l) {
+      if (l.querySelector('input, select, textarea')) return;
+      var ctl = nextControl(l);
+      if (!ctl || (ctl.labels && ctl.labels.length)) return;
+      if (!ctl.id) ctl.id = 'ctl-' + (++seq);
+      l.setAttribute('for', ctl.id);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(CTL + ', button, a[href]'), function (el) {
+      if (el.getAttribute('aria-label') || el.getAttribute('aria-labelledby') || (el.labels && el.labels.length)) return;
+      var iconOnly = /^(BUTTON|A)$/.test(el.tagName) && !(el.textContent || '').trim() && !el.querySelector('img[alt]:not([alt=""])');
+      var name = iconOnly || !/^(BUTTON|A)$/.test(el.tagName) ? el.getAttribute('title') || el.getAttribute('placeholder') : '';
+      if (name) el.setAttribute('aria-label', name);
+    });
+  }
+  function start() {
+    enhance();
+    new MutationObserver(function () { if (!queued) { queued = true; requestAnimationFrame(enhance); } }).observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.readyState !== 'loading') start(); else document.addEventListener('DOMContentLoaded', start);
 })();

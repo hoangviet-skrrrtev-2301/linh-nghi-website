@@ -19,7 +19,7 @@
           <dl class="card-body grid gap-x-8 gap-y-4 sm:grid-cols-2">
             <div><dt class="text-xs text-slate-500">Khách hàng</dt><dd class="font-medium"><a :href="'{{ A }}/customers/' + d.customer_id" class="hover:text-brand-600" x-text="d.name"></a></dd></div>
             <div><dt class="text-xs text-slate-500">Điện thoại</dt><dd class="font-medium"><a :href="'tel:' + d.phone" class="text-brand-600" x-text="d.phone"></a>
-              <a :href="'https://zalo.me/' + d.phone" target="_blank" class="ml-2 text-xs text-blue-600 hover:underline">Zalo</a></dd></div>
+              <a :href="'https://zalo.me/' + d.phone" target="_blank" rel="noopener" class="ml-2 text-xs text-blue-600 hover:underline">Zalo</a></dd></div>
             <div x-show="d.email"><dt class="text-xs text-slate-500">Email</dt><dd><a :href="'mailto:' + d.email" class="text-brand-600" x-text="d.email"></a></dd></div>
             <div x-show="d.contact_via"><dt class="text-xs text-slate-500">Muốn liên hệ qua</dt><dd x-text="d.contact_via"></dd></div>
             <div x-show="d.address" class="sm:col-span-2"><dt class="text-xs text-slate-500">Địa chỉ</dt><dd x-text="d.address"></dd></div>
@@ -136,7 +136,7 @@
           </template>
           <p class="break-all text-xs text-slate-400" x-show="d.ip" x-text="'IP: ' + d.ip"></p>
         </div>
-        {% if currentUser.role == 'owner' %}<button class="btn btn-ghost w-full text-red-600" @click="remove()">{{ icon('trash', 'w-4 h-4') }} Xóa yêu cầu</button>{% endif %}
+        {% if can('sensitive') %}<button class="btn btn-ghost w-full text-red-600" @click="remove()">{{ icon('trash', 'w-4 h-4') }} Xóa yêu cầu</button>{% endif %}
       </aside>
     </div>
   </template>

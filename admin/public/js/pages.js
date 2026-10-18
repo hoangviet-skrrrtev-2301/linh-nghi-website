@@ -449,7 +449,7 @@ document.addEventListener('alpine:init', () => {
   };
 
   Alpine.data('postEdit', (id) => ({
-    id: id ? Number(id) : null, form: null, saving: false, slugTouched: !!id, categories: [], newCat: '', addingCat: false,
+    id: id ? Number(id) : null, form: null, saving: false, slugTouched: !!id, categories: [], authors: [], newCat: '', addingCat: false,
     // Địa chỉ bài viết theo phân cấp: /blog/<chuyên mục>/<bài viết> (chưa có chuyên mục thì /blog/<bài viết>)
     get blogPrefix() { const c = this.categories.find((x) => x.id === Number(this.form?.category_id)); return c && c.active ? `/blog/${c.slug}/` : '/blog/'; },
     async addCategory() {
@@ -463,11 +463,13 @@ document.addEventListener('alpine:init', () => {
       this.addingCat = false;
     },
     async init() {
-      const empty = { title: '', slug: '', excerpt: '', content: '', cover_media_id: null, cover: null, category_id: '', status: 'draft', published_at: '', seo_title: '', seo_description: '' };
+      const empty = { title: '', slug: '', excerpt: '', content: '', cover_media_id: null, cover: null, category_id: '', writer_id: '', status: 'draft', published_at: '', seo_title: '', seo_description: '' };
       try {
         this.categories = (await api('/post-categories')).items;
+        this.authors = (await api('/authors')).items;
         this.form = this.id ? { ...empty, ...(await api(`/posts/${this.id}`)) } : empty;
         this.form.category_id = this.form.category_id || '';
+        this.form.writer_id = this.form.writer_id || '';
         this.form.published_at = toLocalInput(this.form.published_at);
       } catch (e) { toast().error(e); }
     },
@@ -733,6 +735,60 @@ document.addEventListener('alpine:init', () => {
     },
   }));
 
+  // ---------------- Tác giả blog ----------------
+  Alpine.data('authorsPage', () => ({
+    items: [], form: null, saving: false, loading: true,
+    async init() { await this.load(); },
+    async load() { try { this.items = (await api('/authors')).items; } catch (e) { toast().error(e); } this.loading = false; },
+    open(a) {
+      this.form = a
+        ? { ...a, active: !!a.active, linksText: (a.links || []).join('\n') }
+        : { name: '', job_title: '', bio: '', avatar_media_id: null, avatar: null, linksText: '', active: true, sort_order: this.items.length };
+    },
+    async save() {
+      this.saving = true;
+      try {
+        const f = this.form;
+        const body = { ...f, links: f.linksText };
+        const r = await api(f.id ? `/authors/${f.id}` : '/authors', { method: f.id ? 'PUT' : 'POST', body });
+        this.items = r.items; this.form = null;
+        toast().show('Đã lưu tác giả');
+      } catch (e) { toast().error(e); }
+      this.saving = false;
+    },
+    async remove(a) {
+      if (!(await confirmBox({ title: `Xóa tác giả “${a.name}”?`, message: a.post_count ? `${a.post_count} bài viết của tác giả này sẽ chuyển sang ghi là của shop, bài viết không bị xóa.` : 'Tác giả chưa có bài viết nào.' }))) return;
+      try { this.items = (await api(`/authors/${a.id}`, { method: 'DELETE' })).items; toast().show('Đã xóa tác giả'); } catch (e) { toast().error(e); }
+    },
+  }));
+
+  // ---------------- Vai trò & phân quyền ----------------
+  Alpine.data('rolesPage', () => ({
+    roles: [], groups: [], form: null, saving: false, loading: true,
+    async init() { await this.load(); },
+    async load() { try { const r = await api('/roles'); this.roles = r.items; this.groups = r.groups; } catch (e) { toast().error(e); } this.loading = false; },
+    open(r) { this.form = r ? { ...r, permissions: [...r.permissions] } : { name: '', description: '', permissions: [] }; },
+    has(k) { return this.form.permissions.includes(k); },
+    toggle(k) { const i = this.form.permissions.indexOf(k); if (i >= 0) this.form.permissions.splice(i, 1); else this.form.permissions.push(k); },
+    groupAll(g) { return g.items.every((i) => this.has(i.key)); },
+    toggleGroup(g) { const on = !this.groupAll(g); g.items.forEach((i) => { const h = this.has(i.key); if (on && !h) this.form.permissions.push(i.key); if (!on && h) this.toggle(i.key); }); },
+    summary(r) { const n = r.permissions.length; return n ? n + ' quyền' : 'Chưa có quyền nào'; },
+    async save() {
+      this.saving = true;
+      try {
+        const f = this.form;
+        const r = await api(f.id ? `/roles/${f.id}` : '/roles', { method: f.id ? 'PUT' : 'POST', body: f });
+        this.roles = r.items; this.form = null;
+        toast().show('Đã lưu vai trò');
+      } catch (e) { toast().error(e); }
+      this.saving = false;
+    },
+    async remove(r) {
+      if (!(await confirmBox({ title: `Xóa vai trò “${r.name}”?`, message: r.user_count ? `Còn ${r.user_count} tài khoản đang dùng, hệ thống sẽ không cho xóa.` : 'Vai trò chưa có tài khoản nào.' }))) return;
+      try { this.roles = (await api(`/roles/${r.id}`, { method: 'DELETE' })).items; toast().show('Đã xóa vai trò'); } catch (e) { toast().error(e); }
+    },
+  }));
+
   // ---------------- Chuyển hướng & 404 ----------------
   Alpine.data('redirectsPage', () => ({
     ...listPage('/redirects', { auto: '' }),
@@ -992,14 +1048,23 @@ document.addEventListener('alpine:init', () => {
 
   // ---------------- Tài khoản quản trị ----------------
   Alpine.data('usersPage', () => ({
-    users: [], editing: null, saving: false,
+    users: [], roles: [], editing: null, saving: false,
     async init() { this.load(); },
-    async load() { try { this.users = await api('/users'); } catch (e) { toast().error(e); } },
-    open(u) { this.editing = u ? { ...u, active: !!u.active, password: '' } : { email: '', name: '', role: 'staff', password: '', active: true }; },
+    async load() {
+      try { [this.users, this.roles] = await Promise.all([api('/users'), api('/roles').then((r) => r.items)]); } catch (e) { toast().error(e); }
+    },
+    // Ô chọn vai trò gộp: "owner" (Chủ shop) hoặc mã vai trò tùy chỉnh / có sẵn
+    open(u) {
+      this.editing = u
+        ? { ...u, active: !!u.active, password: '', roleChoice: u.role === 'owner' ? 'owner' : String(u.role_id || 1) }
+        : { email: '', name: '', role: 'staff', password: '', active: true, roleChoice: '1' };
+    },
     async save() {
       this.saving = true;
       try {
-        const e = this.editing;
+        const e = { ...this.editing };
+        e.role = e.roleChoice === 'owner' ? 'owner' : 'staff';
+        e.role_id = e.role === 'staff' ? Number(e.roleChoice) : null;
         await api(e.id ? `/users/${e.id}` : '/users', { method: e.id ? 'PUT' : 'POST', body: e });
         toast().show('Đã lưu tài khoản');
         this.editing = null;

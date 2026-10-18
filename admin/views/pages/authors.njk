@@ -1,0 +1,54 @@
+{% extends "layout.njk" %}
+{% from "partials/icons.njk" import icon %}
+{% from "partials/fields.njk" import imageField %}
+{% block title %}Tác giả blog{% endblock %}
+{% block heading %}<a href="{{ A }}/posts" class="mr-2 hidden text-slate-400 hover:text-slate-600 sm:inline">Blog /</a>Tác giả{% endblock %}
+{% block content %}
+<div x-data="authorsPage">
+  {% set helpKey = 'authors' %}{% include "partials/page-help.njk" %}
+  <div class="mb-5 flex flex-wrap items-center gap-3">
+    <p class="flex-1 text-sm text-slate-600">Người viết bài cho blog. Chọn tác giả trong trang viết bài; thông tin hiện ở đầu bài, khung giới thiệu cuối bài và trong dữ liệu schema cho Google.</p>
+    <button type="button" class="btn btn-primary" @click="open(null)">{{ icon('plus', 'w-4 h-4') }} Thêm tác giả</button>
+  </div>
+
+  <div x-cloak x-show="form" class="mb-6">
+    <form @submit.prevent="save()" class="card">
+      <template x-if="form">
+        <div>
+          <div class="card-head"><h2 class="card-title" x-text="form.id ? 'Sửa tác giả' : 'Thêm tác giả'"></h2></div>
+          <div class="grid gap-5 p-5 md:grid-cols-[200px_1fr]">
+            <div><label class="label">Ảnh đại diện</label>{{ imageField('form.avatar_media_id', 'form.avatar') }}<p class="help">Ảnh vuông, rõ mặt, từ 200px.</p></div>
+            <div class="grid gap-4 md:grid-cols-2">
+              <div><label class="label" for="au-name">Tên tác giả *</label><input id="au-name" class="input" x-model="form.name" required maxlength="100"></div>
+              <div><label class="label" for="au-job">Chức danh / chuyên môn</label><input id="au-job" class="input" x-model="form.job_title" maxlength="120" placeholder="VD: Chuyên gia giám định ngọc, Chủ shop"></div>
+              <div class="md:col-span-2"><label class="label" for="au-bio">Giới thiệu ngắn</label><textarea id="au-bio" class="input" rows="3" x-model="form.bio" maxlength="1200" placeholder="Kinh nghiệm, lĩnh vực am hiểu... giúp bài viết đáng tin hơn với người đọc và Google"></textarea></div>
+              <div class="md:col-span-2"><label class="label" for="au-links">Liên kết của tác giả (mỗi dòng một địa chỉ)</label><textarea id="au-links" class="input font-mono text-sm" rows="3" x-model="form.linksText" placeholder="https://www.facebook.com/ten-tac-gia"></textarea><p class="help">Facebook, website, LinkedIn... Chỉ nhận địa chỉ bắt đầu bằng http:// hoặc https://, tối đa 8. Dùng làm dữ liệu sameAs trong schema.</p></div>
+              <div><label class="label" for="au-sort">Thứ tự hiển thị</label><input id="au-sort" type="number" class="input" x-model.number="form.sort_order"></div>
+              <label class="flex items-center gap-2 self-end pb-2 text-sm"><input type="checkbox" class="h-4 w-4 accent-brand-600" x-model="form.active"> Hiển thị trên website</label>
+            </div>
+          </div>
+          <div class="flex justify-end gap-2 border-t border-slate-100 px-5 py-3"><button type="button" class="btn btn-secondary" @click="form = null">Hủy</button><button class="btn btn-primary" :disabled="saving">Lưu tác giả</button></div>
+        </div>
+      </template>
+    </form>
+  </div>
+
+  <div class="card overflow-hidden">
+    <ul class="divide-y divide-slate-100">
+      <template x-for="a in items" :key="a.id">
+        <li class="flex flex-wrap items-center gap-4 px-5 py-4">
+          <img :src="a.avatar?.sm" alt="" class="h-12 w-12 rounded-full bg-slate-100 object-cover" x-show="a.avatar">
+          <span class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400" x-show="!a.avatar">{{ icon('user', 'w-5 h-5') }}</span>
+          <div class="min-w-0 flex-1">
+            <p class="font-medium" :class="!a.active && 'text-slate-400'" x-text="a.name"></p>
+            <p class="truncate text-xs text-slate-500" x-text="(a.job_title ? a.job_title + ' · ' : '') + a.post_count + ' bài viết' + (a.active ? '' : ' · đang ẩn')"></p>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" @click="open(a)" :aria-label="'Sửa tác giả ' + a.name" title="Sửa">{{ icon('edit', 'w-4 h-4') }}</button>
+          <button type="button" class="btn btn-ghost btn-sm text-red-600" @click="remove(a)" :aria-label="'Xóa tác giả ' + a.name" title="Xóa">{{ icon('trash', 'w-4 h-4') }}</button>
+        </li>
+      </template>
+      <li x-show="!loading && !items.length" class="px-5 py-10 text-center text-sm text-slate-500">Chưa có tác giả. Bài viết chưa chọn tác giả sẽ ghi là của shop.</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

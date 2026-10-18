@@ -4,31 +4,44 @@ import { hashPassword, passwordProblem, encrypt, decrypt } from '../lib/security
 import { destroyUserSessions } from '../lib/session-store.js';
 import { HttpError, toInt } from '../lib/utils.js';
 import { cleanText } from '../lib/sanitize.js';
+import { ALL_PERMISSIONS, DEFAULT_ROLE_ID } from '../config/permissions.js';
+import { getRole } from './roles.js';
 
 export const ROLES = { owner: 'Chủ shop', staff: 'Nhân viên' };
 
-const PUBLIC_COLS = 'id, email, name, role, totp_enabled, active, last_login_at, created_at';
+const PUBLIC_COLS = 'id, email, name, role, role_id, totp_enabled, active, last_login_at, created_at';
 
-export const listUsers = () => db.prepare(`SELECT ${PUBLIC_COLS} FROM users ORDER BY role, name`).all();
-export const getUser = (id) => db.prepare(`SELECT ${PUBLIC_COLS} FROM users WHERE id = ?`).get(id);
+// Thêm quyền thực tế: Chủ shop toàn quyền; nhân viên theo vai trò được gán (chưa gán thì vai trò Nhân viên có sẵn)
+function withPermissions(u) {
+  if (!u) return u;
+  if (u.role === 'owner') return { ...u, role_label: ROLES.owner, permissions: [...ALL_PERMISSIONS] };
+  const role = getRole(u.role_id || DEFAULT_ROLE_ID) || getRole(DEFAULT_ROLE_ID);
+  return { ...u, role_label: role?.name || ROLES.staff, permissions: role?.permissions || [] };
+}
+
+export const listUsers = () => db.prepare(`SELECT ${PUBLIC_COLS} FROM users ORDER BY role, name`).all().map(withPermissions);
+export const getUser = (id) => withPermissions(db.prepare(`SELECT ${PUBLIC_COLS} FROM users WHERE id = ?`).get(id));
 export const getUserWithSecrets = (id) => db.prepare('SELECT * FROM users WHERE id = ?').get(id);
 export const findByEmail = (email) => db.prepare('SELECT * FROM users WHERE email = ?').get(String(email || '').trim());
 
-export async function createUser({ email, name, password, role = 'staff' }) {
+const validRoleId = (id) => (id && getRole(id) ? Number(id) : null);
+
+export async function createUser({ email, name, password, role = 'staff', role_id }) {
   const e = cleanText(email, 160).toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) throw new HttpError(400, 'Email không hợp lệ');
   if (findByEmail(e)) throw new HttpError(400, 'Email đã được sử dụng');
   const problem = passwordProblem(password);
   if (problem) throw new HttpError(400, problem);
-  return db.prepare('INSERT INTO users (email, name, password_hash, role) VALUES (?, ?, ?, ?)')
-    .run(e, cleanText(name, 120) || e, await hashPassword(password), ROLES[role] ? role : 'staff').lastInsertRowid;
+  const r = ROLES[role] ? role : 'staff';
+  return db.prepare('INSERT INTO users (email, name, password_hash, role, role_id) VALUES (?, ?, ?, ?, ?)')
+    .run(e, cleanText(name, 120) || e, await hashPassword(password), r, r === 'staff' ? validRoleId(role_id) : null).lastInsertRowid;
 }
 
 function ownerCount(excludeId) {
   return db.prepare(`SELECT COUNT(*) FROM users WHERE role = 'owner' AND active = 1 AND id != ?`).pluck().get(excludeId || 0);
 }
 
-export async function updateUser(id, { name, role, active, password }) {
+export async function updateUser(id, { name, role, role_id, active, password }) {
   const user = getUserWithSecrets(toInt(id));
   if (!user) throw new HttpError(404, 'Không tìm thấy tài khoản');
   const nextRole = ROLES[role] ? role : user.role;
@@ -36,8 +49,9 @@ export async function updateUser(id, { name, role, active, password }) {
   if (user.role === 'owner' && (nextRole !== 'owner' || !nextActive) && ownerCount(user.id) === 0) {
     throw new HttpError(400, 'Phải còn ít nhất một tài khoản Chủ shop đang hoạt động');
   }
-  db.prepare(`UPDATE users SET name = ?, role = ?, active = ?, updated_at = datetime('now') WHERE id = ?`)
-    .run(cleanText(name, 120) || user.name, nextRole, nextActive, user.id);
+  const nextRoleId = nextRole === 'staff' ? (role_id === undefined ? user.role_id : validRoleId(role_id)) : null;
+  db.prepare(`UPDATE users SET name = ?, role = ?, role_id = ?, active = ?, updated_at = datetime('now') WHERE id = ?`)
+    .run(cleanText(name, 120) || user.name, nextRole, nextRoleId, nextActive, user.id);
   if (password) await setPassword(user.id, password);
   if (!nextActive) destroyUserSessions(user.id);
   return getUser(user.id);

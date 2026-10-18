@@ -64,6 +64,8 @@
     .table-stack td.max-w-xs { max-width: none; }
   }
 
+  .ql-snow .ql-tooltip .ql-newtab { display: block; margin-top: 6px; font-size: 12px; white-space: nowrap; cursor: pointer; }
+  .ql-snow .ql-tooltip .ql-newtab input { margin-right: 6px; vertical-align: middle; }
   .badge { @apply inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium; }
   .nav-link { @apply flex items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] text-slate-300 transition hover:bg-white/5 hover:text-white; }
   .nav-link.active { @apply bg-white/10 font-medium text-white; }

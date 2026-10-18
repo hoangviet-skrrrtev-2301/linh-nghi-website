@@ -7,7 +7,7 @@
 {% from "partials/icons.njk" import icon %}
 {% if terms.length %}
 <div class="border-b border-line py-5" x-data="{ open: true }">
-  <button type="button" class="flex w-full items-center justify-between text-left text-sm font-semibold" @click="open = !open" :aria-expanded="open">
+  <button type="button" class="flex w-full items-center justify-between py-1.5 text-left text-sm font-semibold" @click="open = !open" :aria-expanded="open">
     {{ title }} <span :class="open && 'rotate-180'" class="transition">{{ icon('chevron-down', 'w-4 h-4') }}</span>
   </button>
   <div x-show="open" x-collapse class="flex flex-wrap gap-2 pt-4">

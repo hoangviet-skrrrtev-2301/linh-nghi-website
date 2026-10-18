@@ -4,7 +4,7 @@
 <div class="mb-5 {{ helpClass }}" x-data="{ open: true, key: '{{ helpKey }}',
     init() { this.open = innerWidth >= 768; /* điện thoại: mặc định thu gọn cho đỡ dài */ try { const v = localStorage.getItem('ln_admin_help_' + this.key); if (v) this.open = v !== 'hidden'; } catch (e) {} },
     toggle() { this.open = !this.open; try { localStorage.setItem('ln_admin_help_' + this.key, this.open ? 'shown' : 'hidden'); } catch (e) {} } }">
-  <button type="button" class="inline-flex items-center gap-1.5 text-sm text-brand-600 hover:underline" @click="toggle()" :aria-expanded="open">
+  <button type="button" class="inline-flex items-center gap-1.5 py-1.5 text-sm text-brand-600 hover:underline" @click="toggle()" :aria-expanded="open">
     {{ icon('alert', 'w-4 h-4') }} <span x-text="open ? 'Ẩn mô tả cách hoạt động' : 'Xem mô tả cách hoạt động của trang này'"></span>
   </button>
   <div x-cloak x-show="open" x-collapse>
@@ -133,12 +133,28 @@
       <ul class="list-disc space-y-1 pl-5">
         <li>Bấm <b>Lưu</b> để áp dụng ngay; bấm <b>Xem website</b> để kiểm tra. Mỗi nhóm lưu riêng.</li>
         <li>Nhóm dài được chia thành nhiều phần: bấm tên phần để mở / thu gọn (có nút Mở tất cả / Thu gọn tất cả, trạng thái được nhớ).</li>
-        <li>Một số nhóm chỉ Chủ shop sửa được (như Email). Chủ shop cũng tải được bản sao lưu ở cuối cột trái.</li>
+        <li>Các nhóm được gom thành mục lớn ở cột trái (Thông tin chung &amp; menu, Nội dung từng trang, Giao diện, Tối ưu SEO, Email &amp; hệ thống), mỗi mục có mô tả. Tài khoản nào chỉ thấy các mục mình được cấp quyền (Admin › Vai trò &amp; phân quyền). Người có quyền sao lưu tải được bản sao lưu ở cuối cột trái.</li>
+      </ul>
+      {% elif helpKey == 'authors' %}
+      <p><b>Tác giả blog</b>: người viết bài. Bài chưa chọn tác giả sẽ ghi là của shop.</p>
+      <ul class="list-disc space-y-1 pl-5">
+        <li>Mỗi tác giả có tên, chức danh, giới thiệu, ảnh đại diện và liên kết (Facebook, website...). Chọn tác giả ở cột phải khi viết bài.</li>
+        <li>Thông tin hiện ở đầu bài, khung "Về tác giả" cuối bài và trong dữ liệu schema (Person) để Google hiểu người viết.</li>
+        <li>Không có trang tác giả riêng. Tắt "Hiển thị trên website" để ẩn tác giả mà vẫn giữ hồ sơ; xóa tác giả thì bài chuyển về ghi là của shop, không mất bài.</li>
+        <li>Chọn "Luôn ghi là shop" ở Cài đặt › Schema nếu không muốn ghi tên người viết trong dữ liệu cho Google.</li>
+      </ul>
+      {% elif helpKey == 'roles' %}
+      <p><b>Vai trò &amp; phân quyền</b> (chỉ Chủ shop): quyết định mỗi nhân viên được làm gì trong trang quản trị.</p>
+      <ul class="list-disc space-y-1 pl-5">
+        <li>Mỗi vai trò là một bộ quyền chia theo nhóm: Bán hàng, Sản phẩm, Nội dung, từng mục Cài đặt website, Hệ thống. Tick quyền nào, nhân viên có vai trò đó làm được việc ấy; mục menu không có quyền sẽ tự ẩn.</li>
+        <li>Vai trò "Nhân viên" có sẵn giữ đúng quyền mặc định trước đây; chỉnh được nhưng không xóa được.</li>
+        <li>Gán vai trò cho từng người ở trang Tài khoản quản trị. Đổi quyền có hiệu lực ngay, không cần đăng nhập lại.</li>
+        <li>Xóa đơn / khách, xuất danh sách khách, cấu hình email, sao lưu và nhật ký là quyền nhạy cảm: chỉ giao cho người thật tin tưởng. Quản lý tài khoản và vai trò luôn chỉ Chủ shop làm.</li>
       </ul>
       {% elif helpKey == 'users' %}
       <p><b>Tài khoản quản trị</b> (chỉ Chủ shop): thêm tài khoản cho nhân viên và chọn vai trò.</p>
       <ul class="list-disc space-y-1 pl-5">
-        <li><b>Chủ shop</b> làm được mọi việc; <b>Nhân viên</b> không cấu hình email, không quản lý tài khoản, không xem nhật ký, không xóa đơn / khách.</li>
+        <li><b>Chủ shop</b> làm được mọi việc, kể cả quản lý tài khoản. Mỗi nhân viên được gán một <b>vai trò</b> quyết định họ làm được gì (tạo và chỉnh vai trò ở trang Vai trò &amp; phân quyền); mục menu không có quyền tự ẩn.</li>
         <li>Tắt “Cho phép đăng nhập” để <b>khóa ngay</b> một tài khoản (ví dụ khi nhân viên nghỉ việc).</li>
         <li>Nhân viên mất điện thoại đã cài 2FA: bấm biểu tượng khiên để tắt 2FA cho họ.</li>
       </ul>

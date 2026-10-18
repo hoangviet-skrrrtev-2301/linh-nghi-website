@@ -53,11 +53,11 @@
       <div class="grid grid-cols-3 gap-3 p-4 sm:grid-cols-4 xl:grid-cols-5">
         <template x-for="m in items" :key="m.id">
           <div class="group relative aspect-square">
-            <button type="button" @click="selected = m" class="h-full w-full overflow-hidden rounded-lg border-2 bg-slate-100" :class="selected?.id === m.id ? 'border-brand-600' : 'border-transparent hover:border-slate-300'">
+            <button type="button" @click="selected = m" :aria-label="'Xem chi tiết ảnh ' + (m.alt || m.id)" class="h-full w-full overflow-hidden rounded-lg border-2 bg-slate-100" :class="selected?.id === m.id ? 'border-brand-600' : 'border-transparent hover:border-slate-300'">
               <img :src="m.sm" :alt="m.alt" class="h-full w-full object-cover" loading="lazy">
             </button>
             <label class="absolute left-1.5 top-1.5 flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-white/90 shadow" :class="checked.includes(m.id) ? '' : 'opacity-0 group-hover:opacity-100'" @click.stop>
-              <input type="checkbox" class="h-4 w-4 accent-[#256a52]" :checked="checked.includes(m.id)" @change="toggleCheck(m.id)">
+              <input type="checkbox" class="h-4 w-4 accent-[#256a52]" :checked="checked.includes(m.id)" @change="toggleCheck(m.id)" :aria-label="'Chọn ảnh ' + (m.alt || m.id)">
             </label>
             <span x-show="!filters.folder" class="pointer-events-none absolute bottom-1.5 left-1.5 max-w-[85%] truncate rounded bg-black/55 px-1.5 py-0.5 text-[10px] text-white" x-text="label(m.folder)"></span>
           </div>
@@ -83,7 +83,7 @@
               <button class="btn btn-secondary btn-sm mt-2" @click="saveAlt()">Lưu mô tả</button></div>
             <div class="flex flex-wrap gap-2 border-t border-slate-100 pt-3">
               <button class="btn btn-secondary btn-sm" @click="copy(selected.lg)">{{ icon('copy', 'w-3.5 h-3.5') }} Sao chép link</button>
-              <a :href="selected.lg" target="_blank" class="btn btn-secondary btn-sm">{{ icon('eye', 'w-3.5 h-3.5') }} Xem</a>
+              <a :href="selected.lg" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">{{ icon('eye', 'w-3.5 h-3.5') }} Xem</a>
               <button class="btn btn-ghost btn-sm text-red-600" @click="remove(selected)">{{ icon('trash', 'w-3.5 h-3.5') }} Xóa</button>
             </div>
           </div>

@@ -175,7 +175,9 @@ export function articleJsonLd(post) {
     image: post.cover ? [abs(post.cover.lg)] : undefined,
     datePublished: post.published_at ? new Date(post.published_at.replace(' ', 'T') + 'Z').toISOString() : undefined,
     dateModified: new Date(post.updated_at.replace(' ', 'T') + 'Z').toISOString(),
-    author: (s.schema || {}).author_type === 'person' && post.author ? { '@type': 'Person', name: post.author } : { '@type': 'Organization', name: s.site.name, url: config.baseUrl },
+    author: (s.schema || {}).author_type !== 'organization' && post.writer
+      ? { '@type': 'Person', name: post.writer.name, jobTitle: post.writer.job_title || undefined, description: post.writer.bio || undefined, image: post.writer.avatar ? abs(post.writer.avatar.md) : undefined, sameAs: post.writer.links?.length ? post.writer.links : undefined }
+      : { '@type': 'Organization', name: s.site.name, url: config.baseUrl },
     publisher: { '@type': 'Organization', name: s.site.name, logo: s.site.logo ? { '@type': 'ImageObject', url: abs(s.site.logo.md) } : undefined },
     mainEntityOfPage: `${config.baseUrl}${post.url}`,
   };

@@ -28,9 +28,15 @@ const OPTIONS = {
   allowedSchemesByTag: { img: ['http', 'https'] },
   allowProtocolRelative: false,
   transformTags: {
+    // Liên kết mở tab mới chỉ khi người soạn chọn (target="_blank"); mọi liên kết ra ngoài hoặc mở tab mới luôn có noopener (chặn trang đích điều khiển trang gốc)
     a: (tagName, attribs) => {
       const external = /^https?:\/\//i.test(attribs.href || '');
-      return { tagName, attribs: external ? { ...attribs, target: '_blank', rel: 'noopener noreferrer nofollow' } : attribs };
+      const newTab = attribs.target === '_blank';
+      const { target, rel, ...rest } = attribs;
+      const relTokens = new Set(['noopener']);
+      if (newTab) relTokens.add('noreferrer');
+      if (external) relTokens.add('nofollow');
+      return { tagName, attribs: { ...rest, ...(newTab ? { target: '_blank' } : {}), rel: [...relTokens].join(' ') } };
     },
     img: (tagName, attribs) => ({ tagName, attribs: { ...attribs, loading: 'lazy' } }),
   },

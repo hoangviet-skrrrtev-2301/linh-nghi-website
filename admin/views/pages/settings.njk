@@ -4,11 +4,20 @@
 {% block title %}Cài đặt · {{ group.label }}{% endblock %}
 {% block heading %}Cài đặt website{% endblock %}
 {% block content %}
-<div class="grid grid-cols-1 gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
-  <nav class="flex gap-1 overflow-x-auto lg:flex-col">
-    {% for g in groups %}<a href="{{ A }}/settings/{{ g.key }}" class="tab {{ 'active' if g.key == group.key }}">{{ g.label }}</a>{% endfor %}
-    {% if currentUser.role == 'owner' %}
-    <a href="{{ A }}/api/backup" class="tab mt-4 border-t border-slate-200 pt-3 text-brand-700">{{ icon('download', 'inline w-4 h-4 mr-1') }} Tải bản sao lưu</a>
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-[250px_minmax(0,1fr)]">
+  {# Menu cài đặt gom theo mục lớn, mỗi mục có mô tả (SETTINGS_CATEGORIES trong settings-schema.js) #}
+  <nav class="space-y-5" aria-label="Các nhóm cài đặt">
+    {% for c in categories %}
+    <div>
+      <p class="px-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">{{ c.label }}</p>
+      <p class="mt-0.5 px-3 text-xs leading-snug text-slate-500">{{ c.description }}</p>
+      <div class="mt-2 flex flex-wrap gap-1 lg:flex-col lg:flex-nowrap">
+        {% for g in c.groups %}<a href="{{ A }}/settings/{{ g.key }}" class="tab {{ 'active' if g.key == group.key }}" {% if g.key == group.key %}aria-current="page"{% endif %}>{{ g.label }}</a>{% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+    {% if can('backup') %}
+    <a href="{{ A }}/api/backup" class="tab block border-t border-slate-200 pt-3 text-brand-700">{{ icon('download', 'inline w-4 h-4 mr-1') }} Tải bản sao lưu</a>
     {% endif %}
   </nav>
 
@@ -107,7 +116,7 @@
             {% if group.key == 'mail' %}
             <button type="button" class="btn btn-secondary" :disabled="testing" @click="testMail()">{{ icon('mail', 'w-4 h-4') }} <span x-text="testing ? 'Đang gửi...' : 'Lưu & gửi email thử'"></span></button>
             {% endif %}
-            <a href="/" target="_blank" class="btn btn-ghost ml-auto">{{ icon('eye', 'w-4 h-4') }} Xem website</a>
+            <a href="/" target="_blank" rel="noopener" class="btn btn-ghost ml-auto">{{ icon('eye', 'w-4 h-4') }} Xem website</a>
           </div>
         </div>
 

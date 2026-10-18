@@ -38,7 +38,7 @@
             <label for="f-size" class="label">Ni tay / số đo <span class="text-red-500">*</span></label>
             <input id="f-size" name="size" class="input" placeholder="Ví dụ: ni 56 hoặc chu vi bàn tay 18cm" required :class="errors.size && 'is-invalid'" @input="delete errors.size">
             <p class="field-error" x-show="errors.size" x-text="errors.size" x-cloak></p>
-            {% if features.size_guide %}<a href="/huong-dan-size" target="_blank" class="mt-1 inline-block text-xs text-accent hover:underline">Chưa biết ni? Xem cách đo</a>{% endif %}
+            {% if features.size_guide %}<a href="/huong-dan-size" target="_blank" rel="noopener" class="mt-1 inline-block py-1.5 text-xs text-accent hover:underline">Chưa biết ni? Xem cách đo</a>{% endif %}
           </div>
           <div>
             <label for="f-budget" class="label">Ngân sách dự kiến</label>

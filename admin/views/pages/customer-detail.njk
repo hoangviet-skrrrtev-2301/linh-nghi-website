@@ -18,7 +18,7 @@
         <div><label class="label">Nhãn</label><input class="input" x-model="c.tags" placeholder="VIP, khách sỉ... cách nhau bằng dấu phẩy"></div>
         <div><label class="label">Ghi chú</label><textarea class="input" rows="4" x-model="c.note"></textarea></div>
         <div class="flex gap-2"><button class="btn btn-primary" :disabled="saving">Lưu</button>
-          {% if currentUser.role == 'owner' %}<button type="button" class="btn btn-ghost ml-auto text-red-600" @click="remove()">Xóa khách</button>{% endif %}</div>
+          {% if can('sensitive') %}<button type="button" class="btn btn-ghost ml-auto text-red-600" @click="remove()">Xóa khách</button>{% endif %}</div>
       </form>
       <div class="card overflow-hidden self-start">
         <div class="card-head flex-wrap">

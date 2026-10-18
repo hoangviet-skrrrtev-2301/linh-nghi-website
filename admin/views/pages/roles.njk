@@ -1,0 +1,64 @@
+{% extends "layout.njk" %}
+{% from "partials/icons.njk" import icon %}
+{% block title %}Vai trò & phân quyền{% endblock %}
+{% block heading %}<a href="{{ A }}/users" class="mr-2 hidden text-slate-400 hover:text-slate-600 sm:inline">Tài khoản /</a>Vai trò &amp; phân quyền{% endblock %}
+{% block content %}
+<div x-data="rolesPage">
+  {% set helpKey = 'roles' %}{% include "partials/page-help.njk" %}
+  <div class="mb-5 flex flex-wrap items-center gap-3">
+    <p class="flex-1 text-sm text-slate-600">Mỗi vai trò là một bộ quyền. Gán vai trò cho nhân viên ở trang <a href="{{ A }}/users" class="text-brand-600 underline">Tài khoản quản trị</a>. Chủ shop luôn toàn quyền.</p>
+    <button type="button" class="btn btn-primary" @click="open(null)">{{ icon('plus', 'w-4 h-4') }} Thêm vai trò</button>
+  </div>
+
+  <div x-cloak x-show="form" class="mb-6">
+    <form @submit.prevent="save()" class="card">
+      <template x-if="form">
+        <div>
+          <div class="card-head"><h2 class="card-title" x-text="form.id ? 'Sửa vai trò' : 'Thêm vai trò'"></h2></div>
+          <div class="space-y-5 p-5">
+            <div class="grid gap-4 md:grid-cols-2">
+              <div><label class="label" for="ro-name">Tên vai trò *</label><input id="ro-name" class="input" x-model="form.name" required maxlength="60" placeholder="VD: Biên tập viên, Quản lý bán hàng"></div>
+              <div><label class="label" for="ro-desc">Mô tả</label><input id="ro-desc" class="input" x-model="form.description" maxlength="400" placeholder="Vai trò này dành cho ai, làm được gì"></div>
+            </div>
+            <template x-for="g in groups" :key="g.key">
+              <fieldset class="rounded-xl border border-slate-200">
+                <legend class="sr-only" x-text="g.label"></legend>
+                <div class="flex flex-wrap items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-4 py-3">
+                  <div class="min-w-0 flex-1"><p class="text-sm font-semibold" x-text="g.label"></p><p class="text-xs text-slate-500" x-text="g.description"></p></div>
+                  <button type="button" class="text-xs text-brand-600 hover:underline" @click="toggleGroup(g)" x-text="groupAll(g) ? 'Bỏ chọn cả nhóm' : 'Chọn cả nhóm'"></button>
+                </div>
+                <div class="divide-y divide-slate-100">
+                  <template x-for="it in g.items" :key="it.key">
+                    <label class="flex cursor-pointer items-start gap-3 px-4 py-3 hover:bg-slate-50">
+                      <input type="checkbox" class="mt-1 h-4 w-4 accent-brand-600" :checked="has(it.key)" @change="toggle(it.key)">
+                      <span><span class="block text-sm font-medium" x-text="it.label"></span><span class="block text-xs text-slate-500" x-text="it.help"></span></span>
+                    </label>
+                  </template>
+                </div>
+              </fieldset>
+            </template>
+            <p class="text-xs text-slate-500">Quản lý tài khoản và vai trò không giao được, chỉ Chủ shop làm. Tổng quan, tài khoản cá nhân và đổi mật khẩu / 2FA mọi người đều dùng được.</p>
+          </div>
+          <div class="flex justify-end gap-2 border-t border-slate-100 px-5 py-3"><button type="button" class="btn btn-secondary" @click="form = null">Hủy</button><button class="btn btn-primary" :disabled="saving">Lưu vai trò</button></div>
+        </div>
+      </template>
+    </form>
+  </div>
+
+  <div class="card overflow-hidden">
+    <ul class="divide-y divide-slate-100">
+      <template x-for="r in roles" :key="r.id">
+        <li class="flex flex-wrap items-center gap-4 px-5 py-4">
+          <div class="min-w-0 flex-1">
+            <p class="font-medium"><span x-text="r.name"></span> <span class="badge ml-1 bg-slate-100 text-slate-500" x-show="r.is_system">Có sẵn</span></p>
+            <p class="text-xs text-slate-500" x-text="r.description"></p>
+            <p class="mt-1 text-xs text-slate-500" x-text="summary(r) + ' · ' + r.user_count + ' tài khoản'"></p>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" @click="open(r)" :aria-label="'Sửa vai trò ' + r.name" title="Sửa">{{ icon('edit', 'w-4 h-4') }}</button>
+          <button type="button" class="btn btn-ghost btn-sm text-red-600" x-show="!r.is_system" @click="remove(r)" :aria-label="'Xóa vai trò ' + r.name" title="Xóa">{{ icon('trash', 'w-4 h-4') }}</button>
+        </li>
+      </template>
+    </ul>
+  </div>
+</div>
+{% endblock %}

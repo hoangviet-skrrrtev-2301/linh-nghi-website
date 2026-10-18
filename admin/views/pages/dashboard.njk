@@ -8,7 +8,7 @@
   <div x-cloak x-show="d && !d.mailConfigured" class="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
     {{ icon('alert', 'w-5 h-5') }}
     <span class="flex-1">Email thông báo đơn hàng chưa được bật. Đơn hàng vẫn được lưu trong hệ thống nhưng bạn sẽ không nhận email.</span>
-    {% if currentUser.role == 'owner' %}<a href="{{ A }}/settings/mail" class="btn btn-secondary btn-sm">Cấu hình email</a>{% endif %}
+    {% if can('mail') %}<a href="{{ A }}/settings/mail" class="btn btn-secondary btn-sm">Cấu hình email</a>{% endif %}
   </div>
 
   {# ---- Việc cần làm trước khi mở web chính thức (tự mất khi đã xong) ---- #}
@@ -22,7 +22,7 @@
         <li class="flex flex-wrap items-start gap-2">
           <span class="mt-0.5 inline-block h-2 w-2 shrink-0 rounded-full" :class="it.level === 'warn' ? 'bg-amber-500' : 'bg-sky-500'"></span>
           <span class="flex-1" x-text="it.text"></span>
-          <a :href="'{{ A }}/settings/' + it.group" class="text-brand-600 hover:underline">Mở cài đặt</a>
+          <a :href="'{{ A }}/settings/' + it.group" class="inline-block py-1 text-brand-600 hover:underline">Mở cài đặt</a>
         </li>
       </template>
     </ul>

@@ -12,7 +12,7 @@
     <div class="ml-auto flex flex-wrap gap-2">
       <button type="button" class="btn btn-secondary" @click="imp.open = !imp.open; if (imp.open) adding = false">{{ icon('plus', 'w-4 h-4') }} Nhập hàng loạt</button>
       <button type="button" class="btn btn-primary" @click="openNew(); imp.open = false">{{ icon('plus', 'w-4 h-4') }} Thêm khách</button>
-      {% if currentUser.role == 'owner' %}<a :href="exportUrl" class="btn btn-secondary">{{ icon('download', 'w-4 h-4') }} Xuất Excel (CSV)</a>{% endif %}
+      {% if can('sensitive') %}<a :href="exportUrl" class="btn btn-secondary">{{ icon('download', 'w-4 h-4') }} Xuất Excel (CSV)</a>{% endif %}
     </div>
   </div>
 
@@ -134,7 +134,7 @@
 
   {# ---- Form thêm khách ---- #}
   <form x-cloak x-show="adding" x-transition @submit.prevent="create(false)" class="card card-body mb-4 space-y-4">
-    <div class="flex items-center justify-between"><h3 class="card-title">Thêm khách hàng</h3><button type="button" class="btn btn-ghost btn-sm" @click="adding = false">{{ icon('close', 'w-4 h-4') }}</button></div>
+    <div class="flex items-center justify-between"><h3 class="card-title">Thêm khách hàng</h3><button type="button" class="btn btn-ghost btn-sm" @click="adding = false" aria-label="Đóng" title="Đóng">{{ icon('close', 'w-4 h-4') }}</button></div>
     <p class="help !mt-0">Dùng cho khách liên hệ qua Zalo, Facebook, đến cửa hàng... Số điện thoại là mã định danh: trùng số sẽ không tạo mới.</p>
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <div><label class="label">Họ tên *</label><input class="input" x-model="form.name" required :class="errors.name && 'border-red-400'"><p class="text-xs text-red-600" x-text="errors.name"></p></div>

@@ -3,7 +3,7 @@
 {% macro imageField(model, preview='null') %}
 {% from "partials/icons.njk" import icon %}
 <div x-data="mediaField({{ preview }})" x-modelable="value" x-model="{{ model }}" class="flex items-center gap-3">
-  <button type="button" @click="pick()" class="group relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 text-slate-400 transition hover:border-brand-500 hover:text-brand-600">
+  <button type="button" @click="pick()" aria-label="Chọn hoặc đổi ảnh" class="group relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 text-slate-400 transition hover:border-brand-500 hover:text-brand-600">
     <template x-if="preview"><img :src="preview.sm" alt="" class="h-full w-full object-cover"></template>
     <template x-if="!preview"><span class="flex flex-col items-center text-xs">{{ icon('image', 'w-6 h-6') }}<span class="mt-1">Chọn ảnh</span></span></template>
   </button>
@@ -100,7 +100,7 @@
   {% elif f.type == 'image' %}
     {{ imageField(model, mediaExpr) }}
   {% elif f.type == 'color' %}
-    <div class="flex items-center gap-2"><input type="color" class="h-10 w-14 cursor-pointer rounded-lg border border-slate-300 bg-white p-1" x-model="{{ model }}"><input class="input !w-32 font-mono" x-model="{{ model }}"></div>
+    <div class="flex items-center gap-2"><input type="color" class="h-10 w-14 cursor-pointer rounded-lg border border-slate-300 bg-white p-1" aria-label="{{ f.label }} (chọn màu)" x-model="{{ model }}"><input class="input !w-32 font-mono" aria-label="{{ f.label }} (mã màu)" x-model="{{ model }}"></div>
   {% elif f.type == 'select' %}
     <select class="input" x-model="{{ model }}">{% for o in f.options %}<option value="{{ o.value }}">{{ o.label }}</option>{% endfor %}</select>
   {% elif f.type == 'number' %}

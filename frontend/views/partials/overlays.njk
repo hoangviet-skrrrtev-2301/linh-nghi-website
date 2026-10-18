@@ -90,7 +90,7 @@
 {# ============ POPUP YÊU CẦU TƯ VẤN / ĐẶT NHANH 1 SẢN PHẨM ============ #}
 {% from "partials/form-fields.njk" import field, antiSpam %}
 <div x-data="quickInquiry" x-cloak x-show="$store.consult.open" class="fixed inset-0 z-[82] flex items-end justify-center sm:items-center sm:p-6"
-  role="dialog" aria-modal="true" @keydown.escape.window="$store.consult.open = false">
+  role="dialog" aria-modal="true" aria-labelledby="consult-title" @keydown.escape.window="$store.consult.open = false">
   <div x-show="$store.consult.open" x-transition.opacity class="modal-backdrop" @click="$store.consult.open = false"></div>
   <div x-show="$store.consult.open" x-trap.noscroll="$store.consult.open" x-transition class="modal-panel max-h-[94vh] max-w-lg overflow-y-auto rounded-b-none p-6 sm:rounded-lg md:p-8">
     <button class="icon-btn absolute right-3 top-3" @click="$store.consult.open = false" aria-label="Đóng">{{ icon('close') }}</button>
@@ -111,7 +111,7 @@
       </div>
     </template>
     <form x-show="!success" @submit.prevent="submit($el)" novalidate class="relative">
-      <h2 class="pr-8 text-2xl font-medium" x-text="$store.consult.mode === 'order' ? 'Đặt nhanh' : 'Yêu cầu tư vấn'"></h2>
+      <h2 id="consult-title" class="pr-8 text-2xl font-medium" x-text="$store.consult.mode === 'order' ? 'Đặt nhanh' : 'Yêu cầu tư vấn'"></h2>
       <div class="mt-4 flex items-center gap-3 rounded-md bg-ink/[.03] p-3" x-show="$store.consult.p">
         <img :src="$store.consult.p?.cover?.sm" alt="" class="h-14 w-14 rounded object-cover">
         <div class="min-w-0 text-sm">
@@ -139,11 +139,11 @@
 
 {# ============ POPUP NỘI DUNG (khối thông tin trang chủ...) ============ #}
 <div x-data x-cloak x-show="$store.info.open" class="fixed inset-0 z-[80] flex items-center justify-center p-4"
-  role="dialog" aria-modal="true" @keydown.escape.window="$store.info.open = false">
+  role="dialog" aria-modal="true" aria-labelledby="info-title" @keydown.escape.window="$store.info.open = false">
   <div x-show="$store.info.open" x-transition.opacity class="modal-backdrop" @click="$store.info.open = false"></div>
   <div x-show="$store.info.open" x-trap.noscroll="$store.info.open" x-transition.scale.95 class="modal-panel max-h-[85vh] max-w-lg overflow-y-auto p-8">
     <button class="icon-btn absolute right-3 top-3" @click="$store.info.open = false" aria-label="Đóng">{{ icon('close') }}</button>
-    <h2 class="pr-8 text-2xl font-medium" x-text="$store.info.title"></h2>
+    <h2 id="info-title" class="pr-8 text-2xl font-medium" x-text="$store.info.title"></h2>
     <div class="divider-ornament !mx-0 mb-5"></div>
     <div class="prose-jade" x-html="$store.info.html"></div>
   </div>
@@ -176,14 +176,14 @@
 
 {# ============ POPUP CHÀO MỪNG ============ #}
 {% if features.welcome_popup %}
-<div x-data="welcomePopup" x-cloak x-show="open" class="fixed inset-0 z-[85] flex items-center justify-center p-4" role="dialog" aria-modal="true" @keydown.escape.window="close()">
+<div x-data="welcomePopup" x-cloak x-show="open" class="fixed inset-0 z-[85] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="welcome-title" @keydown.escape.window="close()">
   <div x-show="open" x-transition.opacity class="modal-backdrop" @click="close()"></div>
   <div x-show="open" x-trap.noscroll="open" x-transition.scale.90 class="modal-panel grid max-w-2xl {{ 'md:grid-cols-2' if features.welcome_popup_image else '' }}">
     {% if features.welcome_popup_image %}<img src="{{ features.welcome_popup_image.md }}" alt="" class="hidden h-full w-full object-cover md:block">{% endif %}
     <div class="p-8 text-center md:p-10">
       <button class="icon-btn absolute right-3 top-3" @click="close()" aria-label="Đóng">{{ icon('close') }}</button>
       <span class="eyebrow">{{ s.site.name }}</span>
-      <h2 class="mt-3 text-3xl font-medium">{{ features.welcome_popup_title }}</h2>
+      <h2 id="welcome-title" class="mt-3 text-3xl font-medium">{{ features.welcome_popup_title }}</h2>
       <div class="divider-ornament"></div>
       <p class="mt-5 text-muted">{{ features.welcome_popup_content | nl2br }}</p>
       <div class="mt-7 flex flex-col gap-2">

@@ -7,11 +7,12 @@ import { loadUser, requireAuth, requireOwner } from '../middleware/auth.js';
 import { verifyPassword, verifyTotp, DUMMY_HASH } from '../lib/security.js';
 import { findByEmail, isLocked, recordFailure, recordSuccess, getTotpSecret, getUserWithSecrets, audit, ROLES } from '../services/users.js';
 import { getPublicSettings } from '../services/settings.js';
-import { SETTINGS_SCHEMA, SCHEMA_BY_KEY } from '../config/settings-schema.js';
+import { SETTINGS_SCHEMA, SCHEMA_BY_KEY, SETTINGS_CATEGORIES } from '../config/settings-schema.js';
 import { TERM_TYPES, STOCK_LABEL, getProduct, relatedProducts } from '../services/catalog.js';
 import { publicLocals } from './public.js';
 import { INQUIRY_TYPES, INQUIRY_STATUS, INQUIRY_STATUS_BY_TYPE } from '../services/inquiries.js';
 import { HttpError } from '../lib/utils.js';
+import { pagePermission, can, firstAllowedPage, SETTINGS_PERMISSION } from '../config/permissions.js';
 import apiRouter from './admin-api/index.js';
 
 const router = Router();
@@ -31,6 +32,7 @@ router.use((req, res, next) => {
   res.locals.shop = s.site;
   res.locals.A = config.adminPath;
   res.locals.currentPath = req.path;
+  res.locals.can = (perm) => can(req.user, perm);   // dùng trong template để ẩn mục menu / nút không có quyền
   res.locals.meta = {
     termTypes: TERM_TYPES, stockLabels: STOCK_LABEL, inquiryTypes: INQUIRY_TYPES, inquiryStatus: INQUIRY_STATUS, statusByType: INQUIRY_STATUS_BY_TYPE, roles: ROLES,
   };
@@ -111,10 +113,12 @@ router.use('/api', requireAuth, apiRouter);
 
 // ---------------- Các trang admin ----------------
 router.use(requireAuth);
+// Phân quyền theo vai trò (backend/config/permissions.js)
+router.use((req, res, next) => (pagePermission(req.user, req.path) ? next() : next(new HttpError(403, 'Bạn chưa được cấp quyền vào trang này. Liên hệ Chủ shop nếu cần.'))));
 
 const page = (tpl, extra = {}) => (req, res) => res.adminView(tpl, { params: req.params, query: req.query, ...extra });
 
-router.get('/', page('pages/dashboard.njk'));
+router.get('/', (req, res, next) => (can(req.user, 'orders') ? page('pages/dashboard.njk')(req, res, next) : res.redirect(config.adminPath + firstAllowedPage(req.user))));
 router.get('/products', page('pages/products.njk'));
 router.get('/products/new', page('pages/product-edit.njk'));
 router.get('/products/:id', page('pages/product-edit.njk'));
@@ -133,6 +137,7 @@ router.get('/preview/san-pham/:id', (req, res, next) => {
 router.get('/terms', page('pages/terms.njk'));
 router.get('/gallery', page('pages/gallery.njk'));
 router.get('/posts', page('pages/posts.njk'));
+router.get('/authors', page('pages/authors.njk'));
 router.get('/posts/new', page('pages/post-edit.njk'));
 router.get('/posts/:id', page('pages/post-edit.njk'));
 router.get('/media', page('pages/media.njk'));
@@ -141,15 +146,25 @@ router.get('/inquiries/:id', page('pages/inquiry-detail.njk'));
 router.get('/customers', page('pages/customers.njk'));
 router.get('/customers/:id', page('pages/customer-detail.njk'));
 router.get('/account', page('pages/account.njk'));
-router.get('/settings', (req, res) => res.redirect(`${config.adminPath}/settings/site`));
+const settingsAllowed = (req, key) => can(req.user, SETTINGS_PERMISSION[key] || 'owner-only');
+router.get('/settings', (req, res, next) => {
+  const first = SETTINGS_SCHEMA.find((g) => settingsAllowed(req, g.key));
+  if (!first) return next(new HttpError(403, 'Bạn chưa được cấp quyền sửa cài đặt website'));
+  res.redirect(`${config.adminPath}/settings/${first.key}`);
+});
 router.get('/settings/:key', (req, res, next) => {
   const group = SCHEMA_BY_KEY[req.params.key];
-  if (!group || (group.ownerOnly && req.user.role !== 'owner')) return next(new HttpError(404, 'Không tìm thấy trang'));
-  const groups = SETTINGS_SCHEMA.filter((g) => !g.ownerOnly || req.user.role === 'owner').map((g) => ({ key: g.key, label: g.label }));
-  res.adminView('pages/settings.njk', { group, groups });
+  if (!group) return next(new HttpError(404, 'Không tìm thấy trang'));
+  if (!settingsAllowed(req, group.key)) return next(new HttpError(403, 'Bạn chưa được cấp quyền sửa mục cài đặt này'));
+  // Menu cài đặt gom theo mục lớn (kèm mô tả); chỉ hiện nhóm tài khoản có quyền, mục nào không còn nhóm nào thì ẩn
+  const categories = SETTINGS_CATEGORIES
+    .map((c) => ({ ...c, groups: c.groups.filter((k) => settingsAllowed(req, k)).map((k) => ({ key: k, label: SCHEMA_BY_KEY[k].label })) }))
+    .filter((c) => c.groups.length);
+  res.adminView('pages/settings.njk', { group, categories });
 });
-router.get('/redirects', requireOwner, page('pages/redirects.njk'));
+router.get('/redirects', page('pages/redirects.njk'));
 router.get('/users', requireOwner, page('pages/users.njk'));
-router.get('/audit', requireOwner, page('pages/audit.njk'));
+router.get('/roles', requireOwner, page('pages/roles.njk'));
+router.get('/audit', page('pages/audit.njk'));
 
 export default router;

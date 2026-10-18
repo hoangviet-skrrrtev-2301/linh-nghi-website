@@ -149,7 +149,7 @@
               <td x-text="p.stock_label"></td>
               <td><span class="badge" :class="p.status !== 'published' ? 'bg-slate-100 text-slate-500' : p.type_active ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'" x-text="p.status !== 'published' ? 'Bản nháp' : p.type_active ? 'Đang hiển thị' : 'Thử nghiệm (khách chưa thấy)'"></span></td>
               <td class="text-right whitespace-nowrap">
-                <a :href="p.status === 'published' && p.type_active ? p.url : '{{ A }}/preview/san-pham/' + p.id" target="_blank" class="btn btn-ghost btn-sm" :title="p.status === 'published' && p.type_active ? 'Xem trên website' : 'Xem thử như khách (khách chưa thấy sản phẩm này)'">{{ icon('eye', 'w-4 h-4') }}</a>
+                <a :href="p.status === 'published' && p.type_active ? p.url : '{{ A }}/preview/san-pham/' + p.id" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" :title="p.status === 'published' && p.type_active ? 'Xem trên website' : 'Xem thử như khách (khách chưa thấy sản phẩm này)'">{{ icon('eye', 'w-4 h-4') }}</a>
                 <button class="btn btn-ghost btn-sm" :title="p.status === 'published' ? 'Ẩn sản phẩm (khách không thấy)' : 'Hiện lại sản phẩm'" @click="toggleHide(p)"><span x-show="p.status === 'published'">{{ icon('eye-off', 'w-4 h-4') }}</span><span x-cloak x-show="p.status !== 'published'">{{ icon('eye', 'w-4 h-4') }}</span></button>
                 <button class="btn btn-ghost btn-sm" title="Nhân bản" @click="duplicate(p)">{{ icon('copy', 'w-4 h-4') }}</button>
                 <button class="btn btn-ghost btn-sm text-red-600" title="Xóa" @click="remove(p)">{{ icon('trash', 'w-4 h-4') }}</button>

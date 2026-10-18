@@ -3,6 +3,7 @@ import { db, likeVn } from '../lib/db.js';
 import { slugify, HttpError, toInt, bool, stripHtml, truncate } from '../lib/utils.js';
 import { cleanHtml, cleanText } from '../lib/sanitize.js';
 import { getMediaMap } from './media.js';
+import { safeJson } from '../lib/utils.js';
 import { postPath, productPath, RESERVED_BLOG } from '../lib/urls.js';
 import { addAutoRedirect } from './redirects.js';
 
@@ -11,13 +12,15 @@ const withUrl = (post) => ({ ...post, url: postPath(post) });
 
 function hydratePosts(rows) {
   const media = getMediaMap(rows.map((r) => r.cover_media_id));
-  const authors = Object.fromEntries(db.prepare('SELECT id, name FROM users').all().map((u) => [u.id, u.name]));
+  const writers = Object.fromEntries(listAuthors({ ids: [...new Set(rows.map((r) => r.writer_id).filter(Boolean))] }).map((a) => [a.id, a]));
   const cats = Object.fromEntries(db.prepare('SELECT id, name, slug, active FROM post_categories').all().map((x) => [x.id, x]));
   return rows.map((r) => withUrl({
     ...r,
     category: cats[r.category_id] || null,
     cover: media[r.cover_media_id] || null,
-    author: authors[r.author_id] || '',
+    // Tác giả do shop chọn (chưa chọn thì bài ghi là của shop); chỉ tác giả đang hiển thị mới công khai
+    writer: writers[r.writer_id]?.active ? writers[r.writer_id] : null,
+    author: writers[r.writer_id]?.active ? writers[r.writer_id].name : '',
     summary: r.excerpt || truncate(stripHtml(r.content), 180),
     reading_minutes: Math.max(1, Math.round(stripHtml(r.content).split(' ').length / 220)),
   }));
@@ -71,6 +74,7 @@ export function savePost(id, data, userId) {
     content: cleanHtml(data.content),
     cover_media_id: toInt(data.cover_media_id),
     category_id: db.prepare('SELECT id FROM post_categories WHERE id = ?').pluck().get(toInt(data.category_id)) || null,
+    writer_id: db.prepare('SELECT id FROM authors WHERE id = ?').pluck().get(toInt(data.writer_id)) || null,
     published_at: publishedAt,
     seo_title: cleanText(data.seo_title, 200),
     seo_description: cleanText(data.seo_description, 400),
@@ -78,7 +82,7 @@ export function savePost(id, data, userId) {
   if (id) {
     const before = getPost(id, { publicOnly: false });
     const res = db.prepare(`UPDATE posts SET title=@title, slug=@slug, status=@status, excerpt=@excerpt, content=@content,
-      cover_media_id=@cover_media_id, category_id=@category_id, published_at=@published_at, seo_title=@seo_title, seo_description=@seo_description,
+      cover_media_id=@cover_media_id, category_id=@category_id, writer_id=@writer_id, published_at=@published_at, seo_title=@seo_title, seo_description=@seo_description,
       updated_at=datetime('now') WHERE id=@id`).run({ ...v, id });
     if (!res.changes) throw new HttpError(404, 'Không tìm thấy bài viết');
     // Đổi đường dẫn hoặc chuyên mục thì địa chỉ bài đổi: tự chuyển 301 từ địa chỉ cũ
@@ -86,13 +90,69 @@ export function savePost(id, data, userId) {
     if (before?.status === 'published' && after && before.url !== after.url) addAutoRedirect(before.url, after.url);
     return id;
   }
-  return db.prepare(`INSERT INTO posts (title, slug, status, excerpt, content, cover_media_id, category_id, published_at, seo_title, seo_description, author_id)
-    VALUES (@title, @slug, @status, @excerpt, @content, @cover_media_id, @category_id, @published_at, @seo_title, @seo_description, @author_id)`)
+  return db.prepare(`INSERT INTO posts (title, slug, status, excerpt, content, cover_media_id, category_id, writer_id, published_at, seo_title, seo_description, author_id)
+    VALUES (@title, @slug, @status, @excerpt, @content, @cover_media_id, @category_id, @writer_id, @published_at, @seo_title, @seo_description, @author_id)`)
     .run({ ...v, author_id: userId }).lastInsertRowid;
 }
 
 export function deletePost(id) {
   db.prepare('DELETE FROM posts WHERE id = ?').run(id);
+}
+
+// ---------------- Tác giả ----------------
+// Không có trang tác giả riêng: thông tin hiện ở khung cuối bài viết và trong schema (Person) của bài.
+const presentAuthor = (a, media) => ({
+  ...a,
+  active: !!a.active,
+  links: safeJson(a.links, []),
+  avatar: media[a.avatar_media_id] || null,
+});
+
+export function listAuthors({ activeOnly = false, ids } = {}) {
+  const where = [];
+  const params = [];
+  if (activeOnly) where.push('a.active = 1');
+  if (ids) { if (!ids.length) return []; where.push(`a.id IN (${ids.map(() => '?').join(',')})`); params.push(...ids); }
+  const rows = db.prepare(`SELECT a.*, (SELECT COUNT(*) FROM posts p WHERE p.writer_id = a.id) AS post_count
+    FROM authors a ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY a.sort_order, a.name`).all(...params);
+  const media = getMediaMap(rows.map((r) => r.avatar_media_id));
+  return rows.map((r) => presentAuthor(r, media));
+}
+
+export function getAuthor(id) {
+  return listAuthors({ ids: [Number(id)] })[0] || null;
+}
+
+// Mỗi dòng một địa chỉ (website, Facebook, LinkedIn...): chỉ nhận http(s), tối đa 8 địa chỉ
+function cleanLinks(v) {
+  const list = Array.isArray(v) ? v : String(v || '').split(/\r?\n/);
+  return [...new Set(list.map((x) => String(x).trim()).filter((x) => /^https?:\/\/[^\s<>"']+$/i.test(x)))].slice(0, 8);
+}
+
+export function saveAuthor(id, data) {
+  const name = cleanText(data.name, 100);
+  if (!name) throw new HttpError(400, 'Vui lòng nhập tên tác giả');
+  const v = {
+    name,
+    job_title: cleanText(data.job_title, 120),
+    bio: cleanText(data.bio, 1200),
+    avatar_media_id: toInt(data.avatar_media_id),
+    links: JSON.stringify(cleanLinks(data.links)),
+    active: bool(data.active ?? true) ? 1 : 0,
+    sort_order: toInt(data.sort_order, 0),
+  };
+  if (id) {
+    const res = db.prepare(`UPDATE authors SET name=@name, job_title=@job_title, bio=@bio, avatar_media_id=@avatar_media_id, links=@links,
+      active=@active, sort_order=@sort_order, updated_at=datetime('now') WHERE id=@id`).run({ ...v, id });
+    if (!res.changes) throw new HttpError(404, 'Không tìm thấy tác giả');
+    return id;
+  }
+  return db.prepare(`INSERT INTO authors (name, job_title, bio, avatar_media_id, links, active, sort_order)
+    VALUES (@name, @job_title, @bio, @avatar_media_id, @links, @active, @sort_order)`).run(v).lastInsertRowid;
+}
+
+export function deleteAuthor(id) {
+  db.prepare('DELETE FROM authors WHERE id = ?').run(id);
 }
 
 // ---------------- Chuyên mục blog ----------------

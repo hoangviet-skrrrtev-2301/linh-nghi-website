@@ -31,7 +31,7 @@
     @dragover.prevent @drop.prevent="$store.picker.upload($event.dataTransfer.files)">
     <div class="card-head">
       <h3 class="card-title">Chọn ảnh <span class="font-normal text-slate-500" x-text="$store.picker.multiple ? '(chọn được nhiều ảnh)' : ''"></span></h3>
-      <button class="btn btn-ghost btn-sm" @click="$store.picker.open = false">{{ icon('close', 'w-4 h-4') }}</button>
+      <button class="btn btn-ghost btn-sm" @click="$store.picker.open = false" aria-label="Đóng" title="Đóng">{{ icon('close', 'w-4 h-4') }}</button>
     </div>
     <div class="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-3">
       <label class="btn btn-primary cursor-pointer">

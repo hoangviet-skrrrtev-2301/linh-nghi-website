@@ -513,6 +513,7 @@ export const SETTINGS_SCHEMA = [
       { key: 'errors', label: 'Trang lỗi 404', hint: 'Nội dung hiện khi khách vào địa chỉ không tồn tại hoặc trang bị lỗi' },
     ],
     fields: [
+      { name: 'blog_author_label', section: 'blog', label: 'Nhãn khung tác giả cuối bài', type: 'text', default: 'Về tác giả', help: 'Chỉ hiện khi bài có chọn tác giả (Admin › Tác giả blog).' },
       { name: 'products_title', section: 'products', label: 'Tiêu đề trang Sản phẩm', type: 'text', default: 'Tất cả sản phẩm', help: 'Hiện ở đầu trang và cũng là tiêu đề trên Google, trừ khi bạn nhập tiêu đề riêng ở "SEO Google & chia sẻ".' },
       { name: 'products_intro', section: 'products', label: 'Mô tả ngắn trang Sản phẩm', type: 'textarea', default: 'Vòng ngọc tự nhiên được tuyển chọn, đầy đủ chứng chỉ kiểm định.' },
       { name: 'products_per_page', section: 'products', label: 'Số sản phẩm mỗi trang', type: 'number', default: 12 },
@@ -609,8 +610,8 @@ export const SETTINGS_SCHEMA = [
       { name: 'transit_min', label: 'Vận chuyển: tối thiểu (ngày)', type: 'number', default: 1 },
       { name: 'transit_max', label: 'Vận chuyển: tối đa (ngày)', type: 'number', default: 5 },
       {
-        name: 'author_type', label: 'Tác giả bài viết', type: 'select', default: 'organization',
-        options: [{ value: 'organization', label: 'Ghi là shop (không cần trang tác giả)' }, { value: 'person', label: 'Ghi tên người viết nếu bài có nhập tên' }],
+        name: 'author_type', label: 'Tác giả bài viết', type: 'select', default: 'person',
+        options: [{ value: 'person', label: 'Ghi tên tác giả đã chọn cho bài (chưa chọn thì ghi là shop)' }, { value: 'organization', label: 'Luôn ghi là shop' }],
       },
       { name: 'search_action', label: 'Khai báo ô tìm kiếm của website (SearchAction)', type: 'toggle', default: true },
     ],
@@ -766,3 +767,19 @@ sectionize('footer', [
 ]);
 
 export const SCHEMA_BY_KEY = Object.fromEntries(SETTINGS_SCHEMA.map((g) => [g.key, g]));
+
+// Gom các nhóm cài đặt thành vài mục lớn kèm mô tả, để menu cài đặt không dài và rối.
+// Mỗi nhóm phải thuộc đúng một mục (thiếu sẽ báo lỗi khi khởi động).
+export const SETTINGS_CATEGORIES = [
+  { key: 'general', label: 'Thông tin chung & menu', description: 'Tên shop, liên hệ, logo, menu, chân trang và các công tắc bật / tắt tính năng.', groups: ['site', 'navigation', 'footer', 'features'] },
+  { key: 'pages', label: 'Nội dung từng trang', description: 'Chữ và ảnh của trang chủ, Về shop, Hướng dẫn size, Liên hệ, biểu mẫu đặt hàng và các trang Sản phẩm / Gallery / Blog.', groups: ['home', 'about', 'size_guide', 'contact', 'forms', 'pages'] },
+  { key: 'design', label: 'Giao diện', description: 'Màu sắc, font chữ, nhãn sản phẩm, chế độ tối và bố cục các khối trang chủ.', groups: ['theme', 'home_layout'] },
+  { key: 'seo', label: 'Tối ưu SEO', description: 'Mã theo dõi, SEO từng trang, schema cho Google, sitemap, robots.txt và công tắc cho phép Google lập chỉ mục.', groups: ['seo', 'seo_pages', 'schema', 'sitemap'] },
+  { key: 'system', label: 'Email & hệ thống', description: 'Gửi thông báo đơn hàng qua email (chỉ người được cấp quyền).', groups: ['mail'] },
+];
+{
+  const listed = SETTINGS_CATEGORIES.flatMap((c) => c.groups);
+  const missing = SETTINGS_SCHEMA.map((g) => g.key).filter((k) => !listed.includes(k));
+  const unknown = listed.filter((k) => !SCHEMA_BY_KEY[k]);
+  if (missing.length || unknown.length) throw new Error('SETTINGS_CATEGORIES: nhóm chưa xếp mục ' + missing.join(', ') + ' / không tồn tại ' + unknown.join(', '));
+}
