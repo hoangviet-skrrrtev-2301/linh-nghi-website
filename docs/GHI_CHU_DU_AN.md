@@ -2,7 +2,7 @@
 
 Tài liệu "sổ tay" để tiếp tục phát triển: bối cảnh, các quyết định đã chốt, những gì đã xong, việc còn chờ. Cập nhật file này mỗi khi có quyết định hoặc thay đổi lớn.
 
-_Cập nhật lần cuối: 17/10/2026 (cuối ngày)_
+_Cập nhật lần cuối: 18/10/2026 (cuối ngày)_
 
 ---
 
@@ -32,13 +32,19 @@ _Cập nhật lần cuối: 17/10/2026 (cuối ngày)_
 | Index / robots | **Đang TẮT index** cho tới khi chính thức vận hành (bật ở Cài đặt › SEO & mã theo dõi). Khi bật: robots chặn `/*?`; chỉ trang sạch được index; trang có tham số lọc / sắp xếp / tìm kiếm / phân trang là `noindex, follow` và không có canonical; tham số theo dõi (utm...) canonical về trang sạch | Ngày 18/10/2026. Trang 2 trở đi của danh sách không index, sản phẩm vào Google qua sitemap |
 | Schema | Tự dựng từ cài đặt (nhóm Schema + Thông tin shop); đổi trả / giao hàng mặc định tắt, tác giả bài ghi là shop | Ngày 18/10/2026 |
 | Font | Tự lưu trên máy chủ (database/data/fonts), tải một lần từ Google | Ngày 18/10/2026 |
+| Phân quyền | Chủ shop toàn quyền; nhân viên theo **vai trò tùy chỉnh** (Admin › Vai trò & phân quyền): quyền chia nhóm Bán hàng / Sản phẩm / Nội dung / từng mục Cài đặt / Hệ thống. Vai trò "Nhân viên" có sẵn giữ quyền cũ. Quản lý tài khoản + vai trò không giao được. Đường dẫn / trang chưa khai báo quyền mặc định chỉ Chủ shop | Ngày 18/10/2026; `backend/config/permissions.js` |
+| Tác giả blog | Bảng `authors` (tên, chức danh, giới thiệu, ảnh, liên kết); chọn khi viết bài; hiện đầu bài + khung "Về tác giả" + schema Person. **Không có trang tác giả riêng** (chủ dự án chốt). Bài chưa chọn tác giả ghi là shop | Ngày 18/10/2026 |
+| Liên kết trong bài | Mặc định mở cùng tab, có ô tick "Mở trong tab mới"; mọi liên kết ra ngoài / tab mới có `rel="noopener"` | Ngày 18/10/2026 |
+| Số dòng mỗi trang | Danh sách admin mặc định 20, chọn 20 / 30 / 50 / 100 (nhớ trên trình duyệt); Quay lại / Back luôn về đúng trang đang xem (bộ lọc + trang ghi vào địa chỉ) | Ngày 18/10/2026 |
+| Tổng quan: so sánh | Nút "So sánh" mặc định tắt: kỳ liền trước / cùng kỳ năm trước / tùy chọn; biểu đồ không đổi; doanh thu chỉ tính đơn **Hoàn thành** | Ngày 18/10/2026 |
+| Nhãn sản phẩm | Best Seller / Mới / Sale / Đã bán / Đặt trước / Có thể custom tùy chỉnh kiểu, hình dạng, màu, họa tiết, độ đặc (mặc định 100%) ở Cài đặt › Giao diện | Ngày 18/10/2026 |
 | Cấu trúc URL | Phân cấp cha → con: `/san-pham/<loại>/<sản phẩm>`, `/blog/<chuyên mục>/<bài>`; địa chỉ cũ chuyển 301; shop chỉnh chuyển hướng ở Admin › Chuyển hướng & 404 | Ngày 17/10/2026, làm trước khi có tên miền nên chưa mất xếp hạng |
 | Lên đơn | Custom / liên hệ "lên đơn" thì **chính bản ghi đó** chuyển thành đơn hàng (mã DH mới, mã cũ giữ ở `origin_code`, khách tra cứu được cả hai), không tạo bản ghi thứ hai | Ngày 17/10/2026; tránh đếm đôi. Bản ghi cũ tạo theo kiểu `parent_id` vẫn hiển thị bình thường |
 | Doanh thu | Tính theo **ngày hoàn thành** của đơn (giờ Việt Nam), đơn hoàn thành cũ lấy ngày cập nhật cuối làm gần đúng | Chủ dự án chốt |
 | Thứ tự sản phẩm | Admin kéo thả đổi vị trí; `sort_order` đứng đầu trong sắp xếp "Nổi bật" (khách) và khối nổi bật trang chủ, chưa sắp xếp thì Best Seller / nổi bật trước | `reorderProducts` trong `catalog.js`, ghi lại sort_order 1..n toàn cửa hàng |
 | Tìm kiếm | Không phân biệt hoa/thường và dấu ("áo" = "Áo" = "ao") cho sản phẩm, bài viết, đơn, khách, ảnh | Hàm `vn()` trong SQLite |
 | Menu | Mỗi mục có thể sổ dọc theo loại ngọc / màu / kiểu dáng / mệnh / loại sản phẩm / chuyên mục blog / bài mới / danh sách tự nhập. Mục Sản phẩm mặc định sổ theo loại ngọc, tự thêm các loại hàng khác đang hoạt động (Pháp phục) | |
-| Giao diện admin | Menu bên trái: 4 nhóm chính thu gọn, chỉ xổ ra khi đang dùng hoặc bấm vào (18/10/2026, trước đó để phẳng); danh sách nhóm cài đặt gom thành 5 mục lớn có mô tả; các trang nhiều thành phần (Cài đặt các nhóm dài, danh sách slide / khối) chia phần thu gọn / mở ra | Chủ dự án không muốn gập menu |
+| Giao diện admin | Menu bên trái: 4 nhóm chính (Bán hàng, Sản phẩm, Nội dung, Hệ thống) thu gọn, xổ ra khi đang dùng hoặc khi bấm tên nhóm; **trạng thái mở được nhớ** nên chuyển sang mục khác không tự đóng nhóm đang mở. Cài đặt: các nhóm gom thành 5 mục lớn có mô tả, mỗi mục cũng thu gọn và nhớ trạng thái. Trang nhiều thành phần chia phần thu gọn / mở ra; mỗi trang có khung "Mô tả cách hoạt động" ẩn / hiện | Ngày 18/10/2026 |
 | Loại hàng khác ngọc (Pháp phục) | Hiện giống ngọc (thẻ sản phẩm, trang chi tiết) nhưng **không có bộ lọc** (bộ lọc chỉ cho ngọc), không hiện chung trong "Tất cả sản phẩm", chỉ xem qua menu / đường dẫn `?nhom=<slug>` / tìm kiếm | Chủ dự án chốt |
 | Bộ lọc | Loại ngọc, giá (khoảng giá cấu hình được), ni tay, màu, kiểu dáng, mệnh | Danh mục quản lý trong admin |
 | Chế độ tối | Có, khách tự chuyển; mặc định theo thiết bị; chủ shop chỉnh màu tối / tắt trong Admin › Giao diện | Biến CSS `:root[data-theme="dark"]` sinh tại `/theme.css` |
@@ -76,6 +82,10 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 
 **Đã làm thêm ngày 17/10/2026 (đã commit `de2eba2`, `11a3925`):** nút Quay lại theo lịch sử trang, chọn 20/30/50 dòng, thêm đơn thủ công, mô tả cách hoạt động (ẩn/hiện), dashboard tách đơn / custom / liên hệ, **lên đơn trên cùng một bản ghi**, trình soạn thảo đầy đủ (bảng, màu, ảnh alt / kích thước / căn lề), **URL phân cấp + chuyển hướng 301/302/410 + nhật ký 404**, trang 404 cấu hình được, tiêu đề không nhảy cấp, ảnh có width/height + fetchpriority, cache, Permissions-Policy, nhãn ảnh sản phẩm trong hơn, rà responsive 34 trang (xem CHANGELOG.md).
 
+**Đã làm thêm ngày 18/10/2026** (xem CHANGELOG.md, các commit từ `c581284` trở đi): nhãn sản phẩm tùy chỉnh; **SEO kỹ thuật** (tắt index đến khi chính thức, chính sách địa chỉ có tham số, robots.txt, nhóm cài đặt Schema, og:image dự phòng, font tự lưu, Swiper / PhotoSwipe / Quill tải khi cần, `npm run check:seo`, khung "Chuẩn bị mở website chính thức" ở Tổng quan); **tác giả blog**; **phân quyền theo vai trò**; liên kết mở tab mới + noopener; **truy cập (a11y)** (nhãn nút / ô nhập, vùng bấm ≥ 24px, quét tự động còn 0 lỗi); menu Cài đặt + menu admin thu gọn nhớ trạng thái; **rà soát bảo mật** (73 kiểm tra tấn công, đã vá lỗi né quyền bằng dấu "/" cuối); so sánh kỳ ở Tổng quan; cảnh báo khi đổi trạng thái / sửa giá đơn hoàn thành; giỏ hàng báo sản phẩm không còn bán; số dòng 20 / 30 / 50 / 100.
+
+**Trạng thái dữ liệu thật (database/data/app.sqlite) cần nhớ:** `allow_indexing` đang **TẮT**; nhóm Schema đã lưu (loại hình `LocalBusiness`, `author_type` = person, `search_action` = tắt); migration 009 → 012 đã chạy; còn dữ liệu mẫu (số điện thoại 0900 000 000, email hello@example.com, địa chỉ "Thành phố Hà Nội", mạng xã hội chưa trỏ về trang thật, 2 sản phẩm Pháp phục thử). Khung "Chuẩn bị mở website chính thức" ở Tổng quan liệt kê đúng những mục này.
+
 **Mở web chính thức (làm cuối cùng):** bật "Cho phép Google lập chỉ mục", điền thông tin thật (khung "Chuẩn bị mở website chính thức" ở Tổng quan liệt kê các mục còn mẫu), đặt BASE_URL đúng tên miền, chạy `npm run check:seo -- https://tenmien.vn`, rồi gửi sitemap lên Search Console.
 
 **Việc đầu tiên của phiên sau:** nhắc chủ dự án **khởi động lại `npm run dev`** (Ctrl+C rồi chạy lại). Bộ tự khởi động lại của `node --watch` trên máy này đã không nạp mã mới (server vẫn chạy bản 16:33 ngày 17/10, chưa có bảng `redirects`, trang Chuyển hướng & 404 chưa dùng được). Khi khởi động lại, migration 009 và 010 tự chạy; bản sao lưu trước migration ở `database/backups/2026-10-17-11-26`.
@@ -91,6 +101,11 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 - [ ] Gửi sitemap lên Google Search Console, kiểm tra Rich Results
 - [ ] Sau khi có tên miền: kiểm tra www → tên miền chính (301 trong `deploy/nginx.conf`), HTTPS, tốc độ bằng PageSpeed Insights (LCP / CLS thật), xem tab "Trang bị lỗi 404" để tạo chuyển hướng
 - [ ] Thử trình soạn thảo bằng bài thật (bảng dài, nhiều ảnh) và xem bài trên điện thoại thật
+- [ ] **Mở web chính thức:** bật "Cho phép Google lập chỉ mục" (Cài đặt › SEO & mã theo dõi) CHỈ khi đã có tên miền + nội dung thật; đặt `BASE_URL` đúng trong `.env`; `npm run check:seo -- https://tenmien.vn` không lỗi; gửi sitemap lên Search Console
+- [ ] Điền thông tin thật cho khung "Chuẩn bị mở website chính thức" (điện thoại, email, địa chỉ, mạng xã hội, ảnh chia sẻ 1200×630, mã Search Console, địa chỉ có cấu trúc trong Cài đặt › Schema)
+- [ ] Tạo tác giả thật (Admin › Tác giả blog) và chọn cho các bài; tạo vai trò + tài khoản nhân viên thật nếu cần (Vai trò & phân quyền)
+- [ ] Chỉ bật đổi trả / giao hàng trong Cài đặt › Schema khi shop thật sự áp dụng
+- [ ] Nên bật 2FA cho Chủ shop (Tài khoản & bảo mật); cân nhắc giao quyền sao lưu / email / xóa dữ liệu cho ai
 
 **Khi muốn mở bán Pháp phục** (loại đã có sẵn, đang thử nghiệm): nhập sản phẩm thật, kiểm tra bằng "Xem thử như khách", rồi Admin › Sản phẩm › Loại sản phẩm › Bật hoạt động. Còn thiếu trước khi mở bán thật: chọn **kích cỡ** (S/M/L...) khi đặt hàng (giỏ hàng hiện chỉ hiểu "ni" dạng số), thanh toán/chuyển khoản nếu cần, schema SEO riêng cho loại không phải ngọc.
 
@@ -107,6 +122,9 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 - Đăng nhập Zalo/Google cho khách, lịch sử đơn của khách
 - Thông báo đơn mới qua Telegram/Zalo OA
 - Song ngữ Việt – Anh
+- Bắt buộc 2FA cho nhân viên, mã khôi phục 2FA, hết phiên khi không hoạt động
+- Admin tự lưu font (hiện admin còn tải Google Fonts); nén (minify) `app.js` và JS admin nếu cần
+- Trang lọc có thể được index riêng (hiện mọi địa chỉ có tham số `noindex`, `Disallow: /*?`) nếu sau này muốn làm landing theo màu / kiểu dáng
 
 ## 5. Hạn chế đã biết
 
@@ -124,6 +142,9 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 | Ảnh đơn hàng cho khách vẽ trên trình duyệt | Cần font đã tải; nếu trình duyệt khách quá cũ có thể không tạo được ảnh (khách vẫn đặt hàng bình thường) |
 | Tìm kiếm tiếng Việt quét toàn bảng (`vn()`) | Không dùng chỉ mục; nhanh với vài nghìn dòng, cần xem lại nếu lên hàng chục nghìn |
 | Danh sách admin ghi bộ lọc vào URL | `listPage` trong `pages.js` dùng `history.replaceState` để nút Quay lại giữ bộ lọc / trang; trang khách hàng có hàm tải riêng nên chưa giữ |
+| robots.txt chặn mọi địa chỉ có tham số (`Disallow: /*?`) | Có `Allow` riêng cho /assets, /theme.css, /vendor, /fonts, /uploads (CSS / JS dùng ?v=). Trang 2+ của danh sách không được index, sản phẩm vào Google qua sitemap |
+| Font Google tải về máy chủ ở lần chạy đầu | Cần máy chủ ra được internet; chưa tải được thì tạm dùng link Google. Thư mục `database/data/fonts` không đưa lên git, tự tải lại |
+| Phân quyền theo đường dẫn | Thêm API / trang admin mới PHẢI khai báo ở `permissions.js`, nếu không chỉ Chủ shop dùng được. Quyền sao lưu / email / xóa dữ liệu là nhạy cảm |
 | Trạng thái đơn đã chốt trong DB bằng ràng buộc CHECK | Thêm trạng thái mới phải xây lại bảng `inquiries` (xem migration 008 làm mẫu) |
 
 ## 5b. Danh sách đã rà soát SEO / bảo mật (17/10/2026)
@@ -161,6 +182,16 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 | Chia phần thu gọn trong Cài đặt | `sectionize()` cuối `settings-schema.js`, `settingsPage` trong `pages.js`, `admin/views/pages/settings.njk` |
 | Trang admin | `admin/views/pages/*.njk` + component tương ứng trong `admin/public/js/pages.js` |
 | API admin | `backend/routes/admin-api/index.js` |
+| Phân quyền, vai trò | `backend/config/permissions.js` (nhóm quyền, `API_RULES`, `PAGE_RULES`, `SETTINGS_PERMISSION`), `backend/services/roles.js`, `users.js` (`withPermissions`), trang `admin/views/pages/roles.njk` + `rolesPage` trong `pages.js` |
+| Tác giả blog | `services/content.js` (`listAuthors`, `saveAuthor`), `admin/views/pages/authors.njk`, khung cuối bài trong `frontend/views/pages/post.njk`, schema ở `articleJsonLd` (`lib/seo.js`) |
+| Liên kết trong bài (tab mới, noopener) | `SmartLink` + hộp liên kết trong `admin/public/js/core.js`, `cleanHtml` trong `backend/lib/sanitize.js` |
+| SEO: canonical, noindex, tham số, schema, og:image | `buildSeo` và các hàm JSON-LD trong `backend/lib/seo.js`; robots.txt / sitemap trong `lib/robots-sitemap.js`; nhóm cài đặt `schema`, `seo`, `sitemap` |
+| Kiểm tra SEO tự động | `backend/scripts/check-seo.js` (`npm run check:seo`) |
+| Chuẩn bị mở web | `backend/services/launch-check.js` (khung ở Tổng quan) |
+| Font tự lưu | `backend/services/fonts.js`, `base.njk` (`fonts.local` / `fonts.google`) |
+| Nhãn sản phẩm | `backend/lib/tags.js` (CSS sinh vào `/theme.css`), lớp `.tag .tag-<tên>`, nhóm cài đặt theme › Nhãn |
+| Menu admin / menu Cài đặt thu gọn | `navGroup` trong `admin/public/js/core.js`, `admin/views/layout.njk`; `SETTINGS_CATEGORIES` trong `settings-schema.js`, `admin/views/pages/settings.njk` |
+| Mô tả cách hoạt động từng trang admin | `admin/views/partials/page-help.njk` (thêm nhánh `helpKey`) |
 | Cấu trúc database | thêm file mới trong `database/migrations/` |
 | Dữ liệu mẫu | `backend/scripts/seed.js` |
 
@@ -172,6 +203,9 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 - **Ghi script sửa file bằng công cụ Write rồi chạy `node script.mjs`:** đừng nhét code có dấu backtick hoặc `${...}` vào `node -e "..."` hoặc heredoc (shell nuốt mất, đã gây lỗi nhiều lần).
 - **Kiểm tra giao diện bằng Chrome CDP:** Chrome ở `C:/Program Files/Google/Chrome/Application/chrome.exe`, bật `--headless=new --remote-debugging-port=9333`, nói chuyện qua WebSocket (Node 24 có sẵn `WebSocket`, `fetch`, `node:sqlite` để đọc database bản sao). Mẫu kịch bản: đăng nhập admin thử, `Emulation.setDeviceMetricsOverride` đổi độ rộng, đo `scrollWidth > clientWidth`, chụp màn hình, kiểm tra thứ tự H1–H6. Kịch bản dài (hơn 7 phút) thì chạy nền.
 - **Sửa file có `${...}` hoặc backtick:** dùng công cụ Edit; script sửa nhiều chỗ thì ghi bằng Write rồi `node script.mjs` (heredoc làm mất dấu `\` và `$`, đã gây lỗi nhiều lần).
+- **Kiểm tra SEO / URL:** chạy server (bản sao) rồi `npm run check:seo -- http://localhost:3100`; phải không có lỗi trước khi bàn giao thay đổi liên quan trang khách.
+- **Kiểm tra bảo mật / phân quyền:** tạo thêm tài khoản nhân viên thử (`npm run create-admin -- staff@local.test "Tên" "MatKhau123" staff`) trên bản sao, tạo vai trò thử rồi gọi API bằng nhiều biến thể đường dẫn (dấu "/" cuối, chữ hoa, "//"). Giới hạn đăng nhập nằm trong bộ nhớ: gặp 429 thì khởi động lại máy chủ thử.
+- **Tránh lỗi quen:** không chạy `node backend/server.js` từ bản sao mà quên đặt `PORT=3100` (sẽ chiếm cổng 3000 của chủ dự án); script sửa file nhiều dòng ghi bằng công cụ Write (heredoc trong bash hay làm mất `\`); máy chủ thử cần 5–10 giây để khởi động (migration + tải font).
 - Luôn `npm run backup` trước khi sửa; chỉ commit khi chủ dự án đồng ý; ghi `CHANGELOG.md` và file này khi xong việc lớn.
 
 ## 7. Lịch sử thay đổi

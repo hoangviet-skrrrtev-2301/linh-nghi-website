@@ -6,13 +6,19 @@
 {% block content %}
 <div class="grid grid-cols-1 gap-6 lg:grid-cols-[250px_minmax(0,1fr)]">
   {# Menu cài đặt gom theo mục lớn, mỗi mục có mô tả (SETTINGS_CATEGORIES trong settings-schema.js) #}
-  <nav class="space-y-5" aria-label="Các nhóm cài đặt">
+  <nav class="space-y-2" aria-label="Các nhóm cài đặt">
     {% for c in categories %}
-    <div>
-      <p class="px-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">{{ c.label }}</p>
-      <p class="mt-0.5 px-3 text-xs leading-snug text-slate-500">{{ c.description }}</p>
-      <div class="mt-2 flex flex-wrap gap-1 lg:flex-col lg:flex-nowrap">
-        {% for g in c.groups %}<a href="{{ A }}/settings/{{ g.key }}" class="tab {{ 'active' if g.key == group.key }}" {% if g.key == group.key %}aria-current="page"{% endif %}>{{ g.label }}</a>{% endfor %}
+    {# Mỗi mục lớn thu gọn được; xổ ra khi đang ở một nhóm của mục, và nhớ trạng thái mở nên chuyển nhóm không tự đóng #}
+    <div x-data="navGroup({{ 'true' if c.active else 'false' }}, 'set-{{ c.key }}')">
+      <button type="button" class="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left hover:bg-slate-100" @click="toggle()" :aria-expanded="open" aria-controls="set-{{ c.key }}">
+        <span class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{{ c.label }}</span>
+        <span class="shrink-0 text-slate-400 transition" :class="open && 'rotate-180'">{{ icon('chevron-down', 'w-3.5 h-3.5') }}</span>
+      </button>
+      <div id="set-{{ c.key }}" x-show="open" {{ '' if c.active else 'x-cloak' }} x-collapse>
+        <p class="px-3 text-xs leading-snug text-slate-500">{{ c.description }}</p>
+        <div class="mt-2 flex flex-wrap gap-1 lg:flex-col lg:flex-nowrap">
+          {% for g in c.groups %}<a href="{{ A }}/settings/{{ g.key }}" class="tab {{ 'active' if g.key == group.key }}" {% if g.key == group.key %}aria-current="page"{% endif %}>{{ g.label }}</a>{% endfor %}
+        </div>
       </div>
     </div>
     {% endfor %}

@@ -15,6 +15,7 @@ Trình duyệt ──https──► Nginx (SSL, /uploads tĩnh) ──► Node.j
 
 - **Trang khách** render HTML tại server để tốt cho SEO. Alpine.js chỉ lo phần tương tác (popup, giỏ hàng, bộ lọc, form).
 - **Trang admin** là các trang Nunjucks khung, dữ liệu lấy qua JSON API bằng component Alpine trong `admin/public/js/pages.js`.
+- **Phân quyền** theo vai trò: xem mục "Phân quyền, tác giả, truy cập". **SEO kỹ thuật**: xem mục "SEO kỹ thuật" (chính sách tham số, schema, robots, font, `npm run check:seo`).
 - **Cài đặt website** được mô tả trong `backend/config/settings-schema.js`. Admin tự sinh form từ schema, dữ liệu lưu dạng JSON trong bảng `settings`.
 
 ## Đổi giao diện theo mẫu thiết kế
@@ -79,6 +80,8 @@ Chạy `npm run migrate` (trên VPS, `deploy/update.sh` tự chạy). Mỗi file
 | `audit_logs` | Nhật ký thao tác |
 | `product_types` | Loại sản phẩm (Vòng tay ngọc, Pháp phục...): tên, thông số tự đặt `spec_fields` (JSON), `active`, `uses_jade_fields` |
 | `post_categories` | Chuyên mục blog (`posts.category_id`) |
+| `authors` | Tác giả blog (`posts.writer_id`); `links` là JSON các địa chỉ |
+| `roles` | Vai trò phân quyền (`permissions` JSON); `users.role_id` chọn vai trò cho nhân viên (`users.role` vẫn là owner / staff) |
 | `redirects`, `not_found_log` | Chuyển hướng 301 / 302 / 410 (`auto = 1` do hệ thống tự tạo khi đổi slug) và nhật ký đường dẫn bị 404 |
 
 ## Luồng dữ liệu bán hàng (khách hàng, liên hệ, custom, đơn hàng)

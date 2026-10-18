@@ -56,7 +56,7 @@
       {% if can('orders') %}{{ link(A, 'Tổng quan', 'home', p == '/') }}{% endif %}
 
       {% if can('orders') or can('customers') %}
-      <div x-data="navGroup({{ 'true' if salesOn else 'false' }})">
+      <div x-data="navGroup({{ 'true' if salesOn else 'false' }}, 'sales')">
         {{ groupHead('sales', 'Bán hàng') }}
         <div id="nav-sales" x-show="open" {{ '' if salesOn else 'x-cloak' }} x-collapse>
           {% if can('orders') %}
@@ -70,7 +70,7 @@
       {% endif %}
 
       {% if can('products') or can('terms') %}
-      <div x-data="navGroup({{ 'true' if catalogOn else 'false' }})">
+      <div x-data="navGroup({{ 'true' if catalogOn else 'false' }}, 'catalog')">
         {{ groupHead('catalog', 'Sản phẩm') }}
         <div id="nav-catalog" x-show="open" {{ '' if catalogOn else 'x-cloak' }} x-collapse>
           {% if can('products') %}{{ link(A + '/products', 'Sản phẩm', 'box', p.startsWith('/products')) }}{% endif %}
@@ -80,7 +80,7 @@
       {% endif %}
 
       {% if can('gallery') or can('posts') or can('media') or can('products') or can('terms') %}
-      <div x-data="navGroup({{ 'true' if contentOn else 'false' }})">
+      <div x-data="navGroup({{ 'true' if contentOn else 'false' }}, 'content')">
         {{ groupHead('content', 'Nội dung') }}
         <div id="nav-content" x-show="open" {{ '' if contentOn else 'x-cloak' }} x-collapse>
           {% if can('gallery') %}{{ link(A + '/gallery', 'Gallery', 'image', p.startsWith('/gallery')) }}{% endif %}
@@ -94,7 +94,7 @@
       {% endif %}
 
       {% if can('settings_site') or can('settings_pages') or can('settings_design') or can('settings_seo') or can('mail') or can('redirects') or can('audit') or currentUser.role == 'owner' %}
-      <div x-data="navGroup({{ 'true' if systemOn else 'false' }})">
+      <div x-data="navGroup({{ 'true' if systemOn else 'false' }}, 'system')">
         {{ groupHead('system', 'Hệ thống') }}
         <div id="nav-system" x-show="open" {{ '' if systemOn else 'x-cloak' }} x-collapse>
           {% if can('settings_site') or can('settings_pages') or can('settings_design') or can('settings_seo') or can('mail') %}{{ link(A + '/settings', 'Cài đặt website', 'settings', p.startsWith('/settings')) }}{% endif %}

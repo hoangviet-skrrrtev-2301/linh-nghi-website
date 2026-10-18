@@ -4,6 +4,7 @@ Ghi lại các thay đổi đáng chú ý, mới nhất ở trên cùng.
 
 ## Chưa phát hành
 
+- Admin: **nhóm menu nhớ trạng thái mở** (`navGroup(active, key)` lưu vào localStorage `ln_admin_nav_open`): chuyển sang mục khác không tự đóng nhóm đang mở, chỉ đóng khi bấm đóng. **Menu Cài đặt**: 5 mục lớn nay cũng thu gọn (xổ ra khi đang ở một nhóm của mục, nhớ trạng thái). Cập nhật tài liệu cho phiên sau (GHI_CHU_DU_AN, DANH_CHO_LAP_TRINH_VIEN, HUONG_DAN_SU_DUNG, CAI_DAT_VA_CHAY_THU, CLAUDE.md)
 - **Menu admin thu gọn + rà soát bảo mật + sửa xung đột (18/10/2026)**:
   (1) Menu bên trái: 4 nhóm chính (Bán hàng, Sản phẩm, Nội dung, Hệ thống) **thu gọn**, chỉ xổ ra khi đang dùng một trang của nhóm hoặc khi bấm tên nhóm (`navGroup` trong `core.js`, `layout.njk`).
   (2) **Lỗi bảo mật đã sửa (quyền)**: vai trò chỉ có quyền đơn hàng xóa được đơn / xuất được danh sách khách bằng đường dẫn có dấu "/" cuối (`DELETE /inquiries/5/`, `/customers/export.csv/`) vì Express bỏ qua dấu "/" cuối còn quy tắc quyền thì không. Nay `normalizePath` (chữ thường, bỏ "//" và "/" cuối) chạy trước khi so quy tắc; trang admin chưa khai báo quyền mặc định chỉ Chủ shop vào (trước đây mở cho mọi người, ví dụ `/admin/PRODUCTS`; dữ liệu vẫn được API chặn).

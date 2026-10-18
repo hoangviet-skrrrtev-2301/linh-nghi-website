@@ -13,6 +13,7 @@ npm run create-admin    # tạo / đặt lại tài khoản admin (có thể tru
 npm run dev             # http://localhost:3000, admin: /admin
 npm run build:css       # bắt buộc sau khi sửa class Tailwind trong template hoặc file CSS
 npm run migrate | backup | restore -- <thư-mục>
+npm run check:seo       # kiểm tra SEO kỹ thuật của website đang chạy (nhận thêm địa chỉ: -- http://localhost:3100)
 ```
 
 ## Nguyên tắc bắt buộc

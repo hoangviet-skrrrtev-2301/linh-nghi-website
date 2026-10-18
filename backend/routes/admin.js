@@ -158,7 +158,7 @@ router.get('/settings/:key', (req, res, next) => {
   if (!settingsAllowed(req, group.key)) return next(new HttpError(403, 'Bạn chưa được cấp quyền sửa mục cài đặt này'));
   // Menu cài đặt gom theo mục lớn (kèm mô tả); chỉ hiện nhóm tài khoản có quyền, mục nào không còn nhóm nào thì ẩn
   const categories = SETTINGS_CATEGORIES
-    .map((c) => ({ ...c, groups: c.groups.filter((k) => settingsAllowed(req, k)).map((k) => ({ key: k, label: SCHEMA_BY_KEY[k].label })) }))
+    .map((c) => ({ ...c, active: c.groups.includes(group.key), groups: c.groups.filter((k) => settingsAllowed(req, k)).map((k) => ({ key: k, label: SCHEMA_BY_KEY[k].label })) }))
     .filter((c) => c.groups.length);
   res.adminView('pages/settings.njk', { group, categories });
 });

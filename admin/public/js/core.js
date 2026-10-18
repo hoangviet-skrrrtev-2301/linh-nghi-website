@@ -588,5 +588,14 @@
 
 // Nhóm menu bên trái: thu gọn, chỉ xổ ra khi đang dùng một trang của nhóm (active) hoặc khi bấm vào tên nhóm
 document.addEventListener('alpine:init', () => {
-  window.Alpine.data('navGroup', (active) => ({ open: !!active, toggle() { this.open = !this.open; } }));
+  // Nhóm mở khi đang dùng một trang của nhóm (active) hoặc khi người dùng đã bấm mở; trạng thái được nhớ nên chuyển sang mục khác
+  // không tự đóng nhóm đang mở (dễ quay lại). Chỉ đóng khi người dùng bấm đóng.
+  const KEY = 'ln_admin_nav_open';
+  const read = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { return {}; } };
+  const write = (o) => { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) { /* chế độ riêng tư */ } };
+  window.Alpine.data('navGroup', (active, key) => ({
+    open: !!active || read()[key] === true,
+    init() { if (active) { const o = read(); if (o[key] !== true) { o[key] = true; write(o); } } },
+    toggle() { this.open = !this.open; const o = read(); o[key] = this.open; write(o); },
+  }));
 });

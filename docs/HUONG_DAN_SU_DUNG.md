@@ -23,7 +23,8 @@ Ngoài **Chủ shop** (toàn quyền), mỗi nhân viên được gán một **v
 
 Chọn khoảng thời gian muốn xem ở hàng nút phía trên: **7 ngày, 30 ngày, tháng này, tháng trước, quý này, năm nay** hoặc **Tùy chọn** (chọn từ ngày – đến ngày). Lựa chọn được nhớ cho lần sau.
 
-- **Thẻ số liệu:** đơn hàng mới, yêu cầu custom, lời nhắn liên hệ, khách mới, **doanh thu** và giá trị trung bình mỗi đơn trong kỳ. Mũi tên ↑↓ so với kỳ liền trước có số ngày bằng nhau. Doanh thu chỉ tính các đơn **Hoàn thành**, theo **ngày hoàn thành**.
+- **Thẻ số liệu:** đơn hàng mới, yêu cầu custom, lời nhắn liên hệ, khách mới, **doanh thu** và giá trị trung bình mỗi đơn trong kỳ. Doanh thu chỉ tính các đơn **Hoàn thành**, theo **ngày hoàn thành**. Bấm **So sánh** (mặc định tắt) để xem tăng giảm so với kỳ liền trước, cùng kỳ năm trước hoặc kỳ tự chọn.
+- **Chuẩn bị mở website chính thức:** khung liệt kê việc còn thiếu (thông tin mẫu, ảnh chia sẻ, mã Search Console, index đang tắt...), tự mất khi đã xong.
 - **Biểu đồ:** số hiện sẵn trên từng cột; chuyển giữa "Số yêu cầu" và "Doanh thu"; kỳ dài tự gom theo tuần hoặc tháng. Bấm "Xem số liệu chi tiết từng cột" để xem bảng.
 - Bên phải: tình trạng đơn, **sản phẩm bán chạy** trong kỳ, khách mới theo nguồn. Phía dưới: các yêu cầu mới nhất.
 - Nếu email chưa được cấu hình, trang hiện cảnh báo màu vàng.
@@ -160,6 +161,7 @@ Mọi nội dung trên website đều chỉnh được ở đây, chia thành c�
 | Trang Sản phẩm / Gallery / Blog | Tiêu đề, mô tả hiện đầu trang; **các khoảng giá trong bộ lọc**; số ngày gắn nhãn "Mới"; **hướng dẫn bảo quản** chung; số sản phẩm / bài mỗi trang; mục lục, bài gợi ý, **banner dọc** của Blog |
 | SEO & mã theo dõi | Tiêu đề, mô tả, từ khóa, ảnh chia sẻ mặc định, Google Search Console, Google Analytics, Facebook Pixel |
 | SEO Google & chia sẻ | Chỉ nhập khi muốn trang hiện **khác** trên Google / Facebook so với nội dung hiển thị; ô để trống thì tự lấy tiêu đề và mô tả của trang (mỗi ô ghi rõ lấy từ đâu) |
+| Schema (dữ liệu có cấu trúc) | Loại hình doanh nghiệp, địa chỉ có cấu trúc, tọa độ, giờ mở cửa, mức giá, hiệu lực giá, chính sách đổi trả, phí và thời gian giao hàng (chỉ bật khi đúng thực tế), cách ghi tác giả. Thông tin shop trong schema tự lấy từ Thông tin shop và tự cập nhật |
 | Email (SMTP) | (Chủ shop) cấu hình gửi email, xem [CAU_HINH_EMAIL.md](CAU_HINH_EMAIL.md) |
 
 Bấm **Lưu** để áp dụng ngay. Bấm **Xem website** để kiểm tra.
@@ -193,6 +195,12 @@ Website đã tự động có: thẻ meta title/description/keywords, Open Graph
 3. Mục Sơ đồ trang web: gửi `https://tenmien.vn/sitemap.xml`.
 
 > Khi website đang thử nghiệm, có thể tắt "Cho phép Google lập chỉ mục" để Google chưa lưu trang.
+
+## 10b. Menu quản trị
+
+Menu bên trái gồm 4 nhóm chính (Bán hàng, Sản phẩm, Nội dung, Hệ thống) **thu gọn**: nhóm xổ ra khi bạn đang ở một trang của nhóm, hoặc khi bấm vào tên nhóm. Nhóm bạn đã mở được nhớ nên chuyển sang mục khác không tự đóng, chỉ đóng khi bạn bấm đóng. Menu Cài đặt cũng gom thành 5 mục lớn có mô tả và hoạt động tương tự. Mỗi trang admin có khung **Mô tả cách hoạt động** ở đầu trang, ẩn / hiện được.
+
+**Danh sách dài** (đơn hàng, khách hàng, sản phẩm, blog): mặc định 20 dòng mỗi trang, chọn 20 / 30 / 50 / 100 ở chân danh sách. Bấm vào một dòng rồi Quay lại sẽ về đúng trang đang xem.
 
 ## 11. Tài khoản quản trị (Chủ shop)
 

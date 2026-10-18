@@ -223,3 +223,11 @@ Ghi chú về dự án, các quyết định đã chốt và việc còn dang d�
 | `Chưa có tài khoản quản trị` | Chạy `npm run create-admin` |
 | Quên mật khẩu admin trên máy thử nghiệm | Chạy `npm run create-admin`, nhập lại **email cũ** để đặt mật khẩu mới |
 | Muốn xóa sạch để làm lại từ đầu | Tắt server, xóa các file trong `database/data/` và thư mục `database/uploads/20xx`, rồi chạy lại từ Bước 4 |
+
+
+## Lưu ý khi chạy lần đầu (cập nhật 18/10/2026)
+
+- **Index đang tắt mặc định**: robots.txt chặn toàn bộ và mọi trang `noindex` cho tới khi bạn bật "Cho phép Google lập chỉ mục" ở Admin › Cài đặt › SEO & mã theo dõi (chỉ làm khi mở web chính thức). Xem khung "Chuẩn bị mở website chính thức" ở trang Tổng quan.
+- **Font**: lần khởi động đầu server tải font đã chọn từ Google về `database/data/fonts` (cần internet; chưa tải được thì trang tạm dùng link Google).
+- **Kiểm tra SEO**: khi server đang chạy, mở cửa sổ lệnh khác chạy `npm run check:seo` (hoặc `npm run check:seo -- http://localhost:3100`).
+- **Tài khoản nhân viên thử**: `npm run create-admin -- staff@local.test "Tên" "MatKhau12345" staff`, rồi gán vai trò ở Admin › Tài khoản quản trị.
