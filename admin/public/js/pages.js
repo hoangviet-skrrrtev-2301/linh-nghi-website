@@ -600,7 +600,39 @@ document.addEventListener('alpine:init', () => {
     // Đổi trạng thái; có thể kèm email báo khách (tùy chọn tick ở trên)
     async changeStatus(status) {
       if (status === this.d.status) return;
+      if (!(await this.confirmStatus(status))) return;
       await this.update({ status, notify_customer: this.notify && this.canNotify });
+    },
+    // Hỏi lại khi đổi trạng thái dễ gây nhầm: nhảy cách bước, hoàn thành, hủy, hoặc lùi khỏi trạng thái hoàn thành
+    async confirmStatus(status) {
+      const d = this.d;
+      const label = (k) => d.flow.find((s) => s.key === k)?.label || k;
+      const keys = d.flow.map((s) => s.key).filter((k) => k !== 'cancelled');
+      const from = keys.indexOf(d.status), to = keys.indexOf(status);
+      const isOrder = d.type === 'order';
+      const skipped = from >= 0 && to > from + 1 ? keys.slice(from + 1, to).map(label) : [];
+      const mail = this.notify && this.canNotify ? ' Email báo trạng thái mới sẽ được gửi cho khách.' : '';
+      let message = '';
+      let title = `Chuyển sang "${label(status)}"?`;
+      let danger = false;
+      if (d.status === 'completed' && status !== 'completed') {
+        title = `Đưa đơn về "${label(status)}"?`;
+        message = isOrder
+          ? `Đơn đang ở trạng thái hoàn thành. Đưa về "${label(status)}" thì đơn này sẽ bị trừ khỏi doanh thu, và khi hoàn thành lại sẽ tính vào ngày hoàn thành mới.`
+          : `Yêu cầu đang ở trạng thái "${label(d.status)}". Đưa về "${label(status)}" nghĩa là chưa xử lý xong.`;
+      } else if (status === 'cancelled') {
+        message = `Đơn sẽ chuyển sang "Đã hủy" và không còn tính vào doanh thu.`;
+        danger = true;
+      } else if (status === 'completed') {
+        title = isOrder ? 'Xác nhận đơn đã hoàn thành?' : `Đánh dấu "${label(status)}"?`;
+        message = isOrder
+          ? `Doanh thu ${d.total != null ? '(' + window.Admin.fmt.vnd(d.total) + ') ' : ''}sẽ được tính vào hôm nay. Chỉ bấm khi khách đã nhận hàng và thanh toán xong.`
+          : `Yêu cầu sẽ được đánh dấu "${label(status)}".`;
+        if (skipped.length) message += ` Lưu ý: đơn chưa qua bước ${skipped.map((x) => '"' + x + '"').join(', ')}.`;
+      } else if (skipped.length) {
+        message = `Đơn đang ở "${label(d.status)}", bạn đang bỏ qua bước ${skipped.map((x) => '"' + x + '"').join(', ')}. Hãy chắc chắn đúng tình trạng thực tế.`;
+      } else return true;
+      return confirmBox({ title, message: message + mail, okLabel: 'Đồng ý', danger });
     },
     async saveShip() { await this.update({ carrier: this.ship.carrier, tracking_code: this.ship.tracking_code }); },
     // Nạp dữ liệu từ server. Phần dòng hàng đang sửa dở không bị ghi đè khi chỉ đổi trạng thái / ghi chú.
@@ -633,6 +665,11 @@ document.addEventListener('alpine:init', () => {
       this.dirty = true;
     },
     async saveItems() {
+      if (this.d.type === 'order' && this.d.status === 'completed' && !(await confirmBox({
+        title: 'Đơn đã hoàn thành, vẫn sửa giá?',
+        message: `Doanh thu của ngày hoàn thành${this.d.completed_at ? ' (' + window.Admin.fmt.date(this.d.completed_at) + ')' : ''} sẽ thay đổi theo tổng tiền mới (hiện là ${this.d.total != null ? window.Admin.fmt.vnd(this.d.total) : 'chưa có giá'}). Chỉ sửa khi số liệu cũ bị sai.`,
+        okLabel: 'Vẫn lưu', danger: true,
+      }))) return;
       this.saving = true;
       try {
         const body = {
