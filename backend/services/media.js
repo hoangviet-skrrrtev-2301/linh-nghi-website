@@ -48,7 +48,8 @@ export async function saveImage(buffer, { originalName = '', folder = DEFAULT_FO
     const file = `${id}-${key}.webp`;
     await base.clone()
       .resize({ width: size, height: size, fit: 'inside', withoutEnlargement: true })
-      .webp({ quality: key === 'sm' ? 78 : 84, effort: 4 })
+      // Chất lượng theo cỡ: nhỏ 78, vừa 84, lớn 88 (ảnh xem chi tiết / phóng to cần nét cho ngọc)
+      .webp({ quality: { sm: 78, md: 84, lg: 88 }[key], effort: 4 })
       .toFile(path.join(dir, file));
     variants[key] = `${rel}/${file}`;
   }
