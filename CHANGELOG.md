@@ -4,6 +4,8 @@ Ghi lại các thay đổi đáng chú ý, mới nhất ở trên cùng.
 
 ## Chưa phát hành
 
+- Dữ liệu demo: thay ảnh demo cũ (hình vẽ) bằng 67 ảnh thật trong thư mục Thư viện ảnh › sample (ảnh sản phẩm, gallery, bài viết, loại ngọc dùng ảnh mới; 15 ảnh còn lại để sẵn trong thư mục); gói nội dung `database/content-pack` đã xuất lại
+
 - `npm run bootstrap -- --blank`: cài máy mới với website trống hoàn toàn (không nạp gói nội dung, không dữ liệu mẫu); `--seed` dùng dữ liệu mẫu
 
 - Admin › Tổng quan: khung "Chuẩn bị mở website chính thức" mặc định thu gọn (bấm "Xem" để mở)
