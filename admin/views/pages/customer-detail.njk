@@ -24,8 +24,8 @@
         <div class="card-head flex-wrap">
           <h3 class="card-title">Lịch sử đơn & yêu cầu</h3>
           <div class="flex flex-wrap gap-2">
-            <button type="button" class="btn btn-primary btn-sm" :disabled="saving" @click="newInquiry('order')">{{ icon('plus', 'w-3.5 h-3.5') }} Tạo đơn hàng</button>
-            <button type="button" class="btn btn-secondary btn-sm" :disabled="saving" @click="newInquiry('custom')">{{ icon('sparkle', 'w-3.5 h-3.5') }} Ghi nhận yêu cầu custom</button>
+            {% if can('orders') %}<button type="button" class="btn btn-primary btn-sm" :disabled="saving" @click="newInquiry('order')">{{ icon('plus', 'w-3.5 h-3.5') }} Tạo đơn hàng</button>{% endif %}
+            {% if can('orders') %}<button type="button" class="btn btn-secondary btn-sm" :disabled="saving" @click="newInquiry('custom')">{{ icon('sparkle', 'w-3.5 h-3.5') }} Ghi nhận yêu cầu custom</button>{% endif %}
           </div>
         </div>
         <table class="table table-stack">
@@ -33,7 +33,7 @@
           <tbody>
             <tr x-show="!c.inquiries.length"><td colspan="5" class="py-10 text-center text-slate-500">Chưa có đơn hay yêu cầu nào. Dùng nút phía trên để tạo cho khách này.</td></tr>
             <template x-for="i in c.inquiries" :key="i.id">
-              <tr class="cursor-pointer" @click="location.href = '{{ A }}/inquiries/' + i.id">
+              <tr {% if can('orders') %}class="cursor-pointer" @click="location.href = '{{ A }}/inquiries/' + i.id"{% endif %}>
                 <td class="font-mono text-xs" x-text="i.code"></td><td x-text="i.type_label"></td>
                 <td class="max-w-xs"><p class="line-clamp-1 text-slate-600" x-text="i.type === 'order' ? $fmt.vnd(i.total) + ' · ' + i.items.map(x => x.name).join(', ') : i.message"></p></td>
                 <td><span class="badge" :class="Admin.STATUS_COLOR[i.status]" x-text="i.status_label"></span></td>

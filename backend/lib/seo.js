@@ -88,8 +88,8 @@ export function buildSeo(req, { page, title, description, image, type = 'website
     title: fullTitle,
     description: desc,
     keywords: ps[page + '_keywords'] || s.seo.keywords,
-    // Biến thể (có tham số lọc / phân trang) không có canonical: đã noindex, không dùng cả hai
-    canonical: variant ? null : cleanUrl,
+    // Trang không cho index (biến thể có tham số, giỏ hàng, chuyên mục blog, khi tắt index...) không có canonical: không dùng cả noindex lẫn canonical
+    canonical: indexable ? cleanUrl : null,
     url: cleanUrl,
     image: img,
     type,

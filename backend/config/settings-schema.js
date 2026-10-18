@@ -613,7 +613,7 @@ export const SETTINGS_SCHEMA = [
         name: 'author_type', label: 'Tác giả bài viết', type: 'select', default: 'person',
         options: [{ value: 'person', label: 'Ghi tên tác giả đã chọn cho bài (chưa chọn thì ghi là shop)' }, { value: 'organization', label: 'Luôn ghi là shop' }],
       },
-      { name: 'search_action', label: 'Khai báo ô tìm kiếm của website (SearchAction)', type: 'toggle', default: true },
+      { name: 'search_action', label: 'Khai báo ô tìm kiếm của website (SearchAction)', type: 'toggle', default: false, help: 'Google đã bỏ hộp tìm kiếm trong kết quả và trang tìm kiếm của shop bị chặn thu thập, nên mặc định tắt.' },
     ],
   },
   {

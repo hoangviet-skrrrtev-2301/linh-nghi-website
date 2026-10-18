@@ -91,3 +91,10 @@ cd /var/www/linh-nghi && node -e "require('better-sqlite3')('database/data/app.s
 | Email không gửi được | Kiểm tra Mật khẩu ứng dụng Gmail, Gmail đã bật xác minh 2 bước. Một số VPS chặn cổng 465, khi đó thử cổng 587 và tắt SSL |
 | "Phiên làm việc đã hết hạn" | Tải lại trang (F5) |
 | Hết dung lượng | Xóa ảnh không dùng trong Thư viện ảnh, giảm số bản sao lưu: thêm `BACKUP_KEEP=7` vào `.env` |
+
+
+## Phân quyền theo vai trò (18/10/2026)
+
+- Chủ shop toàn quyền; nhân viên theo vai trò (Admin › Vai trò & phân quyền). Chặn ở cả trang lẫn API; đường dẫn chưa khai báo quyền mặc định chỉ Chủ shop. Đường dẫn được chuẩn hóa (chữ thường, bỏ "//" và "/" cuối) trước khi so quyền; quy tắc nằm ở `backend/config/permissions.js`. Thêm API / trang mới phải khai báo quyền ở đó.
+- Quyền nhạy cảm, chỉ giao cho người thật tin tưởng: **tải bản sao lưu** (chứa toàn bộ dữ liệu, mật khẩu băm của mọi tài khoản), **cấu hình email** (đổi máy chủ gửi thư có thể chuyển hướng thông báo chứa thông tin khách), **xóa đơn / khách và xuất danh sách khách**, **cài đặt giao diện** (CSS tùy chỉnh), **chuyển hướng**. Quản lý tài khoản và vai trò không giao được.
+- Chưa có: bắt buộc 2FA cho nhân viên, mã khôi phục 2FA, giới hạn thời gian không hoạt động của phiên (phiên hết hạn theo thời gian cấu hình `SESSION_HOURS`).

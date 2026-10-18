@@ -38,7 +38,7 @@ _Cập nhật lần cuối: 17/10/2026 (cuối ngày)_
 | Thứ tự sản phẩm | Admin kéo thả đổi vị trí; `sort_order` đứng đầu trong sắp xếp "Nổi bật" (khách) và khối nổi bật trang chủ, chưa sắp xếp thì Best Seller / nổi bật trước | `reorderProducts` trong `catalog.js`, ghi lại sort_order 1..n toàn cửa hàng |
 | Tìm kiếm | Không phân biệt hoa/thường và dấu ("áo" = "Áo" = "ao") cho sản phẩm, bài viết, đơn, khách, ảnh | Hàm `vn()` trong SQLite |
 | Menu | Mỗi mục có thể sổ dọc theo loại ngọc / màu / kiểu dáng / mệnh / loại sản phẩm / chuyên mục blog / bài mới / danh sách tự nhập. Mục Sản phẩm mặc định sổ theo loại ngọc, tự thêm các loại hàng khác đang hoạt động (Pháp phục) | |
-| Giao diện admin | Giữ nguyên menu bên trái và danh sách nhóm cài đặt; các trang nhiều thành phần (Cài đặt các nhóm dài, danh sách slide / khối) chia phần thu gọn / mở ra | Chủ dự án không muốn gập menu |
+| Giao diện admin | Menu bên trái: 4 nhóm chính thu gọn, chỉ xổ ra khi đang dùng hoặc bấm vào (18/10/2026, trước đó để phẳng); danh sách nhóm cài đặt gom thành 5 mục lớn có mô tả; các trang nhiều thành phần (Cài đặt các nhóm dài, danh sách slide / khối) chia phần thu gọn / mở ra | Chủ dự án không muốn gập menu |
 | Loại hàng khác ngọc (Pháp phục) | Hiện giống ngọc (thẻ sản phẩm, trang chi tiết) nhưng **không có bộ lọc** (bộ lọc chỉ cho ngọc), không hiện chung trong "Tất cả sản phẩm", chỉ xem qua menu / đường dẫn `?nhom=<slug>` / tìm kiếm | Chủ dự án chốt |
 | Bộ lọc | Loại ngọc, giá (khoảng giá cấu hình được), ni tay, màu, kiểu dáng, mệnh | Danh mục quản lý trong admin |
 | Chế độ tối | Có, khách tự chuyển; mặc định theo thiết bị; chủ shop chỉnh màu tối / tắt trong Admin › Giao diện | Biến CSS `:root[data-theme="dark"]` sinh tại `/theme.css` |

@@ -73,7 +73,7 @@ export const API_RULES = [
   { re: /^\/media\//, read: EDITORS, write: ['media'] },
   { re: /^\/terms/, read: ['terms', 'products'], write: ['terms'] },
   { re: /^\/product-types/, read: ['products', 'terms'], write: ['products'] },
-  { re: /^\/products/, read: ['products'], write: ['products'] },
+  { re: /^\/products/, read: ['products', 'orders', 'gallery'], write: ['products'] },   // đơn hàng cần tìm sản phẩm để thêm dòng hàng
   { re: /^\/gallery/, read: ['gallery'], write: ['gallery'] },
   { re: /^\/(posts|post-categories|authors)/, read: ['posts'], write: ['posts'] },
   { re: /^\/inquiries\/[^/]+$/, method: 'DELETE', any: ['sensitive'] },
@@ -89,7 +89,12 @@ export const API_RULES = [
   { re: /^\/settings(\/|$)/, any: null },
 ];
 
-export function apiPermission(user, method, path) {
+// Express khớp đường dẫn không phân biệt hoa / thường, bỏ qua dấu "/" cuối và "//" thừa. Chuẩn hóa giống vậy trước khi so quy tắc,
+// nếu không "DELETE /inquiries/5/" hay "/Customers/Export.csv" sẽ lọt qua quy tắc quyền riêng.
+export const normalizePath = (p) => '/' + String(p || '').toLowerCase().split('?')[0].split('/').filter(Boolean).join('/');
+
+export function apiPermission(user, method, rawPath) {
+  const path = normalizePath(rawPath);
   const rule = API_RULES.find((r) => r.re.test(path) && (!r.method || r.method === method));
   if (!rule) return user?.role === 'owner'; // đường dẫn chưa khai báo: chỉ Chủ shop (an toàn mặc định)
   if ('any' in rule) return rule.any === null ? !!user : rule.any === 'owner' ? user?.role === 'owner' : canAny(user, rule.any);
@@ -117,8 +122,12 @@ export function firstAllowedPage(user) {
   return order.find(([perm]) => can(user, perm))?.[1] || '/account';
 }
 
-export function pagePermission(user, path) {
+// Trang mọi tài khoản đã đăng nhập đều vào được (Tổng quan tự chuyển hướng, cài đặt kiểm tra riêng từng nhóm)
+const OPEN_PAGES = /^\/(account|settings(\/[^/]+)?)?$/;
+
+export function pagePermission(user, rawPath) {
+  const path = normalizePath(rawPath);
   const rule = PAGE_RULES.find((r) => r.re.test(path));
-  if (!rule) return true;
+  if (!rule) return OPEN_PAGES.test(path) || user?.role === 'owner';   // trang chưa khai báo: chỉ Chủ shop (an toàn mặc định)
   return rule.any === 'owner' ? user?.role === 'owner' : canAny(user, rule.any);
 }

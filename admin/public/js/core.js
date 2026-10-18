@@ -585,3 +585,8 @@
   }
   if (document.readyState !== 'loading') start(); else document.addEventListener('DOMContentLoaded', start);
 })();
+
+// Nhóm menu bên trái: thu gọn, chỉ xổ ra khi đang dùng một trang của nhóm (active) hoặc khi bấm vào tên nhóm
+document.addEventListener('alpine:init', () => {
+  window.Alpine.data('navGroup', (active) => ({ open: !!active, toggle() { this.open = !this.open; } }));
+});

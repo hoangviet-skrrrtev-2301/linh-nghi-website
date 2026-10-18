@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <script nonce="{{ nonce }}">document.documentElement.classList.add('js');
   (function () {
-    var mode = {{ s.theme.dark_mode | dump | safe }}, t = 'light';
+    var mode = {{ s.theme.dark_mode | jsonScript }}, t = 'light';
     if (mode !== 'off') {
       try { t = localStorage.getItem('ln_theme') || (mode === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); } catch (e) {}
     }
@@ -61,10 +61,10 @@
 
   {% if s.seo.ga_measurement_id %}
   <script async src="https://www.googletagmanager.com/gtag/js?id={{ s.seo.ga_measurement_id }}" nonce="{{ nonce }}"></script>
-  <script nonce="{{ nonce }}">window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config',{{ s.seo.ga_measurement_id | dump | safe }});</script>
+  <script nonce="{{ nonce }}">window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config',{{ s.seo.ga_measurement_id | jsonScript }});</script>
   {% endif %}
   {% if s.seo.facebook_pixel_id %}
-  <script nonce="{{ nonce }}">!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init',{{ s.seo.facebook_pixel_id | dump | safe }});fbq('track','PageView');</script>
+  <script nonce="{{ nonce }}">!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init',{{ s.seo.facebook_pixel_id | jsonScript }});fbq('track','PageView');</script>
   {% endif %}
 
   {# Cấu hình cho JavaScript phía trình duyệt #}
