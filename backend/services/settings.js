@@ -4,6 +4,7 @@ import { SETTINGS_SCHEMA, SCHEMA_BY_KEY } from '../config/settings-schema.js';
 import { encrypt, decrypt } from '../lib/security.js';
 import { cleanHtml, cleanText } from '../lib/sanitize.js';
 import { bool, safeJson, HttpError } from '../lib/utils.js';
+import { ensureFonts } from './fonts.js';
 import { getMediaMap } from './media.js';
 
 let cache = null;
@@ -86,6 +87,7 @@ export function saveGroup(key, input) {
   db.prepare(`INSERT INTO settings (key, value, updated_at) VALUES (?, ?, datetime('now'))
     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`).run(key, JSON.stringify(next));
   invalidateSettings();
+  if (key === 'theme') ensureFonts([next.font_heading, next.font_body]); // tự lưu font mới chọn về máy chủ
   return getForAdmin(key);
 }
 

@@ -18,6 +18,9 @@ export function buildRobots() {
   if (!seo.allow_indexing) return 'User-agent: *\nDisallow: /\n';
 
   const out = ['User-agent: *', 'Allow: /'];
+  // Địa chỉ có tham số (lọc, sắp xếp, tìm kiếm, phân trang, album...) chỉ là biến thể của trang gốc: không cho thu thập.
+  // Trang quan trọng (trang chủ, loại sản phẩm, sản phẩm, bài viết) đều có địa chỉ sạch và nằm trong sitemap.
+  if (sm.robots_block_params !== false) out.push('Disallow: /*?');
   // Chỉ nhận đường dẫn bắt đầu bằng "/", không chứa khoảng trắng. Đường dẫn trang quản trị không bao giờ được liệt kê ở đây.
   for (const p of lines(sm.robots_disallow)) {
     if (/^\/[^\s#]*$/.test(p) && !p.startsWith(config.adminPath)) out.push(`Disallow: ${p}`);

@@ -42,6 +42,8 @@ export function createApp() {
   const long = { maxAge: config.isProd ? '30d' : 0, index: false };
   app.use('/assets', versioned, express.static(config.paths.frontendPublic, { index: false, setHeaders: (res) => assetCache(res) }));
   app.use('/uploads', express.static(config.paths.uploads, { index: false, fallthrough: false, dotfiles: 'deny', maxAge: config.isProd ? YEAR * 1000 : 0, immutable: config.isProd }));
+  // Font Google đã tự lưu (tên file có mã nội dung nên không bao giờ đổi): cache 1 năm khi chạy thật
+  app.use('/fonts', express.static(config.paths.fonts, { index: false, dotfiles: 'deny', maxAge: config.isProd ? YEAR * 1000 : 0, immutable: config.isProd, setHeaders: (res, file) => { if (file.endsWith('manifest.json')) res.setHeader('Cache-Control', 'no-store'); } }));
   app.use('/admin-assets', versioned, express.static(config.paths.adminPublic, { index: false, setHeaders: (res) => assetCache(res) }));
   const nm = (p) => path.join(config.paths.nodeModules, p);
   const vendor = {

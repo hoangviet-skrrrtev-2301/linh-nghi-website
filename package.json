@@ -11,6 +11,7 @@
     "start": "node backend/server.js",
     "dev": "node --watch-path=backend backend/server.js",
     "build": "npm run build:css",
+    "check:seo": "node backend/scripts/check-seo.js",
     "build:css": "tailwindcss -i frontend/src/css/app.css -o frontend/public/css/app.css --minify && tailwindcss -i admin/src/admin.css -o admin/public/css/admin.css --minify",
     "watch:css": "tailwindcss -i frontend/src/css/app.css -o frontend/public/css/app.css --watch",
     "migrate": "node backend/scripts/migrate.js",

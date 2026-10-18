@@ -2,8 +2,13 @@
 import { config } from './config/index.js';
 import { migrate, db } from './lib/db.js';
 import { createApp } from './app.js';
+import { ensureFonts } from './services/fonts.js';
+import { getPublicSettings } from './services/settings.js';
 
 migrate();
+
+// Tự lưu font đang dùng về máy chủ (chạy nền, không chặn khởi động)
+ensureFonts([getPublicSettings().theme.font_heading, getPublicSettings().theme.font_body]);
 
 const userCount = db.prepare('SELECT COUNT(*) FROM users').pluck().get();
 const app = createApp();

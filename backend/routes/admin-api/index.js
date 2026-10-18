@@ -15,6 +15,7 @@ import * as content from '../../services/content.js';
 import * as inquiries from '../../services/inquiries.js';
 import * as customerImport from '../../services/customer-import.js';
 import { dashboardStats } from '../../services/dashboard.js';
+import { launchChecks } from '../../services/launch-check.js';
 import * as users from '../../services/users.js';
 import * as redirects from '../../services/redirects.js';
 import * as settings from '../../services/settings.js';
@@ -58,6 +59,7 @@ router.get('/dashboard', h((req) => ({
   },
   latest: inquiries.listInquiries({ perPage: 8 }).items,
   mailConfigured: settings.getRaw('mail').enabled,
+  launch: launchChecks(),
 })));
 
 // ---------------- Thư viện ảnh ----------------

@@ -2,7 +2,6 @@
 // JavaScript giao diện khách (Alpine.js components & stores)
 // Alpine được nạp sau file này nên mọi component đăng ký trong sự kiện "alpine:init".
 // ==========================================================
-import PhotoSwipeLightbox from '/vendor/photoswipe/photoswipe-lightbox.esm.min.js';
 
 const CONFIG = JSON.parse(document.getElementById('app-config')?.textContent || '{}');
 const CART_KEY = 'ln_cart_v1';
@@ -362,26 +361,47 @@ document.addEventListener('alpine:init', () => {
 });
 
 // ---------------- Slider, phóng to ảnh, hiệu ứng ----------------
-function initSwipers() {
-  if (!window.Swiper) return;
+// Swiper (khoảng 45KB) chỉ tải khi trang thật sự có slider cần chạy: banner trang chủ từ 2 slide, hoặc sản phẩm từ 2 ảnh
+let swiperLoading;
+function loadSwiper() {
+  if (window.Swiper) return Promise.resolve();
+  swiperLoading ||= new Promise((resolve, reject) => {
+    const el = document.createElement('script');
+    el.src = '/vendor/swiper/swiper-bundle.min.js';
+    el.onload = resolve;
+    el.onerror = reject;
+    document.head.append(el);
+  });
+  return swiperLoading;
+}
+
+async function initSwipers() {
   const hero = document.querySelector('.hero-swiper');
-  if (hero && Number(hero.dataset.count) > 1) {
+  const main = document.querySelector('.product-main');
+  const needHero = hero && Number(hero.dataset.count) > 1;
+  const needMain = main && main.querySelectorAll('.swiper-slide').length > 1;
+  if (!needHero && !needMain) return;
+  try { await loadSwiper(); } catch { return; }
+  if (needHero) {
     new window.Swiper(hero, {
       loop: true, speed: 900, effect: 'fade', fadeEffect: { crossFade: true },
       autoplay: { delay: 5500, disableOnInteraction: false },
       pagination: { el: '.swiper-pagination', clickable: true },
     });
   }
-  const main = document.querySelector('.product-main');
-  if (main) {
+  if (needMain) {
     const thumbsEl = document.querySelector('.product-thumbs');
     const thumbs = thumbsEl ? new window.Swiper(thumbsEl, { slidesPerView: 'auto', spaceBetween: 10, watchSlidesProgress: true }) : null;
     new window.Swiper(main, { spaceBetween: 0, thumbs: thumbs ? { swiper: thumbs } : undefined });
   }
 }
 
-function initLightbox() {
-  document.querySelectorAll('[data-pswp]').forEach((el) => {
+// PhotoSwipe chỉ tải khi trang có ảnh phóng to (trang chi tiết sản phẩm, gallery)
+async function initLightbox() {
+  const targets = document.querySelectorAll('[data-pswp]');
+  if (!targets.length) return;
+  const { default: PhotoSwipeLightbox } = await import('/vendor/photoswipe/photoswipe-lightbox.esm.min.js');
+  targets.forEach((el) => {
     const lightbox = new PhotoSwipeLightbox({
       gallery: el,
       children: 'a[data-pswp-width]',
@@ -471,7 +491,6 @@ ready(() => {
   initLightbox();
   initMarquee();
   initToc();
-  // Swiper nạp bằng thẻ defer, chạy sau khi tải xong
-  if (window.Swiper) initSwipers();
-  else window.addEventListener('load', initSwipers, { once: true });
+  // Slider chạy khi trình duyệt rảnh, không chen vào lúc hiển thị nội dung đầu trang
+  (window.requestIdleCallback || ((fn) => setTimeout(fn, 200)))(initSwipers);
 });

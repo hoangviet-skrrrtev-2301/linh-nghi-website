@@ -566,11 +566,53 @@ export const SETTINGS_SCHEMA = [
       { name: 'home_title', label: 'Tiêu đề trang chủ', type: 'text', default: 'Linh Nghi – Vòng tay ngọc tự nhiên có kiểm định' },
       { name: 'default_description', label: 'Mô tả mặc định', type: 'textarea', default: 'Vòng tay ngọc phỉ thúy, bích ngọc tự nhiên có chứng chỉ kiểm định. Tư vấn chọn ni, thiết kế theo yêu cầu, giao hàng toàn quốc.' },
       { name: 'keywords', label: 'Từ khóa', type: 'text', default: 'vòng ngọc, vòng phỉ thúy, vòng tay ngọc tự nhiên, vòng ngọc kiểm định' },
-      { name: 'og_image', label: 'Ảnh chia sẻ mạng xã hội mặc định', type: 'image', help: 'Tỉ lệ 1200×630px' },
-      { name: 'allow_indexing', label: 'Cho phép Google lập chỉ mục', type: 'toggle', default: true, help: 'Tắt khi website đang thử nghiệm' },
+      { name: 'og_image', label: 'Ảnh chia sẻ mạng xã hội mặc định', type: 'image', help: 'Tỉ lệ 1200×630px. Dùng cho mọi trang không có ảnh riêng; để trống thì tự dùng logo shop.' },
+      { name: 'allow_indexing', label: 'Cho phép Google lập chỉ mục', type: 'toggle', default: false, help: 'ĐANG TẮT cho tới khi website vận hành chính thức: robots.txt chặn toàn bộ và mọi trang gắn noindex. Chỉ bật khi đã có tên miền chính thức, nội dung thật và đã kiểm tra xong.' },
       { name: 'google_site_verification', label: 'Mã xác minh Google Search Console', type: 'text', help: 'Chỉ dán phần content="..."' },
       { name: 'ga_measurement_id', label: 'Google Analytics 4 (G-XXXXXXX)', type: 'text' },
       { name: 'facebook_pixel_id', label: 'Facebook Pixel ID', type: 'text' },
+    ],
+  },
+  {
+    key: 'schema',
+    label: 'Schema (dữ liệu có cấu trúc)',
+    description: 'Dữ liệu giúp Google hiểu cửa hàng, sản phẩm và bài viết (hiện giá, tình trạng hàng, thông tin shop ngoài kết quả tìm kiếm). Mọi trang, sản phẩm, bài viết mới đều tự có schema theo các lựa chọn ở đây; thông tin shop lấy từ nhóm Thông tin shop và tự cập nhật khi bạn sửa. Chỉ khai báo những gì shop thật sự áp dụng.',
+    fields: [
+      { name: 'enabled', label: 'Bật schema trên website', type: 'toggle', default: true, help: 'Tắt thì mọi trang không xuất dữ liệu có cấu trúc. Nên để bật.' },
+      {
+        name: 'business_type', label: 'Loại hình doanh nghiệp', type: 'select', default: 'JewelryStore',
+        options: [{ value: 'JewelryStore', label: 'Cửa hàng trang sức (JewelryStore)' }, { value: 'Store', label: 'Cửa hàng (Store)' }, { value: 'LocalBusiness', label: 'Doanh nghiệp địa phương (LocalBusiness)' }, { value: 'Organization', label: 'Tổ chức, chỉ bán online (Organization)' }],
+      },
+      { name: 'address_street', label: 'Địa chỉ (số nhà, đường)', type: 'text', help: 'Để trống thì lấy từ Thông tin shop › Địa chỉ.' },
+      { name: 'address_locality', label: 'Quận / huyện, thành phố', type: 'text', help: 'VD: Quận 1, TP. Hồ Chí Minh' },
+      { name: 'address_region', label: 'Tỉnh / thành', type: 'text' },
+      { name: 'address_postal', label: 'Mã bưu chính', type: 'text' },
+      { name: 'geo_lat', label: 'Vĩ độ (lat)', type: 'text', help: 'Chỉ khi có cửa hàng thật để khách tới. Lấy từ Google Maps (chuột phải vào địa điểm).' },
+      { name: 'geo_lng', label: 'Kinh độ (lng)', type: 'text' },
+      { name: 'price_range', label: 'Mức giá (priceRange)', type: 'text', help: 'VD: ₫₫₫ hoặc 1.000.000₫ - 50.000.000₫. Để trống nếu không muốn khai báo.' },
+      { name: 'opening_hours', label: 'Giờ mở cửa (mỗi dòng một khoảng)', type: 'textarea', help: 'Định dạng Google hiểu, VD: Mo-Su 09:00-21:00 hoặc Mo-Fr 09:00-18:00. Để trống nếu không có cửa hàng mở cửa.' },
+      { name: 'product_valid_days', label: 'Giá có hiệu lực (số ngày)', type: 'number', default: 365, help: 'Khai báo priceValidUntil cho giá sản phẩm: hôm nay + số ngày này (tự cập nhật mỗi ngày). Đặt 0 để không khai báo.' },
+      { name: 'return_enabled', label: 'Khai báo chính sách đổi trả', type: 'toggle', default: false, help: 'Chỉ bật nếu shop thật sự có đổi trả; thông tin phải khớp với chính sách đăng trên website.' },
+      { name: 'return_days', label: 'Số ngày được đổi trả', type: 'number', default: 7 },
+      {
+        name: 'return_fees', label: 'Phí đổi trả', type: 'select', default: 'customer',
+        options: [{ value: 'free', label: 'Miễn phí đổi trả' }, { value: 'customer', label: 'Khách chịu phí vận chuyển' }],
+      },
+      {
+        name: 'return_method', label: 'Hình thức trả hàng', type: 'select', default: 'mail',
+        options: [{ value: 'mail', label: 'Gửi qua bưu điện' }, { value: 'store', label: 'Trả tại cửa hàng' }],
+      },
+      { name: 'shipping_enabled', label: 'Khai báo phí và thời gian giao hàng', type: 'toggle', default: false, help: 'Giúp sản phẩm đủ điều kiện hiển thị mua sắm trên Google. Chỉ bật khi thông tin đúng với thực tế.' },
+      { name: 'shipping_cost', label: 'Phí giao hàng (VNĐ, 0 = miễn phí)', type: 'number', default: 0 },
+      { name: 'handling_min', label: 'Chuẩn bị hàng: tối thiểu (ngày)', type: 'number', default: 0 },
+      { name: 'handling_max', label: 'Chuẩn bị hàng: tối đa (ngày)', type: 'number', default: 2 },
+      { name: 'transit_min', label: 'Vận chuyển: tối thiểu (ngày)', type: 'number', default: 1 },
+      { name: 'transit_max', label: 'Vận chuyển: tối đa (ngày)', type: 'number', default: 5 },
+      {
+        name: 'author_type', label: 'Tác giả bài viết', type: 'select', default: 'organization',
+        options: [{ value: 'organization', label: 'Ghi là shop (không cần trang tác giả)' }, { value: 'person', label: 'Ghi tên người viết nếu bài có nhập tên' }],
+      },
+      { name: 'search_action', label: 'Khai báo ô tìm kiếm của website (SearchAction)', type: 'toggle', default: true },
     ],
   },
   {
@@ -578,6 +620,7 @@ export const SETTINGS_SCHEMA = [
     label: 'Sitemap & robots.txt',
     description: 'Quản lý những gì Google được thu thập. Xem kết quả tại /robots.txt và /sitemap.xml của website. Sau khi có tên miền, gửi địa chỉ sitemap.xml vào Google Search Console. Việc bật/tắt cho Google lập chỉ mục toàn website nằm ở nhóm "SEO & mã theo dõi".',
     fields: [
+      { name: 'robots_block_params', label: 'Chặn thu thập các địa chỉ có tham số (lọc, sắp xếp, tìm kiếm, phân trang)', type: 'toggle', default: true, help: 'Thêm Disallow: /*? vào robots.txt để Google chỉ thu thập trang quan trọng (trang chủ, loại sản phẩm, sản phẩm, bài viết). Các trang này cũng tự gắn noindex. Nên để bật.' },
       { name: 'sitemap_enabled', label: 'Bật sitemap.xml', type: 'toggle', default: true },
       { name: 'sitemap_pages', label: 'Đưa các trang chính vào sitemap', type: 'toggle', default: true, help: 'Trang chủ, Sản phẩm, Về shop, Liên hệ, Gallery, Chọn size, Thiết kế riêng, Blog (trang nào đang tắt tính năng sẽ tự bỏ)' },
       { name: 'sitemap_categories', label: 'Đưa trang lọc theo loại ngọc vào sitemap', type: 'toggle', default: true },
@@ -671,6 +714,12 @@ sectionize('site', [
   { key: 'contact', label: 'Liên hệ & địa chỉ', hint: 'Điện thoại, Zalo, email, địa chỉ, giờ làm việc, bản đồ', fields: ['phone', 'zalo', 'email', 'address', 'working_hours', 'map_embed_url'] },
   { key: 'social', label: 'Mạng xã hội & sàn', hint: 'Facebook, Instagram, Threads, TikTok, YouTube, Shopee', fields: ['facebook', 'instagram', 'threads', 'tiktok', 'youtube', 'shopee'] },
   { key: 'footer', label: 'Chân trang', hint: 'Ảnh Bộ Công Thương, đoạn giới thiệu, bản quyền', fields: ['bct_image', 'bct_url', 'footer_text', 'copyright'] },
+]);
+
+sectionize('schema', [
+  { key: 'business', label: 'Thông tin doanh nghiệp', hint: 'Loại hình, địa chỉ có cấu trúc, tọa độ, giờ mở cửa, mức giá', fields: ['enabled', 'business_type', 'address_street', 'address_locality', 'address_region', 'address_postal', 'geo_lat', 'geo_lng', 'price_range', 'opening_hours'] },
+  { key: 'product', label: 'Sản phẩm: giá, đổi trả, giao hàng', hint: 'Hiệu lực giá, chính sách đổi trả, phí và thời gian giao hàng', fields: ['product_valid_days', 'return_enabled', 'return_days', 'return_fees', 'return_method', 'shipping_enabled', 'shipping_cost', 'handling_min', 'handling_max', 'transit_min', 'transit_max'] },
+  { key: 'article', label: 'Bài viết & website', hint: 'Cách ghi tác giả, ô tìm kiếm', fields: ['author_type', 'search_action'] },
 ]);
 
 sectionize('theme', [

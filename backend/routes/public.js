@@ -7,6 +7,7 @@ import {
 import { listPosts, getPost, listGallery, galleryAlbums, listPostCategories, getPostCategory } from '../services/content.js';
 import { buildSeo, productJsonLd, breadcrumbJsonLd, articleJsonLd, collectionJsonLd, webPageJsonLd } from '../lib/seo.js';
 import { pageUrlBuilder } from '../lib/pagination.js';
+import { fontLinks } from '../services/fonts.js';
 import { formToken } from '../middleware/security.js';
 import { HttpError } from '../lib/utils.js';
 import { homeSections } from '../lib/home-layout.js';
@@ -42,11 +43,6 @@ const FEATURE_BY_URL = {
   '/gio-hang': 'checkout',
 };
 
-function googleFontsUrl(theme) {
-  const families = [...new Set([theme.font_heading, theme.font_body])]
-    .map((f) => `family=${encodeURIComponent(f).replace(/%20/g, '+')}:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400`);
-  return `https://fonts.googleapis.com/css2?${families.join('&')}&display=swap`;
-}
 
 // Dữ liệu chung cho mọi trang khách (header, footer, SEO mặc định...)
 export function publicLocals(req, res) {
@@ -54,7 +50,7 @@ export function publicLocals(req, res) {
   res.locals.s = s;
   res.locals.features = s.features;
   res.locals.currentPath = req.path;
-  res.locals.fontsUrl = googleFontsUrl(s.theme);
+  res.locals.fonts = fontLinks(s.theme);
   res.locals.formToken = formToken();
   res.locals.jadeTypes = listTerms('jade_type', { activeOnly: true });
   res.locals.nav = (s.navigation.items || []).filter((item) => {

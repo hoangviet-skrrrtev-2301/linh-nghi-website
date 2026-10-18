@@ -48,6 +48,7 @@ export const config = {
     migrations: path.join(ROOT, 'database/migrations'),
     seeds: path.join(ROOT, 'database/seeds'),
     uploads: path.join(ROOT, 'database/uploads'),
+    fonts: path.join(ROOT, 'database/data/fonts'),
     backups: path.join(ROOT, 'database/backups'),
     nodeModules: path.join(ROOT, 'node_modules'),
   },

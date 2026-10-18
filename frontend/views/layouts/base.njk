@@ -16,8 +16,8 @@
   <meta name="description" content="{{ seo.description }}">
   {% if seo.keywords %}<meta name="keywords" content="{{ seo.keywords }}">{% endif %}
   <meta name="robots" content="{{ seo.robots }}">
-  <link rel="canonical" href="{{ seo.canonical }}">
-  {% if seo.prev %}<link rel="prev" href="{{ seo.prev }}">{% endif %}{% if seo.next %}<link rel="next" href="{{ seo.next }}">{% endif %}
+  {# Trang biến thể (có tham số lọc / phân trang) đã noindex nên không có canonical #}
+  {% if seo.canonical %}<link rel="canonical" href="{{ seo.canonical }}">{% endif %}
   <meta name="theme-color" content="{{ s.theme.color_primary }}">
   <meta name="format-detection" content="telephone=no">
   {% if s.seo.google_site_verification %}<meta name="google-site-verification" content="{{ s.seo.google_site_verification }}">{% endif %}
@@ -28,7 +28,7 @@
   <meta property="og:locale" content="vi_VN">
   <meta property="og:title" content="{{ seo.title }}">
   <meta property="og:description" content="{{ seo.description }}">
-  <meta property="og:url" content="{{ seo.canonical }}">
+  <meta property="og:url" content="{{ seo.url }}">
   {% if seo.image %}<meta property="og:image" content="{{ seo.image }}"><meta property="og:image:alt" content="{{ seo.title }}">{% endif %}
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="{{ seo.title }}">
@@ -42,9 +42,16 @@
   <link rel="icon" href="/assets/images/favicon.svg" type="image/svg+xml">
   {% endif %}
 
+  {# Font tự lưu trên máy chủ; chưa có thì tạm dùng Google Fonts #}
+  {% if fonts.local %}
+  {% for href in fonts.preload %}<link rel="preload" as="font" type="font/woff2" href="{{ href }}" crossorigin>
+  {% endfor %}{% for href in fonts.css %}<link rel="stylesheet" href="{{ href }}">
+  {% endfor %}
+  {% else %}
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="{{ fontsUrl }}">
+  <link rel="stylesheet" href="{{ fonts.google }}">
+  {% endif %}
   <link rel="stylesheet" href="/assets/css/app.css?v={{ assetVersion }}">
   <link rel="stylesheet" href="/theme.css?v={{ assetVersion }}">
   {% block head %}{% endblock %}

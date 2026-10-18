@@ -118,6 +118,17 @@ KHÁCH TRÊN WEBSITE                       SHOP TỰ NHẬP (admin)
 - Đổi slug / loại / chuyên mục trong `catalog.js` và `content.js` phải gọi `addAutoRedirect` (đã làm sẵn trong các hàm lưu). Thêm kiểu trang mới có đường dẫn đổi được thì làm tương tự.
 - Thứ tự middleware trong `app.js`: file tĩnh → `applyRedirects` → `canonicalUrl` → route.
 
+## SEO kỹ thuật: index, canonical, schema, tốc độ
+
+- **Chính sách địa chỉ có tham số** (`hasRealParams`, `buildSeo` trong `backend/lib/seo.js`): trang sạch → `index, follow` + canonical tự trỏ; chỉ có tham số theo dõi (utm_*, fbclid, gclid...) → như trang sạch, canonical về địa chỉ không tham số; có bất kỳ tham số nào khác (lọc, sắp xếp, tìm kiếm, `?trang=N`, album...) → `noindex, follow` và **không in canonical** (`seo.canonical = null`, template bỏ thẻ). `seo.url` luôn là địa chỉ sạch (dùng cho og:url). Tham số mới thêm sau này tự rơi vào nhóm thứ ba, không cần sửa gì.
+- **robots.txt** (`lib/robots-sitemap.js`): index tắt → `Disallow: /`; index bật → `Disallow: /*?` (tắt được ở cài đặt `robots_block_params`) cùng các đường dẫn chặn khác và dòng Sitemap. Sitemap chỉ liệt kê địa chỉ sạch.
+- **Công tắc index** `seo.allow_indexing` (mặc định tắt): tắt → robots `Disallow: /` + mọi trang `noindex, nofollow`. Bật khi chính thức mở web. Khung "Chuẩn bị mở website chính thức" ở Tổng quan (`services/launch-check.js`) nhắc các việc còn lại; thêm kiểm tra mới bằng một dòng `add(...)`.
+- **Schema**: dựng trong `buildSeo` từ nhóm cài đặt `schema` (`organizationJsonLd`, `productJsonLd`, `articleJsonLd`...). Mỗi lần dựng lại từ cài đặt nên sửa trong admin là có hiệu lực ngay. Trang không tự truyền JSON-LD loại trang thì `buildSeo` tự thêm WebPage + BreadcrumbList (chỉ trang cho index). Trang mới nên truyền loại schema đúng (CollectionPage, Product, BlogPosting...) qua tham số `jsonLd`. Chính sách đổi trả và giao hàng chỉ xuất khi shop bật trong cài đặt.
+- **og:image**: ảnh riêng → `seo.og_image` → logo.
+- **Font** (`services/fonts.js`): font chọn ở Giao diện tải về `database/data/fonts` lúc khởi động và khi lưu cài đặt giao diện, phục vụ ở `/fonts`; template `base.njk` dùng `fonts.local` (CSS local + preload) hoặc `fonts.google` khi chưa có. Thêm font mới vào `FONT_OPTIONS` trong schema là đủ.
+- **JavaScript nặng tải khi cần**: Swiper (`loadSwiper` trong `app.js`) chỉ khi có slider cần chạy; PhotoSwipe chỉ khi có `[data-pswp]`.
+- **Kiểm tra tự động**: `npm run check:seo [-- <địa chỉ>]` (mặc định http://localhost:3000, cần server đang chạy). Báo lỗi canonical, noindex, robots, sitemap, 301 chuẩn hóa, 404, H1, ảnh, og:image, JSON-LD, liên kết hỏng. Chạy sau khi sửa template / route / cài đặt SEO hoặc thêm loại trang / tham số.
+
 ## Kiểm tra trước khi bàn giao bản sửa
 
 - [ ] `npm run build:css` không lỗi
@@ -125,3 +136,4 @@ KHÁCH TRÊN WEBSITE                       SHOP TỰ NHẬP (admin)
 - [ ] Xem trang trên điện thoại (DevTools › chế độ thiết bị) và máy tính
 - [ ] Mở DevTools › Console: không có lỗi đỏ
 - [ ] Thử gửi 1 đơn hàng, 1 yêu cầu custom
+- [ ] `npm run check:seo` (server đang chạy) không báo lỗi, nếu có sửa liên quan trang khách

@@ -29,6 +29,9 @@ _Cập nhật lần cuối: 17/10/2026 (cuối ngày)_
 | Blog | Chia theo chuyên mục; trang chuyên mục `noindex, follow`, không có trong sitemap (tắt được) | Để tránh nội dung trùng khi viết bài SEO nhiều chủ đề |
 | Gallery | Hiện tối đa 8 ảnh dạng 2 hàng × 4 cột (trang chủ và trang Gallery); hơn 8 ảnh thành slider tự lướt phải → trái. Tab "Tất cả" chỉ hiện ảnh bật "Hiện ở Gallery tổng", tab album hiện đủ ảnh | Chủ dự án muốn gallery tổng chọn lọc, album phụ chứa feedback / ảnh chưa chọn |
 | Trạng thái đơn | Mỗi loại có chuỗi riêng: đơn hàng thêm **Đang giao hàng** (kèm đơn vị vận chuyển + mã vận đơn khách xem được, tùy chọn email báo khách); liên hệ kết thúc ở "Đã xử lý" | Ngày 17/10/2026 |
+| Index / robots | **Đang TẮT index** cho tới khi chính thức vận hành (bật ở Cài đặt › SEO & mã theo dõi). Khi bật: robots chặn `/*?`; chỉ trang sạch được index; trang có tham số lọc / sắp xếp / tìm kiếm / phân trang là `noindex, follow` và không có canonical; tham số theo dõi (utm...) canonical về trang sạch | Ngày 18/10/2026. Trang 2 trở đi của danh sách không index, sản phẩm vào Google qua sitemap |
+| Schema | Tự dựng từ cài đặt (nhóm Schema + Thông tin shop); đổi trả / giao hàng mặc định tắt, tác giả bài ghi là shop | Ngày 18/10/2026 |
+| Font | Tự lưu trên máy chủ (database/data/fonts), tải một lần từ Google | Ngày 18/10/2026 |
 | Cấu trúc URL | Phân cấp cha → con: `/san-pham/<loại>/<sản phẩm>`, `/blog/<chuyên mục>/<bài>`; địa chỉ cũ chuyển 301; shop chỉnh chuyển hướng ở Admin › Chuyển hướng & 404 | Ngày 17/10/2026, làm trước khi có tên miền nên chưa mất xếp hạng |
 | Lên đơn | Custom / liên hệ "lên đơn" thì **chính bản ghi đó** chuyển thành đơn hàng (mã DH mới, mã cũ giữ ở `origin_code`, khách tra cứu được cả hai), không tạo bản ghi thứ hai | Ngày 17/10/2026; tránh đếm đôi. Bản ghi cũ tạo theo kiểu `parent_id` vẫn hiển thị bình thường |
 | Doanh thu | Tính theo **ngày hoàn thành** của đơn (giờ Việt Nam), đơn hoàn thành cũ lấy ngày cập nhật cuối làm gần đúng | Chủ dự án chốt |
@@ -72,6 +75,8 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 - Vài đơn / khách thử do chủ dự án tự tạo khi thử tính năng (có thể xóa trong admin).
 
 **Đã làm thêm ngày 17/10/2026 (đã commit `de2eba2`, `11a3925`):** nút Quay lại theo lịch sử trang, chọn 20/30/50 dòng, thêm đơn thủ công, mô tả cách hoạt động (ẩn/hiện), dashboard tách đơn / custom / liên hệ, **lên đơn trên cùng một bản ghi**, trình soạn thảo đầy đủ (bảng, màu, ảnh alt / kích thước / căn lề), **URL phân cấp + chuyển hướng 301/302/410 + nhật ký 404**, trang 404 cấu hình được, tiêu đề không nhảy cấp, ảnh có width/height + fetchpriority, cache, Permissions-Policy, nhãn ảnh sản phẩm trong hơn, rà responsive 34 trang (xem CHANGELOG.md).
+
+**Mở web chính thức (làm cuối cùng):** bật "Cho phép Google lập chỉ mục", điền thông tin thật (khung "Chuẩn bị mở website chính thức" ở Tổng quan liệt kê các mục còn mẫu), đặt BASE_URL đúng tên miền, chạy `npm run check:seo -- https://tenmien.vn`, rồi gửi sitemap lên Search Console.
 
 **Việc đầu tiên của phiên sau:** nhắc chủ dự án **khởi động lại `npm run dev`** (Ctrl+C rồi chạy lại). Bộ tự khởi động lại của `node --watch` trên máy này đã không nạp mã mới (server vẫn chạy bản 16:33 ngày 17/10, chưa có bảng `redirects`, trang Chuyển hướng & 404 chưa dùng được). Khi khởi động lại, migration 009 và 010 tự chạy; bản sao lưu trước migration ở `database/backups/2026-10-17-11-26`.
 

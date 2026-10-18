@@ -5,56 +5,98 @@ import { truncate, stripHtml } from './utils.js';
 
 const abs = (url) => (!url ? null : /^https?:\/\//.test(url) ? url : `${config.baseUrl}${url}`);
 
-// page: khóa trang trong nhóm "SEO từng trang" (home, products, gallery...). Giá trị nhập ở đó được ưu tiên.
-// pagination: { page, pages, url: (n) => đường dẫn trang n } → canonical riêng từng trang, rel prev/next, hậu tố "Trang N"
-export function buildSeo(req, { page, title, description, image, type = 'website', noindex = false, followLinks = false, jsonLd = [], canonical, pagination } = {}) {
-  const s = getPublicSettings();
-  const isHome = req.path === '/';
-  const ps = page ? s.seo_pages || {} : {};
-  const pageTitle = ps[`${page}_title`];
-  const pageNo = pagination && pagination.page > 1 ? pagination.page : 0;
-  const baseTitle = isHome && !title
-    ? pageTitle || s.seo.home_title
-    // Cài đặt tự cắt khoảng trắng đầu / cuối nên hậu tố "| Tên shop" lưu không còn dấu cách đầu: nối lại bằng 1 dấu cách
-    : pageTitle || `${title || s.site.name}${s.seo.title_suffix ? ` ${String(s.seo.title_suffix).trim()}` : ''}`;
-  const fullTitle = pageNo ? `${baseTitle} – Trang ${pageNo}` : baseTitle;
-  const desc = truncate(stripHtml(ps[`${page}_description`] || description || s.seo.default_description), 160);
-  const img = abs(ps[`${page}_og_image`]?.lg || image || s.seo.og_image?.lg);
-  // Canonical bỏ các tham số lọc/trang để tránh trùng lặp nội dung
-  const url = pagination ? abs(pagination.url(pagination.page)) : canonical ? abs(canonical) : `${config.baseUrl}${req.path === '/' ? '/' : req.path.replace(/\/+$/, '')}`;
+// Tham số theo dõi quảng cáo: cùng nội dung với trang gốc (canonical về trang sạch, vẫn cho index).
+// MỌI tham số khác (lọc, sắp xếp, tìm kiếm, phân trang, album...) tạo ra biến thể của trang: tự gắn noindex, follow và KHÔNG có canonical
+// (Google khuyên không dùng cùng lúc noindex và canonical), robots.txt cũng chặn "/*?". Tham số mới thêm sau này tự được xử lý như vậy.
+const TRACKING = /^(utm_[a-z0-9_]+|fbclid|gclid|gbraid|wbraid|msclkid|yclid|mc_cid|mc_eid|_ga|_gl|ref|zarsrc)$/i;
+export const hasRealParams = (req) => Object.keys(req.query || {}).some((k) => !TRACKING.test(k));
 
-  const org = {
+const PAGE_TYPES = new Set(['WebPage', 'AboutPage', 'ContactPage', 'CollectionPage', 'ItemPage', 'FAQPage', 'ProfilePage', 'Product', 'BlogPosting', 'Article']);
+const num = (v) => { const n = Number(String(v ?? '').replace(',', '.')); return String(v ?? '').trim() !== '' && Number.isFinite(n) ? n : null; };
+
+// Dữ liệu cửa hàng / tổ chức: dựng mỗi lần từ cài đặt nên tự cập nhật ngay khi shop sửa
+function organizationJsonLd(s, img) {
+  const sc = s.schema || {};
+  const street = (sc.address_street || s.site.address || '').replace(/\s*\n\s*/g, ', ').trim();
+  const lat = num(sc.geo_lat); const lng = num(sc.geo_lng);
+  const hours = String(sc.opening_hours || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const address = street || sc.address_locality || sc.address_region || sc.address_postal
+    ? { '@type': 'PostalAddress', streetAddress: street || undefined, addressLocality: sc.address_locality || undefined, addressRegion: sc.address_region || undefined, postalCode: sc.address_postal || undefined, addressCountry: 'VN' }
+    : undefined;
+  return {
     '@context': 'https://schema.org',
-    '@type': 'JewelryStore',
-    '@id': `${config.baseUrl}/#organization`,
+    '@type': sc.business_type || 'JewelryStore',
+    '@id': config.baseUrl + '/#organization',
     name: s.site.name,
     url: config.baseUrl,
     logo: abs(s.site.logo?.md),
     image: img,
-    telephone: s.site.phone,
-    email: s.site.email,
-    address: s.site.address ? { '@type': 'PostalAddress', streetAddress: s.site.address.replace(/\s*\n\s*/g, ', '), addressCountry: 'VN' } : undefined,
+    telephone: s.site.phone || undefined,
+    email: s.site.email || undefined,
+    address,
+    geo: lat != null && lng != null ? { '@type': 'GeoCoordinates', latitude: lat, longitude: lng } : undefined,
+    priceRange: sc.price_range || undefined,
+    openingHours: hours.length ? hours : undefined,
     contactPoint: s.site.phone ? { '@type': 'ContactPoint', telephone: s.site.phone, contactType: 'customer service', areaServed: 'VN', availableLanguage: 'Vietnamese' } : undefined,
-    slogan: s.site.slogan,
+    slogan: s.site.slogan || undefined,
     sameAs: [s.site.facebook, s.site.instagram, s.site.threads, s.site.tiktok, s.site.youtube, s.site.shopee].filter(Boolean),
+  };
+}
+
+// page: khóa trang trong nhóm "SEO từng trang" (home, products, gallery...). Giá trị nhập ở đó được ưu tiên.
+// pagination: { page, pages, url: (n) => đường dẫn trang n } → hậu tố "Trang N" trong tiêu đề; trang 2 trở đi là biến thể (noindex)
+// Trang nào không tự khai báo schema thì vẫn có WebPage + BreadcrumbList tự động (chỉ trang cho index).
+export function buildSeo(req, { page, title, description, image, type = 'website', noindex = false, followLinks = false, jsonLd = [], canonical, pagination } = {}) {
+  const s = getPublicSettings();
+  const isHome = req.path === '/';
+  const ps = page ? s.seo_pages || {} : {};
+  const pageTitle = ps[page + '_title'];
+  const pageNo = pagination && pagination.page > 1 ? pagination.page : 0;
+  const baseTitle = isHome && !title
+    ? pageTitle || s.seo.home_title
+    // Cài đặt tự cắt khoảng trắng đầu / cuối nên hậu tố "| Tên shop" lưu không còn dấu cách đầu: nối lại bằng 1 dấu cách
+    : pageTitle || (title || s.site.name) + (s.seo.title_suffix ? ' ' + String(s.seo.title_suffix).trim() : '');
+  const fullTitle = pageNo ? baseTitle + ' – Trang ' + pageNo : baseTitle;
+  const desc = truncate(stripHtml(ps[page + '_description'] || description || s.seo.default_description), 160);
+  // Ảnh chia sẻ: ảnh riêng của trang → ảnh chia sẻ mặc định → logo (trang nào cũng có og:image)
+  const img = abs(ps[page + '_og_image']?.lg || image || s.seo.og_image?.lg || s.site.logo?.lg || s.site.logo?.md);
+
+  const variant = hasRealParams(req) || pageNo > 0;
+  const cleanPath = req.path === '/' ? '/' : req.path.replace(/\/+$/, '');
+  const cleanUrl = canonical ? abs(canonical) : pagination ? abs(pagination.url(1)) : config.baseUrl + cleanPath;
+  const indexable = !!s.seo.allow_indexing && !noindex && !variant;
+  const robots = !s.seo.allow_indexing ? 'noindex, nofollow'
+    : noindex ? (followLinks || variant ? 'noindex, follow' : 'noindex, nofollow')
+      : variant ? 'noindex, follow'
+        : 'index, follow, max-image-preview:large';
+
+  const extra = [];
+  if (indexable) {
+    if (!jsonLd.some((o) => PAGE_TYPES.has(o['@type']))) extra.push(webPageJsonLd({ name: fullTitle, description: desc, path: cleanPath, image: img }));
+    if (!isHome && !jsonLd.some((o) => o['@type'] === 'BreadcrumbList')) {
+      extra.push(breadcrumbJsonLd([{ name: 'Trang chủ', url: '/' }, { name: title || fullTitle, url: cleanPath }]));
+    }
+  }
+  const sc = s.schema || {};
+  const site = {
+    '@context': 'https://schema.org', '@type': 'WebSite', '@id': config.baseUrl + '/#website', name: s.site.name, url: config.baseUrl, inLanguage: 'vi',
+    publisher: { '@id': config.baseUrl + '/#organization' },
+    potentialAction: sc.search_action === false ? undefined : { '@type': 'SearchAction', target: config.baseUrl + '/san-pham?q={search_term_string}', 'query-input': 'required name=search_term_string' },
   };
 
   return {
     title: fullTitle,
     description: desc,
-    keywords: ps[`${page}_keywords`] || s.seo.keywords,
-    canonical: url,
+    keywords: ps[page + '_keywords'] || s.seo.keywords,
+    // Biến thể (có tham số lọc / phân trang) không có canonical: đã noindex, không dùng cả hai
+    canonical: variant ? null : cleanUrl,
+    url: cleanUrl,
     image: img,
     type,
-    prev: pagination && pagination.page > 1 ? abs(pagination.url(pagination.page - 1)) : null,
-    next: pagination && pagination.page < pagination.pages ? abs(pagination.url(pagination.page + 1)) : null,
-    // followLinks: trang noindex nhưng vẫn cho Google đi theo các liên kết bên trong (trang chuyên mục)
-    robots: !s.seo.allow_indexing ? 'noindex, nofollow' : noindex ? (followLinks ? 'noindex, follow' : 'noindex, nofollow') : 'index, follow, max-image-preview:large',
+    robots,
     siteName: s.site.name,
     // Tổ chức + website có mặt ở mọi trang để các trang con tham chiếu bằng @id
-    jsonLd: [...([org, { '@context': 'https://schema.org', '@type': 'WebSite', '@id': `${config.baseUrl}/#website`, name: s.site.name, url: config.baseUrl, inLanguage: 'vi', publisher: { '@id': `${config.baseUrl}/#organization` },
-      potentialAction: { '@type': 'SearchAction', target: `${config.baseUrl}/san-pham?q={search_term_string}`, 'query-input': 'required name=search_term_string' } }]), ...jsonLd]
-      .map((obj) => JSON.stringify(obj).replace(/</g, '\\u003c')),
+    jsonLd: sc.enabled === false ? [] : [organizationJsonLd(s, img), site, ...extra, ...jsonLd].map((obj) => JSON.stringify(obj).replace(/</g, '\\u003c')),
   };
 }
 
@@ -75,16 +117,37 @@ export function productJsonLd(p) {
     color: p.color?.name,
   };
   if (p.final_price != null) {
-    data.offers = {
+    const sc = s.schema || {};
+    const offers = {
       '@type': 'Offer',
-      url: `${config.baseUrl}${p.url}`,
+      url: config.baseUrl + p.url,
       priceCurrency: 'VND',
       itemCondition: 'https://schema.org/NewCondition',
       price: p.final_price,
       availability: p.stock_status === 'sold_out' ? 'https://schema.org/SoldOut'
         : p.stock_status === 'made_to_order' ? 'https://schema.org/PreOrder' : 'https://schema.org/InStock',
-      seller: { '@type': 'Organization', name: s.site.name },
+      seller: { '@id': config.baseUrl + '/#organization' },
     };
+    const days = Number(sc.product_valid_days);
+    if (days > 0) offers.priceValidUntil = new Date(Date.now() + days * 864e5).toISOString().slice(0, 10);
+    if (sc.return_enabled) {
+      offers.hasMerchantReturnPolicy = {
+        '@type': 'MerchantReturnPolicy', applicableCountry: 'VN',
+        returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow', merchantReturnDays: Number(sc.return_days) || 7,
+        returnMethod: sc.return_method === 'store' ? 'https://schema.org/ReturnInStore' : 'https://schema.org/ReturnByMail',
+        returnFees: sc.return_fees === 'free' ? 'https://schema.org/FreeReturn' : 'https://schema.org/ReturnShippingFees',
+      };
+    }
+    if (sc.shipping_enabled) {
+      const range = (min, max) => ({ '@type': 'QuantitativeValue', minValue: Number(min) || 0, maxValue: Math.max(Number(max) || 0, Number(min) || 0), unitCode: 'DAY' });
+      offers.shippingDetails = {
+        '@type': 'OfferShippingDetails',
+        shippingRate: { '@type': 'MonetaryAmount', value: Number(sc.shipping_cost) || 0, currency: 'VND' },
+        shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'VN' },
+        deliveryTime: { '@type': 'ShippingDeliveryTime', handlingTime: range(sc.handling_min, sc.handling_max), transitTime: range(sc.transit_min, sc.transit_max) },
+      };
+    }
+    data.offers = offers;
   }
   return data;
 }
@@ -112,7 +175,7 @@ export function articleJsonLd(post) {
     image: post.cover ? [abs(post.cover.lg)] : undefined,
     datePublished: post.published_at ? new Date(post.published_at.replace(' ', 'T') + 'Z').toISOString() : undefined,
     dateModified: new Date(post.updated_at.replace(' ', 'T') + 'Z').toISOString(),
-    author: { '@type': 'Person', name: post.author || s.site.name },
+    author: (s.schema || {}).author_type === 'person' && post.author ? { '@type': 'Person', name: post.author } : { '@type': 'Organization', name: s.site.name, url: config.baseUrl },
     publisher: { '@type': 'Organization', name: s.site.name, logo: s.site.logo ? { '@type': 'ImageObject', url: abs(s.site.logo.md) } : undefined },
     mainEntityOfPage: `${config.baseUrl}${post.url}`,
   };
