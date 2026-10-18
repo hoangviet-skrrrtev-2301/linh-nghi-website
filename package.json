@@ -24,7 +24,8 @@
     "export-content": "node backend/scripts/export-content.js",
     "import-content": "node backend/scripts/import-content.js",
     "pull-backup": "node backend/scripts/pull-backup.js",
-    "test": "node --test --test-concurrency=2 \"tests/**/*.test.js\""
+    "test": "node --test --test-concurrency=2 \"tests/**/*.test.js\"",
+    "build:vercel": "node backend/scripts/build-vercel.js"
   },
   "dependencies": {
     "@alpinejs/collapse": "^3.17.4",

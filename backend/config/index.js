@@ -4,7 +4,8 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+// LN_ROOT: chỉ dùng cho bản đóng gói một tệp trên Vercel (backend/vercel-entry.js); bình thường để trống
+const ROOT = process.env.LN_ROOT ? path.resolve(process.env.LN_ROOT) : path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const envFile = path.join(ROOT, '.env');
 if (fs.existsSync(envFile)) process.loadEnvFile(envFile);
 

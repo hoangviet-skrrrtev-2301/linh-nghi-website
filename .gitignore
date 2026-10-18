@@ -26,3 +26,8 @@ Thumbs.db
 *.p12
 *.pfx
 id_rsa*
+
+.vercel
+
+# Sinh ra lúc build trên Vercel
+api/app.bundle.mjs
