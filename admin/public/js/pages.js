@@ -863,12 +863,18 @@ document.addEventListener('alpine:init', () => {
     },
     get importStatusLabel() { return { new: 'Mới', update: 'Cập nhật', skip: 'Bỏ qua', error: 'Lỗi' }; },
     async load() {
-      if (!this.restored) this.restoreState();   // chỉ để nạp số dòng mỗi trang đã chọn (trang này chưa ghi bộ lọc vào địa chỉ)
+      if (!this.restored) {
+        // Nạp bộ lọc, trang, số dòng từ địa chỉ để Quay lại từ trang chi tiết về đúng trang đang xem
+        this.restoreState();
+        this.selected = this.filters.months ? this.filters.months.split(',').filter(Boolean) : [];
+        this.preset = this.selected.length ? 'pick' : '';
+      }
       this.loading = true;
       try {
         const r = await api(`/customers?${qs({ ...this.filters, page: this.page, per_page: this.perPage })}`);
         this.items = r.items; this.total = r.total; this.pages = r.pages; this.summary = r.summary; this.sources = r.sources || [];
         if (this.page > this.pages) { this.page = this.pages; return this.load(); }
+        this.syncUrl();
       } catch (e) { toast().error(e); }
       this.loading = false;
     },

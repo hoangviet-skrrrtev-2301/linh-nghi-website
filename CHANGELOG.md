@@ -4,6 +4,8 @@ Ghi lại các thay đổi đáng chú ý, mới nhất ở trên cùng.
 
 ## Chưa phát hành
 
+- Admin › Khách hàng: bộ lọc (tìm kiếm, tháng, nguồn), trang và số dòng giờ ghi vào địa chỉ trang như các danh sách khác, nên bấm vào một khách rồi Quay lại / Back vẫn về đúng trang đang xem (trước đây về trang 1)
+
 - Admin: danh sách **Đơn hàng, Custom, Liên hệ, Khách hàng, Sản phẩm, Blog** mặc định **20 dòng/trang**, chọn 20 / 30 / 50 / 100 ở chân danh sách (lựa chọn dùng chung và nhớ trên trình duyệt). API `/inquiries` và `/customers` nhận `per_page` (mặc định 20, tối đa 100); trang Khách hàng trước đây chưa có ô chọn
 
 - Admin: **mô tả cách hoạt động ẩn / hiện ở mọi trang** (trước chỉ có Đơn hàng, Custom, Liên hệ, Khách hàng, Chuyển hướng): thêm Tổng quan, Sản phẩm, Sửa sản phẩm, Danh mục, Gallery, Blog, Viết bài, Thư viện ảnh, Cài đặt, Tài khoản quản trị, Tài khoản & bảo mật, Nhật ký, Chi tiết đơn, Chi tiết khách. Partial đổi tên `partials/sales-help.njk` → `partials/page-help.njk`; nội dung mỗi trang theo `helpKey`; lựa chọn ẩn / hiện nhớ riêng từng trang trên trình duyệt, điện thoại mặc định thu gọn
