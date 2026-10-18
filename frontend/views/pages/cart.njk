@@ -22,6 +22,7 @@
     <div x-show="$store.cart.items.length > 0"><form @submit.prevent="submit($el)" novalidate class="relative mt-8 grid gap-10 lg:grid-cols-[1fr_400px]">
       <div>
         {# ----- Danh sách sản phẩm ----- #}
+        <p class="mb-4 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert" x-show="$store.cart.items.some((i) => i.unavailable)" x-cloak>{{ s.forms.cart_unavailable }}</p>
         <div class="card divide-y divide-line">
           <template x-for="(it, idx) in $store.cart.items" :key="it.key">
             <div class="flex gap-4 p-4 sm:p-5">
@@ -31,7 +32,7 @@
                   <a :href="it.url || '/san-pham/' + it.slug" class="font-heading text-lg font-medium leading-snug hover:text-primary" x-text="it.name"></a>
                   <button type="button" class="p-1 text-muted hover:text-red-600" @click="$store.cart.remove(it.key)" aria-label="Xóa">{{ icon('trash', 'w-4 h-4') }}</button>
                 </div>
-                <p class="mt-0.5 text-xs text-red-600" x-show="it.unavailable">Sản phẩm này không còn bán, vui lòng xóa khỏi giỏ</p>
+                <p class="mt-0.5 text-xs text-red-600" x-show="it.unavailable">{{ s.forms.cart_unavailable }}</p>
                 <div class="mt-auto flex flex-wrap items-center justify-between gap-3 pt-3">
                   <div class="flex items-center gap-3">
                     <template x-if="it.sizes && it.sizes.length">

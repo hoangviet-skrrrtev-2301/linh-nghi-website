@@ -442,6 +442,7 @@ export const SETTINGS_SCHEMA = [
     fields: [
       { name: 'order_title', label: 'Tiêu đề trang đặt hàng', type: 'text', default: 'Gửi đơn đặt hàng' },
       { name: 'order_note', label: 'Ghi chú trang đặt hàng', type: 'richtext', default: '<p>Sau khi nhận đơn, shop sẽ gọi điện hoặc nhắn Zalo để xác nhận và hướng dẫn thanh toán. Bạn chưa cần thanh toán ở bước này.</p>' },
+      { name: 'cart_unavailable', label: 'Cảnh báo sản phẩm trong giỏ không còn bán', type: 'text', default: 'Sản phẩm này đã bị thay đổi, vui lòng xóa khỏi giỏ và chọn sản phẩm khác.', help: 'Hiện ở trang giỏ hàng khi sản phẩm khách đã thêm bị xóa, ẩn hoặc hết hàng. Khách không gửi được đơn cho đến khi xóa sản phẩm đó.' },
       { name: 'order_success', label: 'Thông báo khi gửi đơn thành công', type: 'textarea', default: 'Cảm ơn bạn! Shop đã nhận đơn và sẽ liên hệ xác nhận trong thời gian sớm nhất.' },
       { name: 'order_image_enabled', label: 'Cho khách tải ảnh thông tin đơn hàng sau khi đặt', type: 'toggle', default: true, help: 'Ảnh PNG gồm mã đơn, thông tin nhận hàng, sản phẩm, tổng tiền. Khách lưu để gửi shop và tra cứu về sau. Ảnh được vẽ trên máy khách, không lưu trên máy chủ.' },
       { name: 'order_image_title', label: 'Tiêu đề trên ảnh đơn hàng', type: 'text', default: 'Thông tin đơn hàng' },
@@ -679,7 +680,7 @@ sectionize('size_guide', [
 ]);
 
 sectionize('forms', [
-  { key: 'order', label: 'Đặt hàng', hint: 'Tiêu đề, ghi chú, thông báo thành công, vận chuyển', fields: ['order_title', 'order_note', 'order_success', 'shipping_note'] },
+  { key: 'order', label: 'Đặt hàng', hint: 'Tiêu đề, ghi chú, thông báo thành công, vận chuyển', fields: ['order_title', 'order_note', 'cart_unavailable', 'order_success', 'shipping_note'] },
   { key: 'orderimage', label: 'Ảnh đơn hàng cho khách tải', hint: 'Chữ trên ảnh và nút tải ảnh', toggle: 'order_image_enabled', fields: ['order_image_enabled', 'order_image_title', 'order_image_note', 'order_image_track', 'order_image_button', 'order_image_share'] },
   { key: 'track', label: 'Tra cứu đơn hàng', hint: 'Tiêu đề và lời nhắn theo từng trạng thái đơn', fields: ['track_title', 'track_intro', 'track_msg_new', 'track_msg_contacted', 'track_msg_confirmed', 'track_msg_shipping', 'track_msg_completed', 'track_msg_cancelled'] },
   { key: 'custom', label: 'Thiết kế riêng (custom)', hint: 'Tiêu đề, thông báo và các lựa chọn trong form custom', fields: ['custom_title', 'custom_intro', 'custom_success', 'budget_options', 'contact_via_options', 'accessory_options'] },

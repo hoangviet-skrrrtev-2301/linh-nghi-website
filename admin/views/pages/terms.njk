@@ -5,6 +5,7 @@
 {% block heading %}Danh mục & bộ lọc{% endblock %}
 {% block content %}
 <div x-data="termsPage">
+  {% set helpKey = 'terms' %}{% include "partials/page-help.njk" %}
   <p class="mb-5 max-w-3xl text-sm text-slate-600">Các danh mục dưới đây dùng để phân loại sản phẩm và tạo bộ lọc trên trang Sản phẩm. Loại ngọc còn hiển thị ở khối “Phân loại” trên trang chủ.</p>
   <div class="mb-5 flex flex-wrap items-center gap-2">
     {% for k, v in meta.termTypes %}

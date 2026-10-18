@@ -1,0 +1,162 @@
+{# Mô tả cách hoạt động của từng trang admin (ẩn / hiện được). Truyền helpKey: order | custom | contact | all | customers | redirects | inquiry | customer | dashboard | products | product-edit | terms | gallery | posts | post-edit | media | settings | users | account | audit. Truyền thêm helpClass (tùy chọn) nếu khung nằm trong lưới.
+   Lựa chọn ẩn / hiện nhớ riêng cho từng trang trên trình duyệt này. #}
+{% from "partials/icons.njk" import icon %}
+<div class="mb-5 {{ helpClass }}" x-data="{ open: true, key: '{{ helpKey }}',
+    init() { this.open = innerWidth >= 768; /* điện thoại: mặc định thu gọn cho đỡ dài */ try { const v = localStorage.getItem('ln_admin_help_' + this.key); if (v) this.open = v !== 'hidden'; } catch (e) {} },
+    toggle() { this.open = !this.open; try { localStorage.setItem('ln_admin_help_' + this.key, this.open ? 'shown' : 'hidden'); } catch (e) {} } }">
+  <button type="button" class="inline-flex items-center gap-1.5 text-sm text-brand-600 hover:underline" @click="toggle()" :aria-expanded="open">
+    {{ icon('alert', 'w-4 h-4') }} <span x-text="open ? 'Ẩn mô tả cách hoạt động' : 'Xem mô tả cách hoạt động của trang này'"></span>
+  </button>
+  <div x-cloak x-show="open" x-collapse>
+    <div class="mt-2 space-y-3 rounded-xl border border-brand-100 bg-brand-50/60 p-4 text-sm leading-relaxed text-slate-700">
+      {% if helpKey == 'order' %}
+      <p><b>Đơn hàng</b> là nơi theo dõi mọi đơn của shop, dù khách đặt ở đâu. Một đơn có thể đến từ:</p>
+      <ul class="list-disc space-y-1 pl-5">
+        <li><b>Khách đặt trên website</b> (giỏ hàng): đơn tự xuất hiện ở đây, shop nhận email thông báo nếu đã bật email.</li>
+        <li><b>Lên đơn từ yêu cầu custom hoặc liên hệ</b>: mở yêu cầu đó, bấm “Lên đơn hàng”. Chính yêu cầu ấy chuyển thành đơn (nhận mã DH mới), không sinh thêm một bản ghi thứ hai. Khách vẫn tra cứu được bằng mã cũ.</li>
+        <li><b>Shop tự thêm</b> (khách chốt qua Zalo, Facebook, tại cửa hàng…): bấm <b>Thêm đơn hàng</b> ở góc phải, chọn khách có sẵn hoặc nhập khách mới, rồi điền sản phẩm và giá.</li>
+      </ul>
+      <p><b>Trạng thái:</b> Mới → Đã liên hệ → Đã xác nhận → Đang giao hàng → Hoàn thành (hoặc Đã hủy). Doanh thu ở Tổng quan chỉ tính đơn <b>Hoàn thành</b>, theo ngày hoàn thành.</p>
+      <p><b>Trong chi tiết đơn:</b> sửa sản phẩm, giá, giảm giá / phụ phí; nhập đơn vị vận chuyển và mã vận đơn (khách xem được khi tra cứu bằng mã đơn + số điện thoại); tùy chọn gửi email báo khách mỗi lần đổi trạng thái.</p>
+      {% elif helpKey == 'custom' %}
+      <p><b>Yêu cầu custom</b> là các đơn thiết kế riêng khách gửi từ trang “Thiết kế riêng” (loại ngọc, màu, ni tay, ngân sách, mô tả). Khách không tải được ảnh lên, ảnh mẫu khách gửi qua Zalo.</p>
+      <ul class="list-disc space-y-1 pl-5">
+        <li>Shop liên hệ khách (Zalo / điện thoại), đổi trạng thái Mới → Đã liên hệ → Đã xác nhận → Hoàn thành (hoặc Đã hủy).</li>
+        <li>Trong chi tiết có thể ghi <b>báo giá</b> cho khách và ghi chú nội bộ.</li>
+        <li>Khi khách chốt mua, bấm <b>Lên đơn hàng</b>: yêu cầu này <b>chuyển thành đơn hàng</b> (sang mục Đơn hàng, mã DH mới). Không bị đếm hai lần; khách vẫn tra cứu được bằng mã CT cũ.</li>
+        <li>Shop cũng có thể tự ghi nhận yêu cầu custom khách nhắn ngoài website bằng nút <b>Thêm yêu cầu custom</b>.</li>
+      </ul>
+      {% elif helpKey == 'contact' %}
+      <p><b>Liên hệ</b> gồm lời nhắn từ trang Liên hệ và yêu cầu tư vấn về một sản phẩm (từ popup / trang chi tiết sản phẩm).</p>
+      <ul class="list-disc space-y-1 pl-5">
+        <li>Trạng thái ngắn gọn: Mới → Đã liên hệ → <b>Đã xử lý</b> (hoặc Đã hủy). Khi xong việc tư vấn thì chuyển “Đã xử lý”.</li>
+        <li>Nếu khách quyết định mua, bấm <b>Lên đơn hàng</b>: lời nhắn chuyển thành đơn hàng (không tạo thêm bản ghi), từ đó theo dõi ở mục Đơn hàng.</li>
+        <li>Mỗi người gửi lời nhắn đều có hồ sơ trong <b>Khách hàng</b> (gộp theo số điện thoại).</li>
+      </ul>
+      {% elif helpKey == 'customers' %}
+      <p><b>Khách hàng</b> lưu hồ sơ mỗi người, <b>mỗi số điện thoại là một khách</b>. Khách gửi đơn / custom / liên hệ lần sau cùng số điện thoại sẽ được gộp vào hồ sơ cũ.</p>
+      <ul class="list-disc space-y-1 pl-5">
+        <li>Thêm khách thủ công, hoặc <b>nhập hàng loạt</b> bằng cách dán từ Excel / CSV (có xem trước trước khi nhập).</li>
+        <li>Mở một khách để xem lịch sử, sửa thông tin, ghi nhãn / nguồn, hoặc tạo đơn / yêu cầu mới cho khách đó.</li>
+        <li>Số “đã mua” chỉ cộng các đơn đã <b>Hoàn thành</b>. Xóa khách thì các đơn cũ vẫn được giữ.</li>
+        <li>Bộ lọc thời gian xem được khách mới tạo hoặc khách có phát sinh đơn / yêu cầu trong các tháng chọn; có thể xuất CSV (chủ shop).</li>
+      </ul>
+      {% elif helpKey == 'redirects' %}
+      <p><b>Chuyển hướng</b> đưa khách và Google từ một đường dẫn cũ sang đường dẫn mới, để không mất lượt truy cập và điểm SEO khi đổi địa chỉ trang.</p>
+      <ul class="list-disc space-y-1 pl-5">
+        <li><b>301</b>: đổi địa chỉ vĩnh viễn (nên dùng nhất). <b>302</b>: chuyển tạm thời. <b>410</b>: trang đã gỡ hẳn, không có trang thay thế.</li>
+        <li><b>Tự động:</b> khi bạn đổi đường dẫn (slug) của sản phẩm, bài viết, chuyên mục, loại ngọc hoặc loại sản phẩm, hệ thống tự tạo chuyển hướng 301 từ địa chỉ cũ sang địa chỉ mới (có nhãn “tự động”).</li>
+        <li><b>Tự chuẩn hóa:</b> địa chỉ có dấu “/” ở cuối, chữ hoa, hoặc dạng cũ (<code>/san-pham?loai=...</code>, <code>/blog/chuyen-muc/...</code>) luôn được chuyển 301 về địa chỉ chuẩn.</li>
+        <li><b>Trang bị lỗi 404:</b> xem các địa chỉ khách / Google đã vào nhưng không có trang, rồi bấm “Tạo chuyển hướng” để trỏ về đúng trang.</li>
+        <li>Địa chỉ cấu trúc theo phân cấp: <code>/san-pham</code> → <code>/san-pham/&lt;loại&gt;</code> → <code>/san-pham/&lt;loại&gt;/&lt;sản phẩm&gt;</code>; <code>/blog</code> → <code>/blog/&lt;chuyên mục&gt;</code> → <code>/blog/&lt;chuyên mục&gt;/&lt;bài viết&gt;</code>.</li>
+      </ul>
+      {% elif helpKey == 'inquiry' %}
+      <p><b>Chi tiết yêu cầu</b>: nơi xử lý từng đơn hàng / custom / liên hệ.</p>
+      <ul class="list-disc space-y-1 pl-5">
+        <li><b>Đổi trạng thái</b> bằng các nút bên phải. Các bước dễ gây nhầm (Hoàn thành, Đã hủy, bỏ qua bước, lùi khỏi Hoàn thành) sẽ hỏi lại trước khi đổi.</li>
+        <li><b>Doanh thu</b> chỉ tính đơn ở trạng thái Hoàn thành, theo ngày hoàn thành. Lùi đơn về trạng thái trước thì đơn bị trừ khỏi doanh thu; hoàn thành lại sẽ tính vào ngày mới. Sửa giá của đơn đã hoàn thành làm doanh thu ngày đó đổi theo.</li>
+        <li><b>Sản phẩm &amp; giá</b>: thêm / sửa dòng hàng, giảm giá hoặc phụ phí rồi bấm “Lưu sản phẩm &amp; giá”. Giá trong đơn do khách đặt đã được hệ thống tính lại từ giá sản phẩm.</li>
+        <li><b>Vận chuyển</b>: nhập đơn vị và mã vận đơn, khách xem được khi tra cứu bằng mã đơn + số điện thoại. Tick “Gửi email báo khách” nếu muốn báo ngay khi đổi trạng thái.</li>
+        <li><b>Ghi chú nội bộ</b> khách không nhìn thấy. Custom / liên hệ có nút <b>Lên đơn hàng</b> để chuyển thành đơn trên cùng bản ghi.</li>
+      </ul>
+      {% elif helpKey == 'customer' %}
+      <p><b>Chi tiết khách hàng</b>: hồ sơ và lịch sử của một khách (mỗi số điện thoại là một khách).</p>
+      <ul class="list-disc space-y-1 pl-5">
+        <li>Sửa thông tin, thêm <b>nhãn</b> (VIP, khách sỉ…), <b>nguồn</b>, ni tay và ghi chú nội bộ.</li>
+        <li>Xem toàn bộ đơn / custom / liên hệ của khách; tạo đơn hoặc yêu cầu mới cho khách ngay tại đây.</li>
+        <li>Số “đã mua” chỉ cộng đơn <b>Hoàn thành</b>. Xóa khách (chỉ Chủ shop) thì các đơn cũ vẫn được giữ.</li>
+      </ul>
+      {% elif helpKey == 'dashboard' %}
+      <p><b>Tổng quan</b> cho biết tình hình bán hàng trong một khoảng thời gian bạn chọn (7 ngày, 30 ngày, tháng này, tháng trước, quý này, năm nay hoặc tự chọn ngày). Lựa chọn được nhớ cho lần sau.</p>
+      <ul class="list-disc space-y-1 pl-5">
+        <li><b>Thẻ số liệu:</b> đơn hàng, yêu cầu custom, liên hệ, khách mới, <b>doanh thu</b> và giá trị trung bình mỗi đơn. Doanh thu chỉ tính đơn <b>Hoàn thành</b>, theo <b>ngày hoàn thành</b>, không phải ngày đặt.</li>
+        <li><b>So sánh:</b> mặc định tắt. Bấm “So sánh” để xem tăng giảm so với kỳ liền trước, cùng kỳ năm trước hoặc kỳ tự chọn; biểu đồ không bị đổi.</li>
+        <li><b>Biểu đồ:</b> chuyển giữa “Số yêu cầu” và “Doanh thu”; kỳ dài tự gom theo tuần hoặc tháng.</li>
+        <li>Bên phải: tình trạng đơn, sản phẩm bán chạy, khách mới theo nguồn. Phía dưới: các yêu cầu mới nhất.</li>
+        <li>Xóa hoặc ẩn một sản phẩm không làm đổi doanh thu cũ, vì mỗi đơn đã lưu sẵn tên và giá lúc đặt.</li>
+      </ul>
+      {% elif helpKey == 'products' %}
+      <p><b>Sản phẩm</b> là danh sách toàn bộ hàng của shop, cả đang hiện lẫn bản nháp.</p>
+      <ul class="list-disc space-y-1 pl-5">
+        <li><b>Ẩn / hiện:</b> bấm biểu tượng con mắt để chuyển về bản nháp (khách không thấy, dữ liệu vẫn giữ). Tick chọn nhiều sản phẩm để Ẩn / Hiện / Xóa hàng loạt; xóa luôn hỏi xác nhận.</li>
+        <li><b>Sửa nhanh giá:</b> bấm vào giá để nhập giá bán và giá khuyến mãi; giá mới áp dụng ngay cho khách. Để trống giá bán thì website hiện “Liên hệ”.</li>
+        <li><b>Kéo thả đổi vị trí:</b> kéo biểu tượng ⠿ đầu dòng (khi sắp xếp theo “Thứ tự hiển thị”); đây là thứ tự khách thấy ở mục “Nổi bật” và khối nổi bật trang chủ.</li>
+        <li><b>Nhân bản</b> để tạo nhanh sản phẩm tương tự. <b>Loại sản phẩm</b> để thêm loại hàng khác ngọc và bật / tắt hoạt động; loại chưa hoạt động khách không thấy.</li>
+        <li>Xóa hoặc ẩn sản phẩm đã có người mua không ảnh hưởng đơn cũ và doanh thu. Khách đang để sản phẩm đó trong giỏ sẽ được báo phải chọn sản phẩm khác.</li>
+      </ul>
+      {% elif helpKey == 'product-edit' %}
+      <p><b>Thêm / sửa sản phẩm</b> gồm các tab: Thông tin, Hình ảnh, Thông số &amp; phân loại, Chứng chỉ kiểm định, SEO. Cột bên phải chứa các lựa chọn hiển thị.</p>
+      <ul class="list-disc space-y-1 pl-5">
+        <li><b>Lưu &amp; hiển thị</b> để khách thấy ngay; <b>Lưu nháp</b> để lưu nhưng ẩn.</li>
+        <li><b>Giá:</b> để trống thì hiện “Liên hệ”. Nhập cả giá cũ và giá khuyến mãi thì website tự hiện giá gạch ngang và nhãn Sale.</li>
+        <li><b>Tình trạng:</b> Có sẵn / Đặt trước / Đã bán (đã bán vẫn hiển thị nhưng không thêm vào giỏ được). Best Seller, Mới, Nổi bật gắn nhãn và ưu tiên hiển thị.</li>
+        <li><b>Ni có sẵn</b> nhập cách nhau dấu phẩy (VD <code>52, 54, 56</code>). Ảnh phụ đầu tiên hiện khi khách rê chuột vào thẻ sản phẩm.</li>
+        <li>Đổi đường dẫn (slug) sẽ tự tạo chuyển hướng 301 từ địa chỉ cũ. Tab SEO có khung xem trước trên Google.</li>
+      </ul>
+      {% elif helpKey == 'terms' %}
+      <p><b>Danh mục &amp; bộ lọc</b> gồm 4 nhóm: <b>Loại ngọc, Màu sắc, Kiểu dáng, Mệnh phong thủy</b>. Các mục ở đây tự trở thành bộ lọc trên trang Sản phẩm và là lựa chọn khi nhập sản phẩm.</p>
+      <ul class="list-disc space-y-1 pl-5">
+        <li>Loại ngọc gắn được ảnh để hiện ở khối “Phân loại” trang chủ; Màu sắc có mã màu để hiện chấm màu.</li>
+        <li>Viết mô tả cho từng loại ngọc: trang lọc theo loại được Google lập chỉ mục riêng.</li>
+        <li>Đổi đường dẫn của một mục sẽ tự tạo chuyển hướng 301 từ địa chỉ cũ.</li>
+      </ul>
+      {% elif helpKey == 'gallery' %}
+      <p><b>Gallery</b> hiện tối đa 8 ảnh dạng 2 hàng × 4 cột; nhiều hơn 8 ảnh thì thành slider tự lướt.</p>
+      <ul class="list-disc space-y-1 pl-5">
+        <li><b>Hiện ở Gallery tổng:</b> quyết định ảnh có xuất hiện ở tab “Tất cả” và trang chủ không. Tab album luôn hiện đủ ảnh của album đó (dùng cho ảnh feedback hoặc ảnh chưa muốn đưa lên Gallery tổng).</li>
+        <li>Mỗi ảnh nhập được tiêu đề, mô tả, <b>album</b>, link tới sản phẩm, ẩn / hiện. Kéo ⠿ để sắp xếp; thay đổi lưu ngay khi rời ô nhập.</li>
+        <li>Ảnh <b>gắn sản phẩm</b>: khách bấm vào mở popup xem nhanh sản phẩm. Ảnh không gắn: phóng to ảnh.</li>
+      </ul>
+      {% elif helpKey == 'posts' %}
+      <p><b>Blog</b> là các bài viết kiến thức ngọc để thu hút khách từ Google.</p>
+      <ul class="list-disc space-y-1 pl-5">
+        <li>Bài ở trạng thái nháp thì khách không thấy. Chọn ngày đăng trong tương lai để <b>hẹn giờ đăng</b>.</li>
+        <li><b>Quản lý chuyên mục</b>: thêm / sửa / xóa chuyên mục (xóa chuyên mục thì bài chuyển về “Chưa phân loại”, không mất bài). Trang chuyên mục mặc định không được Google lập chỉ mục để tránh trùng nội dung.</li>
+        <li>Banner dọc, mục lục và bài gợi ý chỉnh ở Cài đặt › Trang Sản phẩm / Gallery / Blog.</li>
+      </ul>
+      {% elif helpKey == 'post-edit' %}
+      <p><b>Viết bài</b> bằng trình soạn thảo đầy đủ (tiêu đề, màu chữ, danh sách, bảng, ảnh, liên kết…).</p>
+      <ul class="list-disc space-y-1 pl-5">
+        <li>Mỗi bài chỉ có <b>một tiêu đề chính (H1)</b> là tên bài; trong nội dung dùng H2, H3. Mục lục tự tạo từ các tiêu đề này.</li>
+        <li>Ảnh chèn từ thư viện bằng nút Ảnh (không dán trực tiếp). Bấm vào ảnh để nhập <b>mô tả (alt)</b>, đổi kích thước và căn lề.</li>
+        <li>Chọn chuyên mục và ngày đăng ở cột phải. Phần SEO có khung xem trước trên Google; đổi đường dẫn sẽ tự tạo chuyển hướng 301.</li>
+      </ul>
+      {% elif helpKey == 'media' %}
+      <p><b>Thư viện ảnh</b> chứa mọi ảnh đã tải lên, chia theo thư mục.</p>
+      <ul class="list-disc space-y-1 pl-5">
+        <li>Kéo thả ảnh vào trang để tải lên. Ảnh tự xoay đúng chiều, xóa thông tin vị trí (EXIF) và nén sang WebP 3 kích thước. Hỗ trợ JPG, PNG, WebP, AVIF; ảnh HEIC của iPhone chưa hỗ trợ.</li>
+        <li>Nhập <b>mô tả ảnh (alt)</b> có từ khóa để tốt cho SEO.</li>
+        <li><b>Cẩn thận khi xóa:</b> xóa ảnh làm trống ảnh ở mọi nơi đang dùng ảnh đó.</li>
+      </ul>
+      {% elif helpKey == 'settings' %}
+      <p><b>Cài đặt website</b>: mọi chữ, ảnh và lựa chọn khách nhìn thấy đều chỉnh ở đây, chia theo nhóm ở cột trái.</p>
+      <ul class="list-disc space-y-1 pl-5">
+        <li>Bấm <b>Lưu</b> để áp dụng ngay; bấm <b>Xem website</b> để kiểm tra. Mỗi nhóm lưu riêng.</li>
+        <li>Nhóm dài được chia thành nhiều phần: bấm tên phần để mở / thu gọn (có nút Mở tất cả / Thu gọn tất cả, trạng thái được nhớ).</li>
+        <li>Một số nhóm chỉ Chủ shop sửa được (như Email). Chủ shop cũng tải được bản sao lưu ở cuối cột trái.</li>
+      </ul>
+      {% elif helpKey == 'users' %}
+      <p><b>Tài khoản quản trị</b> (chỉ Chủ shop): thêm tài khoản cho nhân viên và chọn vai trò.</p>
+      <ul class="list-disc space-y-1 pl-5">
+        <li><b>Chủ shop</b> làm được mọi việc; <b>Nhân viên</b> không cấu hình email, không quản lý tài khoản, không xem nhật ký, không xóa đơn / khách.</li>
+        <li>Tắt “Cho phép đăng nhập” để <b>khóa ngay</b> một tài khoản (ví dụ khi nhân viên nghỉ việc).</li>
+        <li>Nhân viên mất điện thoại đã cài 2FA: bấm biểu tượng khiên để tắt 2FA cho họ.</li>
+      </ul>
+      {% elif helpKey == 'account' %}
+      <p><b>Tài khoản &amp; bảo mật</b> là phần của riêng bạn.</p>
+      <ul class="list-disc space-y-1 pl-5">
+        <li>Đổi tên hiển thị và <b>mật khẩu</b> (các thiết bị khác sẽ tự đăng xuất).</li>
+        <li>Bật <b>xác thực 2 bước</b>: cài Google Authenticator trên điện thoại, quét mã QR rồi nhập mã 6 số. Nên bật cho tài khoản Chủ shop.</li>
+      </ul>
+      {% elif helpKey == 'audit' %}
+      <p><b>Nhật ký hoạt động</b> (chỉ Chủ shop) ghi lại ai đã làm gì, lúc nào, từ địa chỉ IP nào: đăng nhập, thêm / sửa / xóa dữ liệu, xuất danh sách khách, đổi trạng thái đơn…</p>
+      <ul class="list-disc space-y-1 pl-5">
+        <li>Dùng để tìm lại khi có nhầm lẫn (ví dụ ai đã đổi một đơn sang Hoàn thành).</li>
+        <li>Nhật ký chỉ để xem, không sửa hay xóa được.</li>
+      </ul>
+      {% else %}
+      <p>Trang này gộp <b>đơn hàng, yêu cầu custom và liên hệ</b>. Chọn từng mục ở menu “Bán hàng” bên trái để xem chuỗi trạng thái và cách xử lý riêng của loại đó.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>

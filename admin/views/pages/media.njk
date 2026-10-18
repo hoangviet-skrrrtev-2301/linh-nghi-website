@@ -4,6 +4,7 @@
 {% block heading %}Thư viện ảnh{% endblock %}
 {% block content %}
 <div x-data="mediaPage" @dragover.prevent @drop.prevent="upload($event.dataTransfer.files)">
+  {% set helpKey = 'media' %}{% include "partials/page-help.njk" %}
   <div class="mb-5 flex flex-wrap items-center gap-3">
     <input type="search" class="input max-w-xs" placeholder="Tìm theo tên / mô tả ảnh..." x-model="filters.q" @input.debounce.400ms="search()">
     <span class="text-xs text-slate-500" x-show="!uploading">Kéo thả ảnh vào trang để tải lên thư mục <b x-text="label(uploadFolder)"></b>. Ảnh tự xoay đúng chiều, xóa thông tin vị trí (EXIF) và nén WebP.</span>

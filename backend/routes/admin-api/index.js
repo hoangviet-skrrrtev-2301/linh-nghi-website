@@ -49,7 +49,7 @@ router.get('/me', h((req) => ({ user: req.user })));
 
 router.get('/dashboard', h((req) => ({
   // Số liệu theo kỳ chọn (range = 7d | 30d | month | last_month | quarter | year | custom + from, to)
-  ...dashboardStats({ range: req.query.range, from: req.query.from, to: req.query.to }),
+  ...dashboardStats({ range: req.query.range, from: req.query.from, to: req.query.to, compare: req.query.compare, cfrom: req.query.cfrom, cto: req.query.cto }),
   counts: {
     products: db.prepare(`SELECT COUNT(*) FROM products WHERE status = 'published'`).pluck().get(),
     drafts: db.prepare(`SELECT COUNT(*) FROM products WHERE status = 'draft'`).pluck().get(),
@@ -276,6 +276,7 @@ router.delete('/posts/:id', h((req) => {
 // ---------------- Đơn hàng / yêu cầu ----------------
 router.get('/inquiries', h((req) => inquiries.listInquiries({
   type: req.query.type, status: req.query.status, q: req.query.q, from: req.query.from, to: req.query.to, page: toInt(req.query.page, 1),
+  perPage: Math.min(100, Math.max(1, toInt(req.query.per_page, 20))),
 })));
 router.get('/inquiries/:id', h((req) => {
   const inq = inquiries.getInquiry(id(req));
@@ -333,6 +334,7 @@ router.post('/customers/import', h((req) => {
 }));
 router.get('/customers', h((req) => inquiries.listCustomers({
   q: req.query.q, months: req.query.months, by: req.query.by, source: req.query.source, page: toInt(req.query.page, 1),
+  perPage: Math.min(100, Math.max(1, toInt(req.query.per_page, 20))),
 })));
 router.post('/customers', h((req) => {
   const c = inquiries.createCustomer(req.body || {});

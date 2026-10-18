@@ -5,7 +5,7 @@
 {% block heading %}{{ label }}{% endblock %}
 {% block content %}
 <div x-data="inquiriesList({{ (query.type or '') | dump }})">
-  {% set helpKey = query.type or 'all' %}{% include "partials/sales-help.njk" %}
+  {% set helpKey = query.type or 'all' %}{% include "partials/page-help.njk" %}
   {% if query.type %}
   <div class="mb-4 flex justify-end">
     <button type="button" class="btn btn-primary" @click="openAdd()">{{ icon('plus', 'w-4 h-4') }} Thêm {{ {'order': 'đơn hàng', 'custom': 'yêu cầu custom', 'contact': 'liên hệ'}[query.type] }}</button>

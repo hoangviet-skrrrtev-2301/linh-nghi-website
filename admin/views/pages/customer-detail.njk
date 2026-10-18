@@ -4,6 +4,7 @@
 {% block heading %}<a href="{{ A }}/customers" class="mr-2 text-slate-400 hover:text-slate-600">Khách hàng /</a>Chi tiết{% endblock %}
 {% block content %}
 <div x-data="customerDetail({{ params.id | dump }})">
+  {% set helpKey = 'customer' %}{% include "partials/page-help.njk" %}
   <template x-if="c">
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
       <form class="card card-body space-y-4 self-start" @submit.prevent="save()">

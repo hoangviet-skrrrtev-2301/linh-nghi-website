@@ -9,6 +9,9 @@ document.addEventListener('alpine:init', () => {
   const confirmBox = (opts) => Alpine.store('confirm').ask(opts);
   const qs = (obj) => new URLSearchParams(Object.entries(obj).filter(([, v]) => v !== '' && v != null)).toString();
 
+  // Số dòng mỗi trang cho các danh sách chính (đầu tiên là mặc định); lựa chọn dùng chung và được nhớ trên trình duyệt
+  const PER_PAGE = [20, 30, 50, 100];
+
   // Bộ khung cho trang danh sách có tìm kiếm + phân trang
   // perPageOptions (VD: [20, 30, 50]) bật ô chọn số dòng mỗi trang; lựa chọn được nhớ trên trình duyệt.
   // Bộ lọc + trang hiện tại được ghi vào địa chỉ trang để nút Quay lại trả về đúng danh sách vừa xem.
@@ -64,6 +67,9 @@ document.addEventListener('alpine:init', () => {
   // ---------------- Tổng quan ----------------
   Alpine.data('dashboard', () => ({
     d: null, loading: true, range: '30d', from: '', to: '', metric: 'requests',
+    // So sánh kỳ: mặc định tắt và không ghi nhớ, chỉ bật khi bấm nút "So sánh"
+    compare: '', cfrom: '', cto: '',
+    compareModes: [['prev', 'Kỳ liền trước'], ['year', 'Cùng kỳ năm trước'], ['custom', 'Tùy chọn']],
     ranges: [['7d', '7 ngày'], ['30d', '30 ngày'], ['month', 'Tháng này'], ['last_month', 'Tháng trước'], ['quarter', 'Quý này'], ['year', 'Năm nay'], ['custom', 'Tùy chọn']],
     statusColor: { new: 'bg-blue-500', contacted: 'bg-amber-500', confirmed: 'bg-violet-500', shipping: 'bg-sky-500', completed: 'bg-emerald-500', cancelled: 'bg-slate-400' },
     init() {
@@ -73,18 +79,30 @@ document.addEventListener('alpine:init', () => {
     },
     save() { try { localStorage.setItem('ln_admin_dash', JSON.stringify({ range: this.range, from: this.from, to: this.to, metric: this.metric })); } catch { /* chế độ riêng tư */ } },
     setRange(k) { this.range = k; this.save(); if (k !== 'custom' || (this.from && this.to)) this.load(); },
+    setCompare(mode) {
+      this.compare = mode;
+      if (mode !== 'custom' || (this.cfrom && this.cto)) this.load();
+      else if (!mode) this.load();
+    },
     async load() {
       this.loading = true;
-      try { this.d = await api(`/dashboard?${qs({ range: this.range, from: this.range === 'custom' ? this.from : '', to: this.range === 'custom' ? this.to : '' })}`); } catch (e) { toast().error(e); }
+      const q = { range: this.range, from: this.range === 'custom' ? this.from : '', to: this.range === 'custom' ? this.to : '', compare: this.compare };
+      if (this.compare === 'custom') { q.cfrom = this.cfrom; q.cto = this.cto; }
+      try { this.d = await api(`/dashboard?${qs(q)}`); } catch (e) { toast().error(e); }
       this.loading = false;
     },
     // ----- Thẻ số liệu -----
     val(key) { return this.d ? this.d.totals[key] : null; },
     money(n) { return window.Admin.fmt.vnd(n || 0); },
     show(key) { const v = this.val(key); return v == null ? '–' : (key === 'revenue' || key === 'aov') ? this.money(v) : v; },
-    // So với kỳ liền trước có độ dài bằng nhau
+    // Số của kỳ so sánh (chỉ có khi đang bật so sánh)
+    prevShow(key) {
+      const v = this.d?.prev?.[key];
+      return v == null ? '' : (key === 'revenue' || key === 'aov') ? this.money(v) : String(v);
+    },
+    // So với kỳ đang chọn để so sánh; null khi tắt so sánh
     delta(key) {
-      if (!this.d) return null;
+      if (!this.d || !this.d.prev) return null;
       const cur = this.d.totals[key]; const prev = this.d.prev[key];
       if (!prev) return cur ? { text: 'mới', tone: 'up' } : null;
       const pct = Math.round(((cur - prev) / prev) * 100);
@@ -130,7 +148,7 @@ document.addEventListener('alpine:init', () => {
 
   // ---------------- Sản phẩm ----------------
   Alpine.data('productsList', (status = '') => ({
-    ...listPage('/products', { status, sort: 'noi_bat', type: '' }, [20, 30, 50]),
+    ...listPage('/products', { status, sort: 'noi_bat', type: '' }, PER_PAGE),
     selected: [],
     // Sửa nhanh giá ngay ở danh sách (bấm vào giá)
     editing: null, pf: { price: '', sale_price: '' }, priceBusy: false, priceError: '',
@@ -396,7 +414,7 @@ document.addEventListener('alpine:init', () => {
 
   // ---------------- Blog ----------------
   Alpine.data('postsList', () => ({
-    ...listPage('/posts', { status: '', category: '' }, [20, 30, 50]),
+    ...listPage('/posts', { status: '', category: '' }, PER_PAGE),
     categories: [], catOpen: false, catForm: null, catSaving: false,
     init() { this.load(); this.loadCategories(); },
     async loadCategories() { try { this.categories = (await api('/post-categories')).items; } catch (e) { toast().error(e); } },
@@ -553,7 +571,7 @@ document.addEventListener('alpine:init', () => {
 
   // ---------------- Đơn hàng / yêu cầu ----------------
   Alpine.data('inquiriesList', (type) => ({
-    ...listPage('/inquiries', { type: type || '', status: new URLSearchParams(location.search).get('status') || '', from: '', to: '' }),
+    ...listPage('/inquiries', { type: type || '', status: new URLSearchParams(location.search).get('status') || '', from: '', to: '' }, PER_PAGE),
     // Shop tự thêm đơn / yêu cầu từ kênh ngoài website
     add: { open: false, mode: 'existing', q: '', results: [], searching: false, customer: null, form: { name: '', phone: '', email: '', address: '' }, via: '', busy: false, error: '' },
     openAdd() {
@@ -766,7 +784,7 @@ document.addEventListener('alpine:init', () => {
 
   // ---------------- Khách hàng ----------------
   Alpine.data('customersList', () => ({
-    ...listPage('/customers', { months: '', by: 'active', source: '' }),
+    ...listPage('/customers', { months: '', by: 'active', source: '' }, PER_PAGE),
     summary: { customers: 0, inquiries: 0, spent: 0 }, sources: [],
     // Bộ lọc thu gọn: nút "Bộ lọc" mở khung, kết quả lọc hiện thành các chip bên dưới
     filtersOpen: false, preset: '',
@@ -845,10 +863,12 @@ document.addEventListener('alpine:init', () => {
     },
     get importStatusLabel() { return { new: 'Mới', update: 'Cập nhật', skip: 'Bỏ qua', error: 'Lỗi' }; },
     async load() {
+      if (!this.restored) this.restoreState();   // chỉ để nạp số dòng mỗi trang đã chọn (trang này chưa ghi bộ lọc vào địa chỉ)
       this.loading = true;
       try {
-        const r = await api(`/customers?${qs({ ...this.filters, page: this.page })}`);
+        const r = await api(`/customers?${qs({ ...this.filters, page: this.page, per_page: this.perPage })}`);
         this.items = r.items; this.total = r.total; this.pages = r.pages; this.summary = r.summary; this.sources = r.sources || [];
+        if (this.page > this.pages) { this.page = this.pages; return this.load(); }
       } catch (e) { toast().error(e); }
       this.loading = false;
     },

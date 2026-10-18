@@ -4,6 +4,7 @@
 {% block heading %}Tài khoản & bảo mật{% endblock %}
 {% block content %}
 <div x-data="accountPage({{ currentUser | attrjson }})" class="grid max-w-5xl gap-6 lg:grid-cols-2">
+  {% set helpKey = 'account' %}{% set helpClass = 'lg:col-span-2' %}{% include "partials/page-help.njk" %}
   <div class="space-y-6">
     <form class="card card-body space-y-4" @submit.prevent="saveProfile()">
       <h2 class="card-title">Thông tin</h2>

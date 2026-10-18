@@ -5,6 +5,7 @@
 {% block heading %}Tài khoản quản trị{% endblock %}
 {% block content %}
 <div x-data="usersPage">
+  {% set helpKey = 'users' %}{% include "partials/page-help.njk" %}
   <div class="mb-5 flex flex-wrap items-center gap-3">
     <p class="flex-1 text-sm text-slate-600"><b>Chủ shop</b>: toàn quyền (cấu hình email, tài khoản, xóa dữ liệu, sao lưu). <b>Nhân viên</b>: quản lý sản phẩm, nội dung, xem và xử lý đơn hàng.</p>
     <button class="btn btn-primary" @click="open()">{{ icon('plus', 'w-4 h-4') }} Thêm tài khoản</button>

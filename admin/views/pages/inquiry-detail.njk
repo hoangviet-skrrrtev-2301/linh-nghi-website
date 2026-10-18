@@ -4,6 +4,7 @@
 {% block heading %}Chi tiết yêu cầu{% endblock %}
 {% block content %}
 <div x-data="inquiryDetail({{ params.id | dump }})">
+  {% set helpKey = 'inquiry' %}{% include "partials/page-help.njk" %}
   <template x-if="d">
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
       <div class="space-y-6">

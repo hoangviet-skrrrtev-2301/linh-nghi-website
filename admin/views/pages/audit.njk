@@ -3,6 +3,7 @@
 {% block heading %}Nhật ký hoạt động{% endblock %}
 {% block content %}
 <div x-data="auditPage">
+  {% set helpKey = 'audit' %}{% include "partials/page-help.njk" %}
   <p class="mb-5 text-sm text-slate-600">Ghi lại các thao tác trong trang quản trị: đăng nhập, thêm/sửa/xóa dữ liệu, xuất dữ liệu khách hàng...</p>
   <div class="card overflow-hidden">
     <div class="overflow-x-auto">

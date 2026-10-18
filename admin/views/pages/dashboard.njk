@@ -4,6 +4,7 @@
 {% block heading %}Tổng quan{% endblock %}
 {% block content %}
 <div x-data="dashboard">
+  {% set helpKey = 'dashboard' %}{% include "partials/page-help.njk" %}
   <div x-cloak x-show="d && !d.mailConfigured" class="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
     {{ icon('alert', 'w-5 h-5') }}
     <span class="flex-1">Email thông báo đơn hàng chưa được bật. Đơn hàng vẫn được lưu trong hệ thống nhưng bạn sẽ không nhận email.</span>
@@ -20,7 +21,27 @@
       <span class="text-slate-400">→</span>
       <input type="date" class="input !w-auto !py-1.5" x-model="to" @change="save(); from && to && load()" aria-label="Đến ngày">
     </div>
-    <p class="ml-auto text-xs text-slate-500" x-show="d" x-cloak><span x-text="d?.range.text"></span> · <span x-text="d?.range.days"></span> ngày · so với <span x-text="d?.range.prevText"></span></p>
+    <p class="ml-auto text-xs text-slate-500" x-show="d" x-cloak><span x-text="d?.range.text"></span> · <span x-text="d?.range.days"></span> ngày</p>
+  </div>
+
+  {# ---- So sánh kỳ (mặc định tắt) ---- #}
+  <div class="mb-5 flex flex-wrap items-center gap-2">
+    <button type="button" class="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm transition" :class="compare ? 'border-brand-600 bg-brand-50 text-brand-700' : 'border-slate-300 text-slate-600 hover:border-brand-500'" :aria-pressed="compare ? 'true' : 'false'" @click="setCompare(compare ? '' : 'prev')">
+      {{ icon('clock', 'w-4 h-4') }} So sánh<span x-show="compare" x-cloak>: đang bật</span>
+    </button>
+    <template x-if="compare">
+      <div class="flex flex-wrap items-center gap-2">
+        <template x-for="m in compareModes" :key="m[0]">
+          <button type="button" class="rounded-full border px-3 py-1 text-xs transition" :class="compare === m[0] ? 'border-brand-600 bg-brand-600 text-white' : 'border-slate-300 text-slate-600 hover:border-brand-500'" @click="setCompare(m[0])" x-text="m[1]"></button>
+        </template>
+        <span class="flex flex-wrap items-center gap-2" x-show="compare === 'custom'">
+          <input type="date" class="input !w-auto !py-1.5" x-model="cfrom" @change="cfrom && cto && load()" aria-label="Kỳ so sánh từ ngày">
+          <span class="text-slate-400">→</span>
+          <input type="date" class="input !w-auto !py-1.5" x-model="cto" @change="cfrom && cto && load()" aria-label="Kỳ so sánh đến ngày">
+        </span>
+      </div>
+    </template>
+    <p class="text-xs text-slate-500" x-show="d && d.compare" x-cloak>So với <b x-text="d?.compare?.text"></b> (<span x-text="d?.compare?.days"></span> ngày)<span class="text-amber-600" x-show="d?.compare && d.compare.days !== d.range.days"> · hai kỳ dài khác nhau, số liệu không cùng thang đo</span></p>
   </div>
 
   {# ---- Thẻ số liệu theo kỳ ---- #}
@@ -44,10 +65,11 @@
         {% elif k[0] == 'contact' %}<span class="text-slate-500" x-show="d && d.pending.contact" x-text="d ? d.pending.contact + ' chờ xử lý' : ''"></span>
         {% elif k[0] == 'revenue' %}<span class="text-slate-500" x-text="d ? d.totals.completed + ' đơn hoàn thành' : ''"></span>{% endif %}
       </div>
+      <p class="-mt-1 text-[11px] text-slate-500" x-show="d && d.prev" x-cloak>Kỳ so sánh: <b class="font-medium text-slate-700" x-text="prevShow('{{ k[0] }}')"></b></p>
     </a>
     {% endfor %}
   </div>
-  <p class="mt-2 text-xs text-slate-500">Doanh thu tính theo <b>ngày hoàn thành</b> của đơn hàng. Mũi tên so sánh với kỳ liền trước có số ngày bằng nhau.</p>
+  <p class="mt-2 text-xs text-slate-500">Doanh thu tính theo <b>ngày hoàn thành</b> của đơn hàng. Bấm <b>So sánh</b> ở trên để xem tăng trưởng so với kỳ liền trước, cùng kỳ năm trước hoặc kỳ tự chọn.</p>
 
   <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-start">
     {# ---- Biểu đồ ---- #}

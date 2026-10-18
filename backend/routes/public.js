@@ -70,6 +70,7 @@ export function publicLocals(req, res) {
     welcome: !!s.features.welcome_popup,
     welcomeDelay: Number(s.features.welcome_popup_delay) || 5,
     shopName: s.site.name,
+    cartUnavailable: s.forms.cart_unavailable,
     logo: s.site.logo?.md || '',
     orderImage: {
       enabled: !!s.forms.order_image_enabled, title: s.forms.order_image_title, note: s.forms.order_image_note,

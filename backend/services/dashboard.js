@@ -71,12 +71,32 @@ function totalsFor(from, to) {
   };
 }
 
-export function dashboardStats({ range, from, to } = {}) {
+export const COMPARE_MODES = { prev: 'Kỳ liền trước', year: 'Cùng kỳ năm trước', custom: 'Tùy chọn' };
+
+// Kỳ so sánh: tắt (mặc định) | prev = kỳ liền trước cùng số ngày | year = cùng ngày tháng năm trước | custom = tự chọn
+function resolveCompare(r, mode, cfrom, cto) {
+  if (!COMPARE_MODES[mode]) return null;
+  let from; let to;
+  if (mode === 'prev') {
+    to = addDays(r.from, -1); from = addDays(to, -(r.days - 1));
+  } else if (mode === 'year') {
+    const back = (s) => { const d = parse(s); const m = d.getUTCMonth(); d.setUTCFullYear(d.getUTCFullYear() - 1); if (d.getUTCMonth() !== m) d.setUTCDate(0); return toStr(d); };
+    from = back(r.from); to = back(r.to);
+  } else {
+    const ok = (s) => /^\d{4}-\d{2}-\d{2}$/.test(String(s || '')) && !Number.isNaN(parse(s).getTime());
+    if (!ok(cfrom) || !ok(cto)) throw new HttpError(422, 'Vui lòng chọn ngày bắt đầu và ngày kết thúc của kỳ so sánh');
+    from = cfrom; to = cto;
+    if (from > to) [from, to] = [to, from];
+    if (diffDays(from, to) > 730) throw new HttpError(422, 'Kỳ so sánh tối đa 2 năm');
+  }
+  return { mode, label: COMPARE_MODES[mode], from, to, days: diffDays(from, to) + 1, text: `${dmy(from)} – ${dmy(to)}` };
+}
+
+export function dashboardStats({ range, from, to, compare, cfrom, cto } = {}) {
   const r = resolveRange(range, from, to);
-  const prevTo = addDays(r.from, -1);
-  const prevFrom = addDays(prevTo, -(r.days - 1));
+  const cmp = resolveCompare(r, compare, cfrom, cto);
   const totals = totalsFor(r.from, r.to);
-  const prev = totalsFor(prevFrom, prevTo);
+  const prev = cmp ? totalsFor(cmp.from, cmp.to) : null;
 
   // Biểu đồ: số yêu cầu theo loại và doanh thu (ngày hoàn thành) theo từng cột
   const b = bucketer(r.days);
@@ -114,7 +134,8 @@ export function dashboardStats({ range, from, to } = {}) {
   };
 
   return {
-    range: { ...r, label: RANGES[r.key], text: `${dmy(r.from)} – ${dmy(r.to)}`, prevText: `${dmy(prevFrom)} – ${dmy(prevTo)}` },
+    range: { ...r, label: RANGES[r.key], text: `${dmy(r.from)} – ${dmy(r.to)}`, },
+    compare: cmp,
     totals, prev, pending,
     series: { unit: b.unit, first, buckets: [...buckets.values()] },
     statusBreakdown, topProducts, sources,

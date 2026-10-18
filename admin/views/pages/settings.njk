@@ -14,6 +14,7 @@
 
   {% set secKeys = [] %}{% for sec in group.sections %}{% set _ = secKeys.push(sec.key) %}{% endfor %}
   <div x-data="settingsPage({{ group.key | dump }}, {{ secKeys | attrjson }})">
+  {% set helpKey = 'settings' %}{% include "partials/page-help.njk" %}
     <template x-if="values">
       <form @submit.prevent="save()" class="space-y-6">
         <div class="card">

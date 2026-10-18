@@ -4,7 +4,7 @@
 {% block heading %}Chuyển hướng & trang 404{% endblock %}
 {% block content %}
 <div x-data="redirectsPage">
-  {% set helpKey = 'redirects' %}{% include "partials/sales-help.njk" %}
+  {% set helpKey = 'redirects' %}{% include "partials/page-help.njk" %}
 
   <div class="mb-4 flex flex-wrap gap-1">
     <button class="tab" :class="tab === 'redirects' && 'active'" @click="tab = 'redirects'">Chuyển hướng <span class="badge bg-slate-100 text-slate-600" x-text="total"></span></button>

@@ -4,6 +4,7 @@
 {% block heading %}Gallery{% endblock %}
 {% block content %}
 <div x-data="galleryPage">
+  {% set helpKey = 'gallery' %}{% include "partials/page-help.njk" %}
   <div class="mb-5 flex flex-wrap items-center gap-3">
     <p class="flex-1 text-sm text-slate-600">Kéo biểu tượng {{ icon('drag', 'inline w-4 h-4') }} để sắp xếp. Album dùng để chia nhóm ảnh trên trang Gallery (ví dụ: “Khách hàng”, “Bộ sưu tập Thu”).
     <b>Hiện ở Gallery tổng</b> bật thì ảnh xuất hiện ở tab “Tất cả” và trang chủ; tắt thì ảnh chỉ hiện trong tab album của nó (album luôn hiện đủ ảnh, dù bật hay tắt).</p>

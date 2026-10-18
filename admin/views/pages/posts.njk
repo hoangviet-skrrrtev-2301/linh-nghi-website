@@ -4,6 +4,7 @@
 {% block heading %}Blog{% endblock %}
 {% block content %}
 <div x-data="postsList">
+  {% set helpKey = 'posts' %}{% include "partials/page-help.njk" %}
   <div class="mb-5 flex flex-wrap items-center gap-3">
     <input type="search" class="input max-w-xs" placeholder="Tìm bài viết..." x-model="filters.q" @input.debounce.400ms="search()">
     <select class="input !w-auto" x-model="filters.status" @change="search()"><option value="">Tất cả</option><option value="published">Đã đăng</option><option value="draft">Nháp</option></select>

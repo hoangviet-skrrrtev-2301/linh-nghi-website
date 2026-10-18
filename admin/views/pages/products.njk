@@ -4,6 +4,7 @@
 {% block heading %}Sản phẩm{% endblock %}
 {% block content %}
 <div x-data="productsList({{ (query.status or '') | dump }})">
+  {% set helpKey = 'products' %}{% include "partials/page-help.njk" %}
   <div class="mb-5 flex flex-wrap items-center gap-3">
     <div class="relative w-full max-w-xs">
       <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{{ icon('search', 'w-4 h-4') }}</span>

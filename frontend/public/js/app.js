@@ -327,7 +327,7 @@ document.addEventListener('alpine:init', () => {
         const cart = Alpine.store('cart');
         const missing = cart.items.find((i) => i.sizes?.length && !i.size);
         if (missing) { this.message = `Vui lòng chọn ni cho “${missing.name}”`; return; }
-        if (cart.items.some((i) => i.unavailable)) { this.message = 'Vui lòng xóa sản phẩm không còn bán khỏi giỏ'; return; }
+        if (cart.items.some((i) => i.unavailable)) { this.message = CONFIG.cartUnavailable || ''; return; }
         body.items = cart.items.map((i) => ({ id: i.id, qty: i.qty, size: i.size }));
       }
       this.loading = true;

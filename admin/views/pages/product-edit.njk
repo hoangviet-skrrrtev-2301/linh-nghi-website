@@ -5,6 +5,7 @@
 {% block heading %}<a href="{{ A }}/products" class="mr-2 hidden text-slate-400 hover:text-slate-600 sm:inline">Sản phẩm /</a>{{ 'Sửa sản phẩm' if params.id else 'Thêm sản phẩm' }}{% endblock %}
 {% block content %}
 <div x-data="productEdit({{ (params.id or '') | dump }})">
+  {% set helpKey = 'product-edit' %}{% include "partials/page-help.njk" %}
   <template x-if="!form"><div class="py-20 text-center text-slate-500">Đang tải...</div></template>
   <template x-if="form">
     <form @submit.prevent="save()" class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
