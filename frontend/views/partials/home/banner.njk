@@ -1,35 +1,64 @@
 {% from "partials/icons.njk" import icon %}
-{% from "partials/product-card.njk" import productCard %}
 {# ================= BANNER ================= #}
+{# Một khối nhiều banner (slider: tự chuyển / kéo để chuyển) hoặc mỗi banner một khối nối tiếp (stack).
+   Ảnh: banner đầu tiên là ảnh LCP (loading=eager + fetchpriority=high, có preload ở home.njk); banner sau tải lười:
+   slider (xếp chồng trong khung nhìn) dùng fetchpriority=low để không tranh băng thông với ảnh LCP, stack (nằm dưới màn hình) để mặc định. #}
 {% set slides = s.home.hero_slides %}
+{% macro heroSlide(sl, i, cfg, mode, siteName) %}
+  {% from "partials/icons.njk" import icon %}
+  {% set hasText = sl.title or sl.eyebrow or sl.subtitle or sl.cta_label %}
+  {% set tag = 'h1' if i == cfg.h1 else 'h2' %}
+  {% if sl.image %}
+    <img src="{{ sl.image.lg }}" srcset="{{ sl.image | srcset }}" sizes="100vw" alt="{{ sl.alt or sl.title or sl.image.alt or siteName }}"
+      {% if sl.image.width %}width="{{ sl.image.width }}" height="{{ sl.image.height }}"{% endif %}
+      class="hero-img absolute inset-0 h-full w-full object-cover" decoding="async"
+      {% if i == 0 %}loading="eager" fetchpriority="high"{% elif mode == 'slider' %}loading="lazy" fetchpriority="low"{% else %}loading="lazy"{% endif %}>
+    {% if hasText %}<div class="absolute inset-0 bg-gradient-to-r from-black/55 via-black/25 to-transparent"></div>{% endif %}
+  {% else %}
+    <div class="hero-img absolute inset-0 bg-grain" style="background-color: color-mix(in srgb, var(--c-primary) 9%, var(--c-bg))"></div>
+    <div class="absolute -right-24 top-1/2 hidden h-[560px] w-[560px] -translate-y-1/2 rounded-full border-[70px] border-primary/25 lg:block" style="box-shadow: inset 0 0 80px rgba(255,255,255,.5)"></div>
+  {% endif %}
+  {% if sl.link_url %}<a href="{{ sl.link_url }}" class="absolute inset-0 z-10" aria-label="{{ sl.title or sl.alt or sl.image.alt or siteName }}"></a>{% endif %}
+  {% if hasText %}
+  <div class="container-x relative z-20 flex h-full items-center pointer-events-none">
+    <div class="pointer-events-auto max-w-xl {{ 'text-white' if sl.image else '' }}">
+      {% if sl.eyebrow %}<p class="eyebrow {{ '!text-white/85' if sl.image }}">{{ sl.eyebrow }}</p>{% endif %}
+      {% if sl.title %}<{{ tag }} class="mt-4 text-balance text-[2.6rem] font-medium leading-[1.05] sm:text-6xl lg:text-7xl">{{ sl.title }}</{{ tag }}>{% endif %}
+      {% if sl.subtitle %}<p class="mt-6 max-w-md text-[16px] leading-relaxed {{ 'text-white/85' if sl.image else 'text-muted' }}">{{ sl.subtitle }}</p>{% endif %}
+      {% if sl.cta_label %}
+      <div class="mt-9 flex flex-wrap gap-3">
+        <a href="{{ sl.cta_url or '/san-pham' }}" class="btn {{ 'btn-light' if sl.image else 'btn-primary' }}">{{ sl.cta_label }} {{ icon('arrow-right', 'w-4 h-4') }}</a>
+        {% if features.custom_request %}<a href="/thiet-ke-rieng" class="btn {{ 'border border-white/50 text-white hover:bg-white/10' if sl.image else 'btn-outline' }}">Thiết kế riêng</a>{% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+{% endmacro %}
+
+{# Không banner nào có tiêu đề thì vẫn cần đúng một H1 cho trang (ẩn bằng chữ chỉ dành cho trình đọc màn hình) #}
+{% if heroCfg.h1 < 0 %}<h1 class="sr-only">{{ s.seo.home_title or s.site.name }}</h1>{% endif %}
+
+{% if heroCfg.mode == 'stack' %}
+<section aria-label="Banner" class="relative">
+  {% for sl in slides %}
+  <div class="hero-static relative h-[78vh] min-h-[520px] max-h-[820px] overflow-hidden">{{ heroSlide(sl, loop.index0, heroCfg, 'stack', s.site.name) }}</div>
+  {% endfor %}
+</section>
+{% else %}
 <section class="relative" aria-label="Banner">
-  <div class="swiper hero-swiper h-[78vh] min-h-[520px] max-h-[820px]" data-count="{{ slides.length }}">
+  <div class="swiper hero-swiper h-[78vh] min-h-[520px] max-h-[820px]" data-count="{{ slides.length }}"
+    data-autoplay="{{ heroCfg.autoplayMs }}" data-effect="{{ heroCfg.effect }}" data-drag="{{ 1 if heroCfg.drag else 0 }}" data-pause-hover="{{ 1 if heroCfg.pauseHover else 0 }}" data-arrows="{{ 1 if heroCfg.arrows else 0 }}">
     <div class="swiper-wrapper">
       {% for sl in slides %}
-      <div class="swiper-slide hero-slide relative overflow-hidden">
-        {% if sl.image %}
-          <img src="{{ sl.image.lg }}" srcset="{{ sl.image | srcset }}" sizes="100vw" alt="{{ sl.title }}" class="hero-img absolute inset-0 h-full w-full object-cover" {{ 'fetchpriority=high decoding=async' if loop.first else 'loading=lazy decoding=async' }} {% if sl.image.width %}width="{{ sl.image.width }}" height="{{ sl.image.height }}"{% endif %}>
-          <div class="absolute inset-0 bg-gradient-to-r from-black/55 via-black/25 to-transparent"></div>
-        {% else %}
-          <div class="hero-img absolute inset-0 bg-grain" style="background-color: color-mix(in srgb, var(--c-primary) 9%, var(--c-bg))"></div>
-          <div class="absolute -right-24 top-1/2 hidden h-[560px] w-[560px] -translate-y-1/2 rounded-full border-[70px] border-primary/25 lg:block" style="box-shadow: inset 0 0 80px rgba(255,255,255,.5)"></div>
-        {% endif %}
-        <div class="container-x relative flex h-full items-center">
-          <div class="max-w-xl {{ 'text-white' if sl.image else '' }}">
-            {% if sl.eyebrow %}<p class="eyebrow {{ '!text-white/85' if sl.image }}">{{ sl.eyebrow }}</p>{% endif %}
-            <{{ 'h1' if loop.first else 'h2' }} class="mt-4 text-balance text-[2.6rem] font-medium leading-[1.05] sm:text-6xl lg:text-7xl">{{ sl.title }}</{{ 'h1' if loop.first else 'h2' }}>
-            {% if sl.subtitle %}<p class="mt-6 max-w-md text-[16px] leading-relaxed {{ 'text-white/85' if sl.image else 'text-muted' }}">{{ sl.subtitle }}</p>{% endif %}
-            {% if sl.cta_label %}
-            <div class="mt-9 flex flex-wrap gap-3">
-              <a href="{{ sl.cta_url or '/san-pham' }}" class="btn {{ 'btn-light' if sl.image else 'btn-primary' }}">{{ sl.cta_label }} {{ icon('arrow-right', 'w-4 h-4') }}</a>
-              {% if features.custom_request %}<a href="/thiet-ke-rieng" class="btn {{ 'border border-white/50 text-white hover:bg-white/10' if sl.image else 'btn-outline' }}">Thiết kế riêng</a>{% endif %}
-            </div>
-            {% endif %}
-          </div>
-        </div>
-      </div>
+      <div class="swiper-slide hero-slide relative overflow-hidden"{% if slides.length > 1 %} role="group" aria-roledescription="slide" aria-label="{{ loop.index }} / {{ slides.length }}"{% endif %}>{{ heroSlide(sl, loop.index0, heroCfg, 'slider', s.site.name) }}</div>
       {% endfor %}
     </div>
     {% if slides.length > 1 %}<div class="swiper-pagination !bottom-8"></div>{% endif %}
   </div>
+  {% if slides.length > 1 and heroCfg.arrows %}
+  <button type="button" class="hero-nav hero-prev" aria-label="Banner trước"><span class="rotate-180">{{ icon('arrow-right', 'w-5 h-5') }}</span></button>
+  <button type="button" class="hero-nav hero-next" aria-label="Banner kế tiếp">{{ icon('arrow-right', 'w-5 h-5') }}</button>
+  {% endif %}
 </section>
+{% endif %}

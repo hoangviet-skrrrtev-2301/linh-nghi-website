@@ -1020,6 +1020,20 @@ document.addEventListener('alpine:init', () => {
       } catch (e) { toast().error(e); }
     },
     addItem(field, blank) { (this.values[field] ||= []).push(structuredClone(blank)); },
+    // Chọn nhiều ảnh cùng lúc: mỗi ảnh thành một mục mới (VD mỗi ảnh một banner), mục chỉ có ảnh, chữ điền sau
+    bulkAdd(field, imageKey, blank) {
+      Alpine.store('picker').show({
+        multiple: true,
+        onSelect: (list) => {
+          for (const m of list || []) {
+            this.media[m.id] = m;
+            const item = structuredClone(blank);
+            item[imageKey] = m.id;
+            (this.values[field] ||= []).push(item);
+          }
+        },
+      });
+    },
     move(field, i, d) {
       const arr = this.values[field];
       const j = i + d;

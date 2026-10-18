@@ -99,10 +99,25 @@ function videoEmbed(url) {
 const requireFeature =(key) => (req, res, next) => (getRaw('features')[key] ? next() : next(new HttpError(404, 'Trang không tồn tại')));
 
 // ---------------- Trang chủ ----------------
+// Cấu hình banner đầu trang: chuẩn hóa giá trị cài đặt; slide nào là H1 (slide đầu tiên có tiêu đề)
+function heroConfig(h) {
+  const slides = h.hero_slides || [];
+  const delay = Math.min(Math.max(Number(h.hero_delay) || 6, 2), 20) * 1000;
+  return {
+    mode: h.hero_mode === 'stack' ? 'stack' : 'slider',
+    autoplayMs: h.hero_autoplay === false ? 0 : delay,
+    effect: h.hero_effect === 'slide' ? 'slide' : 'fade',
+    drag: h.hero_drag !== false,
+    arrows: !!h.hero_arrows,
+    pauseHover: h.hero_pause_hover !== false,
+    h1: slides.findIndex((sl) => sl.title),
+  };
+}
 router.get('/', (req, res) => {
   const s = res.locals.s;
   res.view('pages/home.njk', {
     sections: homeSections(s.home_layout),
+    heroCfg: heroConfig(s.home),
     featured: featuredProducts(Number(s.home.featured_limit) || 8),
     gallery: s.features.gallery && s.home.show_gallery ? listGallery({ limit: Math.min(Math.max(Number(s.home.gallery_limit) || 24, 4), 60) }) : [],
     posts: s.features.blog && s.home.show_blog ? listPosts({ perPage: 3 }).items : [],

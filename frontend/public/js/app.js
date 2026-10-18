@@ -383,10 +383,22 @@ async function initSwipers() {
   if (!needHero && !needMain) return;
   try { await loadSwiper(); } catch { return; }
   if (needHero) {
+    // Cấu hình lấy từ cài đặt (data-* do máy chủ in ra): tự chuyển + thời gian, hiệu ứng, kéo / vuốt, mũi tên, tạm dừng khi rê chuột
+    const d = hero.dataset;
+    const count = Number(d.count);
+    const delay = Number(d.autoplay) || 0;
+    const drag = d.drag !== '0';
+    const fade = d.effect !== 'slide';
+    const section = hero.closest('section') || document;
+    if (drag) hero.classList.add('is-draggable');
     new window.Swiper(hero, {
-      loop: true, speed: 900, effect: 'fade', fadeEffect: { crossFade: true },
-      autoplay: { delay: 5500, disableOnInteraction: false },
+      loop: count > 2, rewind: count <= 2, speed: 900,
+      ...(fade ? { effect: 'fade', fadeEffect: { crossFade: true } } : {}),
+      autoplay: delay ? { delay, disableOnInteraction: false, pauseOnMouseEnter: d.pauseHover !== '0' } : false,
+      allowTouchMove: drag, simulateTouch: drag, grabCursor: drag,
+      navigation: d.arrows === '1' ? { prevEl: section.querySelector('.hero-prev'), nextEl: section.querySelector('.hero-next') } : false,
       pagination: { el: '.swiper-pagination', clickable: true },
+      a11y: { enabled: true },
     });
   }
   if (needMain) {

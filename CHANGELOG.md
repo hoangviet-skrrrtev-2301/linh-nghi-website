@@ -4,6 +4,8 @@ Ghi lại các thay đổi đáng chú ý, mới nhất ở trên cùng.
 
 ## Chưa phát hành
 
+- **Banner trang chủ**: (1) nút **"Thêm nhiều ảnh"** chọn cùng lúc nhiều ảnh banner (mỗi ảnh một banner, thêm chữ sau; bấm nút này cũng dùng được cho các danh sách ảnh khác nếu khai báo `bulkImage` trong schema); (2) **cách hiển thị**: một khối slider (các banner chuyển nhau) hoặc mỗi banner một khối nối tiếp (`hero_mode`); (3) tùy chọn slider: tự chuyển + thời gian (2–20 giây), hiệu ứng mờ dần / trượt, cho kéo chuột / vuốt tay, mũi tên trái phải, tạm dừng khi rê chuột; (4) mỗi banner có thêm mô tả ảnh (alt) và liên kết khi bấm cả banner, banner chỉ có ảnh thì không phủ lớp tối và không chữ; (5) **ưu tiên tải ảnh chuẩn**: banner đầu `loading=eager` + `fetchpriority=high` (kèm preload), banner sau `loading=lazy` + `fetchpriority=low` ở slider (xếp chồng trong khung nhìn nên không được tranh băng thông với ảnh LCP) và lazy mặc định ở kiểu xếp nối tiếp; ảnh có width / height; luôn đúng một H1 (không banner nào có tiêu đề thì H1 ẩn bằng sr-only). Mã: `partials/home/banner.njk`, `heroConfig` trong `routes/public.js`, `initSwipers` trong `frontend/public/js/app.js`
+
 - Ảnh tải lên: chất lượng WebP cỡ lớn nâng từ 84 lên 88 (nét hơn cho ngọc, nặng thêm khoảng 25%); cỡ nhỏ 78, cỡ vừa 84 giữ nguyên. Chỉ áp dụng cho ảnh tải lên sau này, ảnh đã có không đổi
 
 - Dữ liệu demo: thay ảnh demo cũ (hình vẽ) bằng 67 ảnh thật trong thư mục Thư viện ảnh › sample (ảnh sản phẩm, gallery, bài viết, loại ngọc dùng ảnh mới; 15 ảnh còn lại để sẵn trong thư mục); gói nội dung `database/content-pack` đã xuất lại

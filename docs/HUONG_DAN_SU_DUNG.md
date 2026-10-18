@@ -155,7 +155,7 @@ Mọi nội dung trên website đều chỉnh được ở đây, chia thành c�
 | Menu | Thêm, xóa, đổi tên, sắp xếp mục menu; mỗi mục chọn được **menu sổ dọc** (theo loại ngọc, màu, kiểu dáng, mệnh, loại sản phẩm, chuyên mục blog, bài mới nhất hoặc tự nhập "Tên \| /đường-dẫn"). Mục Sản phẩm mặc định sổ theo loại ngọc |
 | Bố cục trang chủ | **Bật/tắt và đổi thứ tự (↑ ↓)** từng khối trang chủ; mỗi khối đổi được **nền** (một màu, họa tiết, hoặc ảnh tải lên kèm lớp phủ) và màu chữ |
 | Chân trang | Bật/tắt và đổi thứ tự các cột (giới thiệu, menu, dòng ngọc, liên kết tự thêm, liên hệ) và từng thông tin trong chân trang |
-| Trang chủ | Banner (nhiều slide), khối thông tin nổi bật (kèm nội dung popup), **khối chứng chỉ kiểm định** (ảnh giấy VGC / PNJ Lab..., lời cam kết), **khối ý nghĩa phong thủy**, công cụ tính ni nhanh, tiêu đề các khối, cảm nhận khách hàng |
+| Trang chủ | Banner (nhiều banner trong một khối hoặc xếp nối tiếp; bấm "Thêm nhiều ảnh" để chọn cùng lúc; đặt thời gian tự chuyển, cho kéo / vuốt, mũi tên), khối thông tin nổi bật (kèm nội dung popup), **khối chứng chỉ kiểm định** (ảnh giấy VGC / PNJ Lab..., lời cam kết), **khối ý nghĩa phong thủy**, công cụ tính ni nhanh, tiêu đề các khối, cảm nhận khách hàng |
 | Trang Về shop / Hướng dẫn size / Liên hệ | Nội dung từng trang, bảng quy đổi size, **video hướng dẫn đo** (dán link YouTube) |
 | Biểu mẫu & đặt hàng | Nội dung trang đặt hàng, các thông báo sau khi gửi, lựa chọn ngân sách, **lựa chọn dây / mặt / phụ kiện** cho form custom, kênh liên hệ |
 | Trang Sản phẩm / Gallery / Blog | Tiêu đề, mô tả hiện đầu trang; **các khoảng giá trong bộ lọc**; số ngày gắn nhãn "Mới"; **hướng dẫn bảo quản** chung; số sản phẩm / bài mỗi trang; mục lục, bài gợi ý, **banner dọc** của Blog |

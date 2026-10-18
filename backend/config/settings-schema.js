@@ -194,7 +194,7 @@ export const SETTINGS_SCHEMA = [
     label: 'Trang chủ',
     description: 'Nội dung các khối trên trang chủ.',
     sections: [
-      { key: 'banner', label: 'Banner đầu trang', hint: 'Các slide lớn ở đầu trang' },
+      { key: 'banner', label: 'Banner đầu trang', hint: 'Nhiều banner trong một khối (tự chuyển hoặc kéo để chuyển) hoặc xếp thành nhiều khối nối tiếp' },
       { key: 'info', label: 'Thông tin nổi bật', hint: 'Dải 4 ô bấm vào xem chi tiết, nằm dưới banner' },
       { key: 'featured', label: 'Sản phẩm nổi bật', hint: 'Tiêu đề, mô tả và số sản phẩm hiển thị' },
       { key: 'categories', label: 'Phân loại theo dòng ngọc', hint: 'Tiêu đề khối phân loại' },
@@ -208,14 +208,31 @@ export const SETTINGS_SCHEMA = [
     ],
     fields: [
       {
-        name: 'hero_slides', section: 'banner', collapsible: true, itemTitle: 'title', label: 'Banner đầu trang (slide)', type: 'list',
+        name: 'hero_mode', section: 'banner', label: 'Cách hiển thị nhiều banner', type: 'select', default: 'slider',
+        options: [{ value: 'slider', label: 'Một khối, các banner chuyển nhau (slider)' }, { value: 'stack', label: 'Mỗi banner là một khối riêng, xếp nối tiếp xuống dưới' }],
+        help: 'Chỉ có một banner thì hai cách giống nhau. Các tùy chọn chuyển banner bên dưới chỉ dùng cho kiểu slider.',
+      },
+      { name: 'hero_autoplay', section: 'banner', label: 'Tự động chuyển banner', type: 'toggle', default: true },
+      { name: 'hero_delay', section: 'banner', label: 'Thời gian giữa hai banner (giây, 2–20)', type: 'number', default: 6 },
+      {
+        name: 'hero_effect', section: 'banner', label: 'Hiệu ứng chuyển', type: 'select', default: 'fade',
+        options: [{ value: 'fade', label: 'Mờ dần' }, { value: 'slide', label: 'Trượt ngang' }],
+      },
+      { name: 'hero_drag', section: 'banner', label: 'Cho kéo chuột / vuốt tay để chuyển banner', type: 'toggle', default: true },
+      { name: 'hero_arrows', section: 'banner', label: 'Hiện nút mũi tên trái / phải', type: 'toggle', default: false },
+      { name: 'hero_pause_hover', section: 'banner', label: 'Tạm dừng tự chuyển khi rê chuột vào banner', type: 'toggle', default: true },
+      {
+        name: 'hero_slides', section: 'banner', collapsible: true, itemTitle: 'title', bulkImage: 'image', label: 'Banner đầu trang', type: 'list',
+        help: 'Bấm "Thêm nhiều ảnh" để chọn cùng lúc nhiều ảnh banner (mỗi ảnh thành một banner, thêm chữ sau nếu muốn). Banner đầu tiên được tải ưu tiên (LCP), nên đặt banner quan trọng nhất lên đầu. Banner không có chữ và nút thì chỉ hiện ảnh.',
         fields: [
           { name: 'image', label: 'Ảnh (ngang, tối thiểu 1920px)', type: 'image' },
+          { name: 'alt', label: 'Mô tả ảnh (alt) cho người khiếm thị và Google', type: 'text', help: 'Để trống thì lấy tiêu đề, rồi đến mô tả trong Thư viện ảnh.' },
           { name: 'eyebrow', label: 'Dòng chữ nhỏ phía trên', type: 'text' },
           { name: 'title', label: 'Tiêu đề', type: 'text' },
           { name: 'subtitle', label: 'Mô tả', type: 'textarea' },
           { name: 'cta_label', label: 'Chữ trên nút', type: 'text' },
           { name: 'cta_url', label: 'Link nút', type: 'text' },
+          { name: 'link_url', label: 'Liên kết khi bấm vào cả banner (tùy chọn)', type: 'text', help: 'Dùng cho banner chỉ có ảnh (khuyến mãi...). VD: /san-pham hoặc /blog/ten-bai.' },
         ],
         default: [
           { eyebrow: 'Ngọc tự nhiên · Có kiểm định', title: 'Vòng ngọc tinh tuyển cho người thương', subtitle: 'Mỗi chiếc vòng được tuyển chọn kỹ lưỡng, đo ni chuẩn tay và kèm chứng chỉ kiểm định.', cta_label: 'Khám phá bộ sưu tập', cta_url: '/san-pham' },

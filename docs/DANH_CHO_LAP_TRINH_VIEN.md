@@ -139,6 +139,11 @@ KHÁCH TRÊN WEBSITE                       SHOP TỰ NHẬP (admin)
 - **JavaScript nặng tải khi cần**: Swiper (`loadSwiper` trong `app.js`) chỉ khi có slider cần chạy; PhotoSwipe chỉ khi có `[data-pswp]`.
 - **Kiểm tra tự động**: `npm run check:seo [-- <địa chỉ>]` (mặc định http://localhost:3000, cần server đang chạy). Báo lỗi canonical, noindex, robots, sitemap, 301 chuẩn hóa, 404, H1, ảnh, og:image, JSON-LD, liên kết hỏng. Chạy sau khi sửa template / route / cài đặt SEO hoặc thêm loại trang / tham số.
 
+## Banner trang chủ
+
+- Cài đặt nhóm `home`, phần `banner`: `hero_mode` (slider | stack), `hero_autoplay`, `hero_delay`, `hero_effect`, `hero_drag`, `hero_arrows`, `hero_pause_hover`, danh sách `hero_slides` (ảnh, alt, chữ, nút, `link_url`). `heroConfig()` (`routes/public.js`) chuẩn hóa và tìm slide làm H1; `partials/home/banner.njk` dựng hai kiểu; `initSwipers()` đọc `data-*` trên `.hero-swiper`.
+- Quy tắc ảnh: banner đầu `eager` + `fetchpriority=high` + preload ở `home.njk`; banner sau lazy (`fetchpriority=low` khi nằm chồng trong slider). Đừng bỏ các thuộc tính này khi sửa template.
+
 ## Gói nội dung và cài đặt máy mới
 
 - `backend/lib/content-pack.js`: `exportPack` dùng `VACUUM INTO` sao chép database rồi xóa khỏi BẢN SAO các bảng riêng tư (`PRIVATE_TABLES`: sessions, audit_logs, not_found_log, inquiries, customers, users) và các nhóm cài đặt `ownerOnly` (email SMTP), gỡ tham chiếu tài khoản, `VACUUM` lại và **kiểm tra không còn dữ liệu riêng tư (nếu còn thì hủy)**; chỉ chép ảnh được bảng `media` tham chiếu. `importPack` chỉ chạy khi database trống (hoặc `--force`, tự giữ bản sao lưu), thay file database rồi bạn phải `migrate` (script tự gọi). Module này không nạp `lib/db.js` để thay file trước khi database được mở.
