@@ -36,13 +36,16 @@ Quy trình xử lý một đơn:
 3. Khi giao hàng: nhập đơn vị vận chuyển và mã vận đơn (khách xem được), tick gửi email báo khách.
 4. Khi xong: chuyển **Hoàn thành**. Doanh thu chỉ tính đơn Hoàn thành, theo ngày hoàn thành.
 5. Khách custom / liên hệ chốt mua: bấm **Lên đơn hàng**, chính yêu cầu đó thành đơn (không tạo bản ghi thứ hai).
-6. Khách nhắn ngoài website (Zalo, Facebook, tại cửa hàng): bấm **Thêm đơn hàng / Thêm yêu cầu** để nhập tay.
+6. Khách nhắn ngoài website (Zalo, Facebook, tại cửa hàng): bấm **Thêm đơn hàng / Thêm yêu cầu** để nhập tay. Chọn được **ngày phát sinh** (mặc định hôm nay), trạng thái và ngày hoàn thành để nhập lại đơn cũ đúng ngày.
 
 **Tổng quan** hiển thị đơn mới, yêu cầu custom, liên hệ, khách mới, doanh thu, giá trị trung bình mỗi đơn theo kỳ (7 ngày, 30 ngày, tháng, quý, năm hoặc tự chọn), kèm biểu đồ; nút **So sánh** cho thấy tăng trưởng so với kỳ trước.
 
 ## 3. Sản phẩm
 
-- **Loại sản phẩm:** Vòng tay ngọc (chính, có đủ bộ lọc, chứng chỉ, ni tay) và loại khác như Pháp phục (có sẵn, đang tắt; mỗi loại tự khai báo thông số riêng).
+- **Loại sản phẩm:** Vòng tay ngọc (chính, có đủ bộ lọc, chứng chỉ, ni tay) và loại khác như Pháp phục (có sẵn, đang tắt; mỗi loại tự khai báo thông số riêng). Mỗi loại tự khai báo lựa chọn khi đặt hàng (kích cỡ S/M/L..., ô thông tin thêm như chiều cao / cân nặng).
+- **Quản lý kho (tùy chọn, mặc định tắt):** tick "Theo dõi kho" ở sản phẩm cần; kho tự trừ / hoàn theo trạng thái đơn, hết hàng tự hiện "Đã bán", khách thấy "Còn N" nếu bật.
+- **Gợi ý tìm kiếm:** khách gõ ô tìm kiếm là thấy sản phẩm phù hợp kèm ảnh, giá; gõ không dấu vẫn ra.
+- **Phân loại khách tự tính:** Người quan tâm → Đã đặt hàng → Đã mua → Mua lại; lọc ở trang Khách hàng.
 - **Mỗi sản phẩm:** tên, mã, giá, giá khuyến mãi (tự hiện nhãn Sale), ảnh, loại ngọc / màu / kiểu dáng / mệnh, ni có sẵn, chứng chỉ kiểm định, mô tả, SEO. Tình trạng: Có sẵn / Đặt trước / Đã bán. Nhãn: Best Seller, Mới, Nổi bật, Có thể custom (kiểu nhãn tùy chỉnh trong Cài đặt › Giao diện).
 - **Quản lý nhanh:** sửa giá ngay ở danh sách, ẩn / hiện / xóa hàng loạt, kéo thả đổi vị trí, nhân bản, xem thử như khách (cả bản nháp).
 - **Danh mục & bộ lọc:** tạo loại ngọc, màu, kiểu dáng, mệnh; tự thành bộ lọc trên website.

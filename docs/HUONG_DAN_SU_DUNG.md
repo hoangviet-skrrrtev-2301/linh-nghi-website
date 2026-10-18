@@ -41,7 +41,7 @@ Khách có thể gửi yêu cầu theo nhiều cách:
 | Trang Thiết kế riêng | Yêu cầu custom |
 | Form ở trang Liên hệ | Liên hệ |
 
-Khi khách chọn **"Ni khác"** và tự nhập số đo, ni đó hiện trong đơn hàng như bình thường.
+Khi khách chọn **"Ni khác"** và tự nhập số đo, ni đó hiện trong đơn hàng như bình thường. Với loại khác ngọc (Pháp phục), khách chọn **kích cỡ** (S, M, L...) và có thể điền **thông tin thêm** (VD: chiều cao, cân nặng); cả hai hiện trong đơn, email, ảnh đơn hàng và trang tra cứu.
 
 Khi khách gửi đơn, hệ thống sẽ:
 1. Lưu đơn vào trang quản trị (luôn luôn, kể cả khi email lỗi).
@@ -58,6 +58,11 @@ Yêu cầu custom bỏ bước "Đang giao hàng"; lời nhắn liên hệ chỉ
 
 **Lên đơn từ yêu cầu:** với yêu cầu custom hoặc liên hệ, bấm **Lên đơn hàng từ yêu cầu này** để tạo đơn có mã riêng cho khách, chốt giá và theo dõi giống đơn đặt qua website.
 
+**Thêm đơn / yêu cầu nhập tay** (khách nhắn Zalo, Facebook, đến cửa hàng, hoặc đơn cũ chưa ghi): bấm **Thêm đơn hàng**, chọn khách, rồi chọn **Ngày phát sinh** (mặc định hôm nay, không chọn ngày tương lai; mã đơn mang ngày đã chọn) và **Trạng thái hiện tại**. Chọn **Hoàn thành** thì có thêm **Ngày hoàn thành**, doanh thu tính vào ngày này. Sau này sửa ở chi tiết đơn, mục **Ngày ghi nhận** (nút **Lưu ngày**).
+
+**Kết thúc mà khách không mua:** với custom và liên hệ, bấm **Đã hủy**; hệ thống ghi "Không chốt đơn" (custom) hoặc "Không phát sinh đơn" (liên hệ).
+
+
 Dùng ô **Ghi chú nội bộ** để ghi lại các lần trao đổi (khách không nhìn thấy). Nếu email gửi lỗi, bấm **Gửi lại email thông báo**.
 
 > 💡 Giá trong đơn do hệ thống tự tính lại từ giá sản phẩm hiện tại, khách không thể sửa giá.
@@ -67,8 +72,9 @@ Dùng ô **Ghi chú nội bộ** để ghi lại các lần trao đổi (khách 
 Danh sách khách được gộp theo số điện thoại, kèm số lần đặt và tổng tiền đã mua. Bấm vào một khách để thêm **nhãn** (VIP, khách sỉ...), **ghi chú**, ni tay và xem lịch sử đơn. Chủ shop có thể **Xuất Excel (CSV)**: mở bằng Excel sẽ hiển thị đúng tiếng Việt.
 
 - **Bộ lọc:** bấm **Bộ lọc** để chọn thời gian (tháng này, tháng trước, 3 / 6 tháng, năm nay hoặc chọn tháng cụ thể), cách tính (có phát sinh đơn/yêu cầu hay khách mới tạo) và **nguồn khách**. Bộ lọc đang bật hiện thành các nhãn nhỏ phía trên danh sách, bấm ✕ để bỏ.
-- **Thêm khách:** nút **Thêm khách** cho từng người (khách nhắn Zalo, Facebook, đến cửa hàng...). Số điện thoại là mã định danh, trùng số thì không tạo mới.
-- **Nhập hàng loạt:** bấm **Nhập hàng loạt**, dán danh sách copy từ Excel / Google Sheets (hoặc chọn file CSV). Cột theo thứ tự: Họ tên, Số điện thoại, Email, Địa chỉ, Nguồn, Nhãn, Ni tay, Ghi chú (có dòng tiêu đề thì tự nhận cột; chỉ họ tên và số điện thoại là bắt buộc; tải **file mẫu** ngay trong khung). Bấm **Kiểm tra trước** để xem từng dòng là mới / trùng / lỗi rồi mới bấm **Nhập**. Có thể gán sẵn nguồn và nhãn cho cả lô, chọn bỏ qua hoặc cập nhật khi trùng số điện thoại. Mỗi lần tối đa 2.000 khách.
+- **Phân loại (tự tính):** hàng nút phía trên danh sách: **Người quan tâm** (chưa có đơn, đơn hủy cũng về nhóm này) → **Đã đặt hàng** (có đơn chưa hoàn thành) → **Đã mua** (1 đơn hoàn thành) → **Mua lại** (từ 2). Một người một hồ sơ, tự chuyển nhóm khi đặt hàng.
+- **Thêm khách:** nút **Thêm khách** cho từng người (khách nhắn Zalo, Facebook, đến cửa hàng...). Số điện thoại là mã định danh, trùng số thì không tạo mới. Ô **Ngày bắt đầu là khách** mặc định hôm nay; chọn ngày cũ khi nhập lại khách đã có từ trước.
+- **Nhập hàng loạt:** bấm **Nhập hàng loạt**, dán danh sách copy từ Excel / Google Sheets (hoặc chọn file CSV). Cột theo thứ tự: Họ tên, Số điện thoại, Email, Địa chỉ, Nguồn, Nhãn, Ni tay, Ghi chú (có dòng tiêu đề thì tự nhận cột; chỉ họ tên và số điện thoại là bắt buộc; tải **file mẫu** ngay trong khung). Bấm **Kiểm tra trước** để xem từng dòng là mới / trùng / lỗi rồi mới bấm **Nhập**. Có thể gán sẵn nguồn và nhãn cho cả lô, chọn bỏ qua hoặc cập nhật khi trùng số điện thoại. Mỗi lần tối đa 2.000 khách. Thêm cột **Ngày tạo** (VD 15/09/2026) nếu có; dòng không có ngày dùng **Ngày mặc định cho cả lô** (mặc định hôm nay).
 
 ## 4. Sản phẩm
 
@@ -85,6 +91,7 @@ Danh sách khách được gộp theo số điện thoại, kèm số lần đ�
 Cột bên phải:
 - **Lưu & hiển thị**: sản phẩm xuất hiện trên website. **Lưu nháp**: lưu nhưng ẩn.
 - **Tình trạng:** Có sẵn / Đặt trước / Đã bán (sản phẩm đã bán vẫn hiển thị nhưng không thêm vào giỏ được).
+- **Theo dõi kho** (hiện khi bật Quản lý kho ở Cài đặt): tick rồi nhập số lượng còn; không tick thì bán như cũ. Có lịch sử nhập / trừ / hoàn.
 - **★ Best Seller:** gắn nhãn Best Seller, ưu tiên đứng đầu ở trang chủ và khi sắp xếp "Bán chạy nhất".
 - **Sản phẩm mới:** gắn nhãn "Mới". Ngoài ra sản phẩm tự có nhãn "Mới" trong 30 ngày đầu sau khi đăng (đổi số ngày ở Cài đặt › Tiêu đề các trang, đặt 0 để tắt).
 - **Sản phẩm nổi bật:** hiện ở trang chủ.
@@ -104,7 +111,9 @@ Cột bên phải:
 **Loại sản phẩm (Vòng tay ngọc, Pháp phục...):** bấm nút **Loại sản phẩm** ở trang danh sách để thêm / sửa loại, tự đặt các **thông số** cho từng loại (ô chữ, số, hoặc danh sách chọn; gõ giá trị mới khi nhập sản phẩm thì tự được thêm vào danh sách), và **bật / tắt hoạt động**. Nút **Thêm sản phẩm** cho chọn loại trước; form tự đổi theo loại (loại không phải ngọc không có ô loại ngọc, màu, ni, chứng chỉ).
 - Loại **Chưa hoạt động (thử nghiệm)**: sản phẩm vẫn nhập và lưu được, nhưng khách không thấy ở bất kỳ đâu. Dùng nút mắt **Xem thử như khách** để xem trang sản phẩm đúng như khách sẽ thấy.
 - Khi bật hoạt động: sản phẩm hiện qua menu Sản phẩm (mục tên loại), đường dẫn riêng của loại và tìm kiếm; **không** hiện chung trong "Tất cả sản phẩm" (trừ khi tick "Hiện chung") và **không có bộ lọc** (bộ lọc chỉ dành cho ngọc).
-- Bật hoạt động xong, đơn đặt Pháp phục chưa chọn được kích cỡ S/M/L (xem GHI_CHU_DU_AN.md).
+- Khách đặt Pháp phục chọn được **kích cỡ** (S/M/L...) và điền thông tin thêm nếu bạn bật ô đó.
+
+**Lựa chọn khi khách đặt hàng (kích cỡ):** trong form loại sản phẩm (không phải loại ngọc), khung **Lựa chọn khi khách đặt hàng**: đặt tên (Kích cỡ, Size...), đơn vị, gợi ý nhanh (S, M, L, XL), tick **Cho khách nhập kích cỡ riêng** nếu muốn, và **ô thông tin thêm** (VD "Chiều cao / cân nặng", để trống nếu không cần). Danh sách kích cỡ của từng sản phẩm nhập ở tab Thông số; sản phẩm có danh sách thì khách phải chọn trước khi thêm vào giỏ.
 
 ## 5. Danh mục & bộ lọc
 
@@ -151,7 +160,7 @@ Mọi nội dung trên website đều chỉnh được ở đây, chia thành c�
 |---|---|
 | Thông tin shop | Tên, slogan, logo, favicon, SĐT, Zalo, email, địa chỉ, bản đồ, mạng xã hội, chân trang |
 | Giao diện | Màu chủ đạo, màu nhấn, màu nền, font chữ, độ bo góc, số cột sản phẩm, hiệu ứng, CSS tùy chỉnh |
-| Bật/tắt tính năng | Đặt hàng, custom, blog, gallery, trang size, hiện giá, nút liên hệ nổi, **popup chào mừng**, thanh thông báo |
+| Bật/tắt tính năng | Đặt hàng, custom, blog, gallery, trang size, hiện giá, nút liên hệ nổi, **popup chào mừng**, thanh thông báo, **gợi ý tìm kiếm**, **quản lý kho** |
 | Menu | Thêm, xóa, đổi tên, sắp xếp mục menu; mỗi mục chọn được **menu sổ dọc** (theo loại ngọc, màu, kiểu dáng, mệnh, loại sản phẩm, chuyên mục blog, bài mới nhất hoặc tự nhập "Tên \| /đường-dẫn"). Mục Sản phẩm mặc định sổ theo loại ngọc |
 | Bố cục trang chủ | **Bật/tắt và đổi thứ tự (↑ ↓)** từng khối trang chủ; mỗi khối đổi được **nền** (một màu, họa tiết, hoặc ảnh tải lên kèm lớp phủ) và màu chữ |
 | Chân trang | Bật/tắt và đổi thứ tự các cột (giới thiệu, menu, dòng ngọc, liên kết tự thêm, liên hệ) và từng thông tin trong chân trang |
@@ -233,3 +242,15 @@ Bật/tắt tính năng › tắt "Hiển thị giá sản phẩm".
 
 **Quên mật khẩu?**
 Nhờ Chủ shop đặt lại trong Tài khoản quản trị. Nếu Chủ shop quên, xem [BAO_MAT_SAO_LUU.md](BAO_MAT_SAO_LUU.md) › "Quên mật khẩu".
+
+## Gợi ý tìm kiếm và quản lý kho (Cài đặt › Bật/tắt tính năng)
+
+**Gợi ý tìm kiếm** (mặc định bật): khách gõ từ 2 ký tự là thấy sản phẩm (ảnh, loại, giá) và loại ngọc phù hợp, gõ không dấu vẫn ra; chọn bằng chuột hoặc mũi tên + Enter. Chỉnh số gợi ý (3 đến 10).
+
+**Quản lý kho** (không bắt buộc, mặc định tắt): bật thì trong từng sản phẩm có ô **Theo dõi kho**; chỉ sản phẩm được tick mới bị trừ kho.
+
+- **Trừ kho khi đơn chuyển sang:** chọn mốc (khuyên dùng "Đã xác nhận"). Đơn lùi trạng thái, bị hủy, sửa số lượng hoặc xóa thì kho tự hoàn, không trừ hai lần.
+- Hết hàng thì sản phẩm tự hiện "Đã bán"; nhập thêm hàng thì tự bán lại.
+- **Không cho khách đặt quá số lượng còn:** tick để chặn. Đơn chưa đến mốc trừ kho chưa giữ chỗ nên hai khách đặt cùng lúc món chỉ còn 1 vẫn gửi được đơn; shop xử lý khi xác nhận.
+- **Hiện số lượng còn cho khách:** không hiện / chỉ khi sắp hết / luôn hiện; chữ hiển thị sửa được (dùng {n} chỗ số lượng). Trang Sản phẩm của admin có cột Kho và cảnh báo sắp hết.
+- Kho theo từng sản phẩm, chưa chia theo kích cỡ. Tắt tính năng thì mọi thứ về như cũ, số liệu vẫn giữ.
