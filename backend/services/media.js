@@ -155,10 +155,16 @@ export function moveMedia(ids, folder) {
   return { moved: list.length, folder: target };
 }
 
-export function updateMediaAlt(id, alt) {
-  db.prepare('UPDATE media SET alt = ? WHERE id = ?').run(String(alt || '').slice(0, 300), id);
+// Sửa tên ảnh (name) và / hoặc mô tả alt. Trường nào không gửi lên thì giữ nguyên.
+export function updateMediaInfo(id, { name, alt } = {}) {
+  const cur = db.prepare('SELECT original_name, alt FROM media WHERE id = ?').get(id);
+  if (!cur) throw new HttpError(404, 'Không tìm thấy ảnh');
+  const nextName = name === undefined ? cur.original_name : String(name || '').trim().slice(0, 200);
+  const nextAlt = alt === undefined ? cur.alt : String(alt || '').trim().slice(0, 300);
+  db.prepare('UPDATE media SET original_name = ?, alt = ? WHERE id = ?').run(nextName, nextAlt, id);
   return getMedia(id);
 }
+export const updateMediaAlt = (id, alt) => updateMediaInfo(id, { alt });
 
 export function deleteMedia(id) {
   const row = db.prepare('SELECT * FROM media WHERE id = ?').get(id);

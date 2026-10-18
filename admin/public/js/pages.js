@@ -558,7 +558,11 @@ document.addEventListener('alpine:init', () => {
       this.uploading = 0;
     },
     async saveAlt() {
-      try { await api(`/media/${this.selected.id}`, { method: 'PATCH', body: { alt: this.selected.alt } }); toast().show('Đã lưu mô tả ảnh'); } catch (e) { toast().error(e); }
+      try {
+        const r = await api(`/media/${this.selected.id}`, { method: 'PATCH', body: { name: this.selected.original_name, alt: this.selected.alt } });
+        const row = this.items.find((x) => x.id === r.id); if (row) Object.assign(row, { original_name: r.original_name, alt: r.alt });
+        toast().show('Đã lưu tên và mô tả ảnh');
+      } catch (e) { toast().error(e); }
     },
     copy(url) { navigator.clipboard?.writeText(location.origin + url); toast().show('Đã sao chép đường dẫn'); },
     async remove(m) {

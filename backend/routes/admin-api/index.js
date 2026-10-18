@@ -103,7 +103,11 @@ router.post('/media', upload.array('files', 20), h(async (req) => {
   return { items: out };
 }));
 
-router.patch('/media/:id', h((req) => media.updateMediaAlt(id(req), req.body.alt)));
+router.patch('/media/:id', h((req) => {
+  const m = media.updateMediaInfo(id(req), { name: req.body?.name, alt: req.body?.alt });
+  audit(req, 'update', 'media', req.params.id, 'sửa tên / mô tả ảnh');
+  return m;
+}));
 router.delete('/media/:id', h((req) => {
   media.deleteMedia(id(req));
   settings.invalidateSettings();

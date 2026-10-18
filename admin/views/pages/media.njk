@@ -73,14 +73,15 @@
         <div>
           <img :src="selected.md" class="w-full rounded-t-xl bg-slate-100" alt="">
           <div class="card-body space-y-3 text-sm">
-            <p class="break-all font-medium" x-text="selected.original_name || ('Ảnh #' + selected.id)"></p>
+            <div><label class="label" for="media-name">Tên ảnh</label><input id="media-name" class="input" x-model="selected.original_name" maxlength="200" placeholder="VD: Vòng phỉ thúy xanh lục băng"></div>
             <p class="text-xs text-slate-500" x-text="selected.width + '×' + selected.height + 'px · ' + $fmt.bytes(selected.size_bytes) + ' · ' + $fmt.date(selected.created_at)"></p>
             <div><label class="label">Thư mục</label>
               <select class="input" :value="selected.folder" @change="moveOne($event.target.value)">
                 <template x-for="f in folders" :key="f.name"><option :value="f.name" :selected="f.name === selected.folder" x-text="label(f.name)"></option></template>
               </select></div>
-            <div><label class="label">Mô tả ảnh (alt, tốt cho SEO)</label><textarea class="input" rows="2" x-model="selected.alt"></textarea>
-              <button class="btn btn-secondary btn-sm mt-2" @click="saveAlt()">Lưu mô tả</button></div>
+            <div><label class="label" for="media-alt">Mô tả ảnh (alt, tốt cho SEO)</label><textarea id="media-alt" class="input" rows="2" x-model="selected.alt" maxlength="300" placeholder="Mô tả ngắn nội dung ảnh, có từ khóa nếu hợp lý"></textarea>
+              <p class="help">Tên ảnh giúp bạn tìm trong thư viện. Mô tả (alt) hiện cho người khiếm thị và Google đọc, nên viết rõ ảnh chụp gì.</p>
+              <button class="btn btn-primary btn-sm mt-2" @click="saveAlt()">Lưu tên và mô tả</button></div>
             <div class="flex flex-wrap gap-2 border-t border-slate-100 pt-3">
               <button class="btn btn-secondary btn-sm" @click="copy(selected.lg)">{{ icon('copy', 'w-3.5 h-3.5') }} Sao chép link</button>
               <a :href="selected.lg" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">{{ icon('eye', 'w-3.5 h-3.5') }} Xem</a>
