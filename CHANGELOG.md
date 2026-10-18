@@ -4,6 +4,8 @@ Ghi lại các thay đổi đáng chú ý, mới nhất ở trên cùng.
 
 ## Chưa phát hành
 
+- `npm run bootstrap -- --blank`: cài máy mới với website trống hoàn toàn (không nạp gói nội dung, không dữ liệu mẫu); `--seed` dùng dữ liệu mẫu
+
 - Admin › Tổng quan: khung "Chuẩn bị mở website chính thức" mặc định thu gọn (bấm "Xem" để mở)
 
 - **Bàn giao và cài máy mới (18/10/2026)**: (1) **Gói nội dung sạch** `database/content-pack/` (`npm run export-content`): sản phẩm, danh mục, gallery, blog, tác giả, ảnh đang dùng, cài đặt, chuyển hướng, vai trò; KHÔNG có tài khoản, khách hàng, đơn hàng, nhật ký, phiên, cấu hình email (công cụ tự xóa khỏi bản sao và tự kiểm tra rồi mới ghi gói); `npm run import-content [-- --force]` nạp vào máy khác (tự giữ bản sao lưu). (2) **`npm run bootstrap`** + `chay-thu.bat` / `chay-thu.sh`: một lệnh cài máy mới (kiểm tra Node, tạo `.env`, database, nạp gói nội dung hoặc dữ liệu mẫu, tạo Chủ shop với mật khẩu ngẫu nhiên in một lần); chạy lại an toàn. (3) `.gitignore` chặn thêm mọi `*.sqlite` (trừ gói nội dung), `.env.*`, `*.pem`, `*.key`, `id_rsa*`. (4) Tài liệu mới `docs/BAN_GIAO.md` (nội dung lưu ở đâu, gì không được đưa lên GitHub, chạy lần đầu local và server, chọn server, vì sao không dùng Vercel) và `docs/TONG_QUAN_TINH_NANG.md` (người dùng mới); cập nhật README, CAI_DAT_VA_CHAY_THU, HUONG_DAN_UPLOAD, CLAUDE.md, GHI_CHU_DU_AN, DANH_CHO_LAP_TRINH_VIEN

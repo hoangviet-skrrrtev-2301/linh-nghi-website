@@ -3,7 +3,7 @@
 //   3. tạo database + chạy migration    4. nạp "gói nội dung" (hoặc dữ liệu mẫu) nếu database còn trống
 //   5. tạo tài khoản Chủ shop (mật khẩu ngẫu nhiên, in ra một lần) nếu chưa có tài khoản nào
 // Chạy lại nhiều lần vẫn an toàn: dữ liệu đã có thì không bị ghi đè.
-// Tùy chọn: --email a@b.vn --password MatKhau12345 --seed (dùng dữ liệu mẫu thay vì gói nội dung) --no-admin
+// Tùy chọn: --email a@b.vn --password MatKhau12345 --seed (dùng dữ liệu mẫu thay vì gói nội dung) --blank (website trống hoàn toàn, tự nhập trong admin) --no-admin
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -49,13 +49,13 @@ if (fs.existsSync(config.paths.database)) {
 }
 if (hasData) {
   step(4, 'Database đã có dữ liệu, giữ nguyên (muốn nạp lại gói nội dung: npm run import-content -- --force)');
-} else if (packExists() && !flag('seed')) {
+} else if (packExists() && !flag('seed') && !flag('blank')) {
   const r = await importPack({ force: true });
   step(4, `Đã nạp gói nội dung từ GitHub${r.info ? ` (tạo lúc ${r.info.createdAt})` : ''}: sản phẩm, ảnh, bài viết, cài đặt`);
 }
 const { migrate, db } = await import('../lib/db.js');
 const applied = migrate({ log: () => {} });
-if (!hasData && (!packExists() || flag('seed'))) {
+if (!hasData && !flag('blank') && (!packExists() || flag('seed'))) {
   step(4, 'Không có gói nội dung, đang tạo dữ liệu mẫu...');
   execFileSync(process.execPath, [path.join(ROOT, 'backend/scripts/seed.js')], { cwd: ROOT, stdio: 'inherit' });
 }

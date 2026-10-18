@@ -64,6 +64,8 @@ npm run bootstrap      # tạo .env, database, nạp nội dung bàn giao, tạo
 npm run dev            # chạy website
 ```
 
+Muốn website **trống hoàn toàn** thay vì nội dung của người giao: `npm run bootstrap -- --blank` (hoặc `--seed` để có dữ liệu mẫu).
+
 Hoặc **bấm đúp `chay-thu.bat`** (Windows) / `bash chay-thu.sh` (macOS, Linux): làm tất cả các bước trên rồi mở website.
 
 Mở http://localhost:3000 để xem website và http://localhost:3000/admin để vào trang quản trị (email và mật khẩu do `bootstrap` in ra). Chi tiết: [docs/BAN_GIAO.md](docs/BAN_GIAO.md).

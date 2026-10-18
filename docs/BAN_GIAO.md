@@ -85,6 +85,16 @@ Hoặc **bấm đúp** `chay-thu.bat` (Windows) / chạy `bash chay-thu.sh` (mac
 4. **Nạp gói nội dung** từ GitHub nếu database còn trống (không có gói thì tạo dữ liệu mẫu).
 5. Tạo tài khoản **Chủ shop** với mật khẩu ngẫu nhiên, **in ra màn hình một lần**.
 
+**Chọn cách bắt đầu dữ liệu** (thêm vào lệnh `bootstrap`, hoặc `npm run bootstrap -- ...`):
+
+| Muốn | Lệnh |
+|---|---|
+| **Xem lại đúng nội dung của người giao** (mặc định khi có gói nội dung) | `npm run bootstrap` |
+| **Website trống hoàn toàn**, tự nhập từ đầu | `npm run bootstrap -- --blank` |
+| Dữ liệu mẫu để xem thử | `npm run bootstrap -- --seed` |
+
+Chưa muốn làm lại từ đầu mà lỡ chọn sai: `npm run import-content -- --force` nạp lại nội dung của người giao (tự giữ bản sao lưu).
+
 Nhờ vậy mọi máy chạy giống máy của bạn mà không cần copy thư mục nào bằng tay.
 
 ---
