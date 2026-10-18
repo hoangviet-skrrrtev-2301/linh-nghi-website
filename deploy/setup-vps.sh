@@ -90,7 +90,7 @@ else
 fi
 
 step "Sao lưu tự động lúc 3 giờ sáng mỗi ngày"
-CRON="0 3 * * * cd $APP_DIR && /usr/bin/node backend/scripts/backup.js >> logs/backup.log 2>&1"
+CRON="0 3 * * * cd $APP_DIR && /usr/bin/node backend/scripts/backup.js >> logs/backup.log 2>&1; bash deploy/offsite-backup.sh >> logs/backup.log 2>&1"
 ( crontab -u "$APP_USER" -l 2>/dev/null | grep -v 'backup.js' ; echo "$CRON" ) | crontab -u "$APP_USER" -
 
 echo -e "\n\033[1;32m✔ HOÀN TẤT!\033[0m"

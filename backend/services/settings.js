@@ -5,6 +5,7 @@ import { encrypt, decrypt } from '../lib/security.js';
 import { cleanHtml, cleanText } from '../lib/sanitize.js';
 import { bool, safeJson, HttpError } from '../lib/utils.js';
 import { ensureFonts } from './fonts.js';
+import { normalizePolicies } from './policies.js';
 import { getMediaMap } from './media.js';
 
 let cache = null;
@@ -40,6 +41,12 @@ export function getForAdmin(key) {
   const group = SCHEMA_BY_KEY[key];
   const data = { ...getRaw(key) };
   for (const f of group.fields) if (f.type === 'secret') data[f.name] = data[f.name] ? '__SET__' : '';
+  // Danh sách cố định đã lưu từ trước thì chưa có mục mới (ví dụ cột "Chính sách"): bổ sung ở cuối, người dùng sắp xếp lại tùy ý
+  for (const f of group.fields) {
+    if (f.type === 'list' && f.fixed && Array.isArray(f.default) && Array.isArray(data[f.name])) {
+      for (const d of f.default) if (!data[f.name].some((x) => x && x.key === d.key)) data[f.name] = [...data[f.name], structuredClone(d)];
+    }
+  }
   return data;
 }
 
@@ -87,6 +94,13 @@ export function saveGroup(key, input) {
   db.prepare(`INSERT INTO settings (key, value, updated_at) VALUES (?, ?, datetime('now'))
     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`).run(key, JSON.stringify(next));
   invalidateSettings();
+  if (key === 'policies') {
+    // Trang chính sách: mã trang + đường dẫn duy nhất + chuyển hướng khi đổi đường dẫn (xử lý sau khi lưu để nhìn thấy bản cũ)
+    const fixed = normalizePolicies(prev.policy_pages, next.policy_pages);
+    next.policy_pages = fixed;
+    db.prepare("UPDATE settings SET value = ? WHERE key = 'policies'").run(JSON.stringify(next));
+    invalidateSettings();
+  }
   if (key === 'theme') ensureFonts([next.font_heading, next.font_body]); // tự lưu font mới chọn về máy chủ
   return getForAdmin(key);
 }

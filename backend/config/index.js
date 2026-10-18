@@ -9,6 +9,8 @@ const envFile = path.join(ROOT, '.env');
 if (fs.existsSync(envFile)) process.loadEnvFile(envFile);
 
 const env = process.env;
+// LN_DATA_DIR: lưu database + ảnh + font + sao lưu ở thư mục khác (bộ kiểm thử dùng thư mục tạm). Bình thường để trống.
+const DATA = env.LN_DATA_DIR ? path.resolve(env.LN_DATA_DIR) : null;
 const isProd = env.NODE_ENV === 'production';
 
 function secret(name) {
@@ -44,12 +46,12 @@ export const config = {
     frontendPublic: path.join(ROOT, 'frontend/public'),
     adminViews: path.join(ROOT, 'admin/views'),
     adminPublic: path.join(ROOT, 'admin/public'),
-    database: path.join(ROOT, 'database/data/app.sqlite'),
+    database: DATA ? path.join(DATA, 'app.sqlite') : path.join(ROOT, 'database/data/app.sqlite'),
     migrations: path.join(ROOT, 'database/migrations'),
     seeds: path.join(ROOT, 'database/seeds'),
-    uploads: path.join(ROOT, 'database/uploads'),
-    fonts: path.join(ROOT, 'database/data/fonts'),
-    backups: path.join(ROOT, 'database/backups'),
+    uploads: DATA ? path.join(DATA, 'uploads') : path.join(ROOT, 'database/uploads'),
+    fonts: DATA ? path.join(DATA, 'fonts') : path.join(ROOT, 'database/data/fonts'),
+    backups: DATA ? path.join(DATA, 'backups') : path.join(ROOT, 'database/backups'),
     nodeModules: path.join(ROOT, 'node_modules'),
   },
 };

@@ -22,7 +22,9 @@
     "setup": "npm run build && npm run migrate",
     "bootstrap": "node backend/scripts/bootstrap.js",
     "export-content": "node backend/scripts/export-content.js",
-    "import-content": "node backend/scripts/import-content.js"
+    "import-content": "node backend/scripts/import-content.js",
+    "pull-backup": "node backend/scripts/pull-backup.js",
+    "test": "node --test --test-concurrency=2 \"tests/**/*.test.js\""
   },
   "dependencies": {
     "@alpinejs/collapse": "^3.17.4",

@@ -166,9 +166,34 @@ Làm theo [HUONG_DAN_UPLOAD.md](HUONG_DAN_UPLOAD.md) (mua VPS, tên miền, SSH,
    - **Cài đặt › Schema:** địa chỉ có cấu trúc, giờ mở cửa; chỉ bật đổi trả / giao hàng nếu đúng thực tế.
    - **Tài khoản quản trị / Vai trò & phân quyền:** tạo tài khoản nhân viên (nếu có) và giao quyền vừa đủ.
 7. **Cuối cùng, khi đã sẵn sàng bán:** Cài đặt › SEO & mã theo dõi › bật **"Cho phép Google lập chỉ mục"** (mặc định đang **TẮT** để Google chưa thu thập website khi còn thử nghiệm). Rồi trên VPS chạy `npm run check:seo -- https://tenmien.vn` (phải không có lỗi), và gửi `https://tenmien.vn/sitemap.xml` lên Google Search Console.
-8. Đặt lịch kiểm tra: bản sao lưu tự động chạy lúc 3 giờ sáng (giữ 14 bản); thỉnh thoảng tải một bản về máy riêng (Cài đặt › Tải bản sao lưu, hoặc `npm run backup` rồi tải thư mục).
+8. **Sao lưu ra ngoài server (rất nên làm ngay):** bản sao lưu tự động chạy lúc 3 giờ sáng và giữ 14 bản, nhưng **nằm chung ổ đĩa với website**: ổ hỏng là mất cả hai. Làm một trong hai cách ở mục "Sao lưu ra ngoài server" bên dưới. Trang **Tổng quan** sẽ nhắc nếu quá 3 ngày chưa có bản sao lưu nào được chép ra ngoài.
 
 ---
+
+### Sao lưu ra ngoài server
+
+**Cách 1: tải về máy tính của bạn mỗi ngày (miễn phí, khuyên dùng).** Làm trên **máy tính** (không phải server):
+
+1. Tạo khóa SSH một lần (bỏ qua nếu đã có): `ssh-keygen -t ed25519` (Enter hết, không đặt mật khẩu cho khóa dùng để tự động).
+2. Cho server nhận khóa: `ssh-copy-id root@IP` (Windows không có lệnh này: mở file `~/.ssh/id_ed25519.pub`, copy nội dung, dán thêm vào cuối file `~/.ssh/authorized_keys` trên server). Kiểm tra `ssh root@IP` vào được **không hỏi mật khẩu**.
+3. Mở thư mục dự án trên máy tính, chạy thử và lưu cấu hình:
+   `npm run pull-backup -- --server root@IP --path /var/www/linh-nghi --to D:\SaoLuuLinhNghi --keep 30 --save`
+   Lệnh tải bản mới nhất, kiểm tra database nguyên vẹn, báo số sản phẩm và dung lượng ảnh, giữ 30 bản gần nhất. Nhật ký ở `D:\SaoLuuLinhNghi\pull-backup.log`.
+4. **Đặt lịch mỗi ngày:**
+   - Windows: `powershell -ExecutionPolicy Bypass -File deploy\dat-lich-tai-sao-luu.ps1 -Time 04:30` (nếu máy đang tắt đúng giờ, Windows chạy bù khi bật máy). Xóa lịch: `Unregister-ScheduledTask -TaskName LinhNghi-TaiSaoLuu -Confirm:$false`.
+   - macOS / Linux: `crontab -e` thêm dòng `30 4 * * * cd /đường/dẫn/website-linh-nghi && npm run pull-backup >> ~/pull-backup.log 2>&1`.
+5. **Khôi phục khi cần:** `npm run restore -- "D:\SaoLuuLinhNghi\<ngày-giờ>"` (làm trên server sau khi chép thư mục đó lên, xem [HUONG_DAN_UPLOAD.md](HUONG_DAN_UPLOAD.md)).
+
+Máy tính cần bật vào khoảng giờ đặt lịch (hoặc bật lại trong ngày). Nên lưu thư mục này ở ổ có sao lưu riêng hoặc USB / ổ ngoài.
+
+**Cách 2: đẩy tự động lên dịch vụ lưu trữ (Google Drive, Dropbox, OneDrive, Amazon S3...) ngay từ server, bằng rclone.** Làm một lần trên server:
+
+1. `curl https://rclone.org/install.sh | sudo bash`
+2. `rclone config` rồi làm theo hướng dẫn để tạo một "remote" (ví dụ đặt tên `gdrive`; với Google Drive cần đăng nhập qua trình duyệt, xem https://rclone.org/drive/).
+3. Thêm vào file `.env` trên server: `OFFSITE_REMOTE=gdrive:linh-nghi-backup` (và `OFFSITE_KEEP_DAYS=30` nếu muốn đổi số ngày giữ).
+4. Thử: `bash deploy/offsite-backup.sh`. Từ đó mỗi đêm sau lần sao lưu 3 giờ sáng, bản mới tự được đẩy lên.
+
+Có thể dùng cả hai cách. **Hai việc này tôi chưa thử trên server thật** (chỉ thử phần tải về bằng thư mục cục bộ): lần đầu hãy chạy thử và mở bản đã tải để chắc chắn dùng được.
 
 ## 6. Nền tảng của website và server phù hợp
 

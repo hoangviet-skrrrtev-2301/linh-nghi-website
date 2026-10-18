@@ -9,11 +9,12 @@ import { buildSeo, productJsonLd, breadcrumbJsonLd, articleJsonLd, collectionJso
 import { pageUrlBuilder } from '../lib/pagination.js';
 import { fontLinks } from '../services/fonts.js';
 import { formToken } from '../middleware/security.js';
-import { HttpError } from '../lib/utils.js';
+import { HttpError, truncate, stripHtml } from '../lib/utils.js';
 import { homeSections } from '../lib/home-layout.js';
 import { buildToc } from '../lib/toc.js';
 import { navChildren } from '../lib/nav-menu.js';
 import { footerColumns, safeLinks } from '../lib/footer-layout.js';
+import { listPolicies, getPolicy, policyPath } from '../services/policies.js';
 
 const router = Router();
 
@@ -57,7 +58,9 @@ export function publicLocals(req, res) {
     const feature = FEATURE_BY_URL[item.url];
     return item.label && item.url && (!feature || s.features[feature]);
   }).map((item) => ({ ...item, children: navChildren(item, { jadeTypes: res.locals.jadeTypes }) }));
-  res.locals.footerCols = footerColumns(s.footer);
+  res.locals.policyLinks = listPolicies().map((x) => ({ title: x.title, url: policyPath(x.slug) }));
+  res.locals.policyBar = !!s.policies?.show_in_footer;   // dòng liên kết nhỏ ở thanh dưới cùng (tùy chọn)
+  res.locals.footerCols = footerColumns(s.footer, { skip: res.locals.policyLinks.length ? [] : ['policies'] });
   res.locals.footerLinks = safeLinks(s.footer.extra_links);
   res.locals.clientConfig = {
     checkout: !!s.features.checkout,
@@ -390,6 +393,16 @@ router.get('/lien-he', (req, res) => {
     jsonLd: pageSchema({ type: 'ContactPage', path: '/lien-he', name: c.title, description: c.intro }),
   });
   res.view('pages/contact.njk');
+});
+
+// Trang chính sách (nội dung và danh sách sửa ở Admin › Cài đặt › Trang chính sách)
+router.get('/chinh-sach/:slug', (req, res, next) => {
+  const page = getPolicy(req.params.slug);
+  if (!page) return next();
+  const path = policyPath(page.slug);
+  const description = truncate(stripHtml(page.content), 160);
+  res.locals.seo = buildSeo(req, { title: page.title, description, jsonLd: pageSchema({ type: 'WebPage', path, name: page.title, description }) });
+  res.view('pages/policy.njk', { policy: page, others: listPolicies().filter((x) => x.slug !== page.slug) });
 });
 
 router.get('/ve-shop', (req, res) => {

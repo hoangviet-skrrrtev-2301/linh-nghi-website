@@ -52,7 +52,7 @@ export const DEFAULT_ROLE_ID = 1;
 // Mỗi nhóm cài đặt thuộc một quyền
 export const SETTINGS_PERMISSION = {
   site: 'settings_site', navigation: 'settings_site', footer: 'settings_site', features: 'settings_site',
-  home: 'settings_pages', about: 'settings_pages', size_guide: 'settings_pages', contact: 'settings_pages', forms: 'settings_pages', pages: 'settings_pages',
+  home: 'settings_pages', policies: 'settings_pages', about: 'settings_pages', size_guide: 'settings_pages', contact: 'settings_pages', forms: 'settings_pages', pages: 'settings_pages',
   theme: 'settings_design', home_layout: 'settings_design',
   seo: 'settings_seo', seo_pages: 'settings_seo', schema: 'settings_seo', sitemap: 'settings_seo',
   mail: 'mail',

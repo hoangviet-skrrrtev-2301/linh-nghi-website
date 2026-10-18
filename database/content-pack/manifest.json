@@ -1,5 +1,5 @@
 {
-  "createdAt": "2026-10-18T04:34:52.106Z",
+  "createdAt": "2026-10-18T05:44:36.504Z",
   "lastMigration": "012_roles.sql",
   "counts": {
     "products": 23,

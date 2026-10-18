@@ -61,6 +61,7 @@ async function download(family) {
 
 // Tải (nếu chưa có) font của các họ chữ đang dùng; chạy nền, gọi lại nhiều lần vẫn an toàn.
 export function ensureFonts(families) {
+  if (process.env.LN_NO_FONTS) return; // kiểm thử: không tải font từ internet
   for (const family of new Set(families.filter(Boolean))) {
     if (readManifest(family) || inflight.has(family) || (retryAfter.get(family) || 0) > Date.now()) continue;
     const job = download(family)

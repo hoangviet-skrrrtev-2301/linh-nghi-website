@@ -14,7 +14,7 @@
   {# ---- Việc cần làm trước khi mở web chính thức (tự mất khi đã xong) ---- #}
   <div x-cloak x-show="d && d.launch && d.launch.length" class="mb-6 rounded-xl border border-brand-200 bg-brand-50/60 px-5 py-4 text-sm" x-data="{ open: false }">
     <button type="button" class="flex w-full items-center justify-between gap-3 text-left font-medium text-slate-800" @click="open = !open" :aria-expanded="open">
-      <span>Chuẩn bị mở website chính thức <span class="ml-1 font-normal text-slate-500" x-text="'(' + (d?.launch?.length || 0) + ' việc)'"></span></span>
+      <span>Việc cần chú ý: chuẩn bị mở web và sao lưu <span class="ml-1 font-normal text-slate-500" x-text="'(' + (d?.launch?.length || 0) + ' việc)'"></span></span>
       <span class="text-xs text-brand-600" x-text="open ? 'Thu gọn' : 'Xem'"></span>
     </button>
     <ul class="mt-3 space-y-2" x-show="open" x-collapse>
@@ -22,7 +22,7 @@
         <li class="flex flex-wrap items-start gap-2">
           <span class="mt-0.5 inline-block h-2 w-2 shrink-0 rounded-full" :class="it.level === 'warn' ? 'bg-amber-500' : 'bg-sky-500'"></span>
           <span class="flex-1" x-text="it.text"></span>
-          <a :href="'{{ A }}/settings/' + it.group" class="inline-block py-1 text-brand-600 hover:underline">Mở cài đặt</a>
+          <a x-show="it.group !== 'backup'" :href="'{{ A }}/settings/' + it.group" class="inline-block py-1 text-brand-600 hover:underline">Mở cài đặt</a>
         </li>
       </template>
     </ul>

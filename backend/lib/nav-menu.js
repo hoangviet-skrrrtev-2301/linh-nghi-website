@@ -1,6 +1,7 @@
 // Menu sổ dọc (dropdown): nguồn danh sách con do chủ shop chọn ở Admin › Cài đặt › Menu.
 import { listTerms, listPublicProductGroups } from '../services/catalog.js';
 import { listPosts, listPostCategories } from '../services/content.js';
+import { listPolicies, policyPath } from '../services/policies.js';
 
 export const NAV_TERM_PARAM = { jade_type: 'loai', color: 'mau', style: 'kieu', element: 'menh' };
 
@@ -25,6 +26,7 @@ export function navChildren(item, { jadeTypes = [], limit = 8 } = {}) {
   // Theo loại sản phẩm: Vòng tay ngọc, Pháp phục... (chỉ loại đang hoạt động và có sản phẩm)
   if (kind === 'product_type') return listPublicProductGroups().map(groupLink);
   if (kind === 'blog_category') return listPostCategories({ activeOnly: true }).map((c) => ({ label: c.name, url: `/blog/${encodeURIComponent(c.slug)}` }));
+  if (kind === 'policies') return listPolicies().map((x) => ({ label: x.title, url: policyPath(x.slug) }));
   if (kind === 'posts') return listPosts({ perPage: limit }).items.map((p) => ({ label: p.title, url: p.url }));
   const param = NAV_TERM_PARAM[kind];
   if (!param) return [];

@@ -15,6 +15,8 @@ npm run build:css       # bắt buộc sau khi sửa class Tailwind trong templa
 npm run migrate | backup | restore -- <thư-mục>
 npm run bootstrap        # máy mới: .env + database + nạp gói nội dung + tạo admin (mật khẩu ngẫu nhiên hiện một lần)
 npm run export-content  # tạo gói nội dung sạch database/content-pack/ (commit khi bàn giao); import-content -- --force để nạp
+npm run pull-backup    # (chạy trên máy riêng) tải bản sao lưu mới nhất từ server về máy; xem docs/BAN_GIAO.md
+npm test                # bộ kiểm thử tự động (thư mục tests/, dùng thư mục tạm, không đụng dữ liệu thật); chạy trước khi commit
 npm run check:seo       # kiểm tra SEO kỹ thuật của website đang chạy (nhận thêm địa chỉ: -- http://localhost:3100)
 ```
 

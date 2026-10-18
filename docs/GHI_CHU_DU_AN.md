@@ -106,6 +106,8 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 - [ ] Điền thông tin thật cho khung "Chuẩn bị mở website chính thức" (điện thoại, email, địa chỉ, mạng xã hội, ảnh chia sẻ 1200×630, mã Search Console, địa chỉ có cấu trúc trong Cài đặt › Schema)
 - [ ] Tạo tác giả thật (Admin › Tác giả blog) và chọn cho các bài; tạo vai trò + tài khoản nhân viên thật nếu cần (Vai trò & phân quyền)
 - [ ] Chỉ bật đổi trả / giao hàng trong Cài đặt › Schema khi shop thật sự áp dụng
+- [ ] **Đọc lại và sửa 4 trang chính sách mẫu** (Cài đặt › Trang chính sách) rồi tick "Đã xác nhận"
+- [ ] **Đặt lịch sao lưu chép ra ngoài server** (`npm run pull-backup` + `deploy/dat-lich-tai-sao-luu.ps1`, hoặc rclone `deploy/offsite-backup.sh`), chưa thử trên server thật
 - [ ] Nên bật 2FA cho Chủ shop (Tài khoản & bảo mật); cân nhắc giao quyền sao lưu / email / xóa dữ liệu cho ai
 
 **Khi muốn mở bán Pháp phục** (loại đã có sẵn, đang thử nghiệm): nhập sản phẩm thật, kiểm tra bằng "Xem thử như khách", rồi Admin › Sản phẩm › Loại sản phẩm › Bật hoạt động. Còn thiếu trước khi mở bán thật: chọn **kích cỡ** (S/M/L...) khi đặt hàng (giỏ hàng hiện chỉ hiểu "ni" dạng số), thanh toán/chuyển khoản nếu cần, schema SEO riêng cho loại không phải ngọc.
@@ -194,6 +196,8 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 | Menu admin / menu Cài đặt thu gọn | `navGroup` trong `admin/public/js/core.js`, `admin/views/layout.njk`; `SETTINGS_CATEGORIES` trong `settings-schema.js`, `admin/views/pages/settings.njk` |
 | Mô tả cách hoạt động từng trang admin | `admin/views/partials/page-help.njk` (thêm nhánh `helpKey`) |
 | Bàn giao, cài máy mới | `backend/lib/content-pack.js`, `backend/scripts/bootstrap.js` / `export-content.js` / `import-content.js`, `chay-thu.bat` / `chay-thu.sh`, tài liệu `docs/BAN_GIAO.md` |
+| Trang chính sách | `services/policies.js`, `lib/policy-defaults.js` (nội dung mẫu), nhóm cài đặt `policies`, `pages/policy.njk`, chân trang trong `partials/footer.njk` |
+| Sao lưu ra ngoài server | `scripts/pull-backup.js` (máy riêng), `deploy/offsite-backup.sh` (rclone), `deploy/dat-lich-tai-sao-luu.ps1`, `services/backup-status.js` (nhắc ở Tổng quan) |
 | Cấu trúc database | thêm file mới trong `database/migrations/` |
 | Dữ liệu mẫu | `backend/scripts/seed.js` |
 
@@ -205,6 +209,7 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 - **Ghi script sửa file bằng công cụ Write rồi chạy `node script.mjs`:** đừng nhét code có dấu backtick hoặc `${...}` vào `node -e "..."` hoặc heredoc (shell nuốt mất, đã gây lỗi nhiều lần).
 - **Kiểm tra giao diện bằng Chrome CDP:** Chrome ở `C:/Program Files/Google/Chrome/Application/chrome.exe`, bật `--headless=new --remote-debugging-port=9333`, nói chuyện qua WebSocket (Node 24 có sẵn `WebSocket`, `fetch`, `node:sqlite` để đọc database bản sao). Mẫu kịch bản: đăng nhập admin thử, `Emulation.setDeviceMetricsOverride` đổi độ rộng, đo `scrollWidth > clientWidth`, chụp màn hình, kiểm tra thứ tự H1–H6. Kịch bản dài (hơn 7 phút) thì chạy nền.
 - **Sửa file có `${...}` hoặc backtick:** dùng công cụ Edit; script sửa nhiều chỗ thì ghi bằng Write rồi `node script.mjs` (heredoc làm mất dấu `\` và `$`, đã gây lỗi nhiều lần).
+- **Kiểm thử tự động:** `npm test` (thư mục `tests/`, mỗi file chạy trong tiến trình riêng với `LN_DATA_DIR` thư mục tạm, `LN_PACK_DIR`, `LN_NO_FONTS`; `tests/helpers.js` có `boot()` dựng website + phiên đăng nhập admin). Sửa logic đơn hàng / quyền / SEO / làm sạch HTML / gói nội dung thì chạy và bổ sung kiểm thử cho trường hợp mới. Tính năng mới đụng tới các mảng trên nên có thêm ít nhất một kiểm tra.
 - **Kiểm tra SEO / URL:** chạy server (bản sao) rồi `npm run check:seo -- http://localhost:3100`; phải không có lỗi trước khi bàn giao thay đổi liên quan trang khách.
 - **Kiểm tra bảo mật / phân quyền:** tạo thêm tài khoản nhân viên thử (`npm run create-admin -- staff@local.test "Tên" "MatKhau123" staff`) trên bản sao, tạo vai trò thử rồi gọi API bằng nhiều biến thể đường dẫn (dấu "/" cuối, chữ hoa, "//"). Giới hạn đăng nhập nằm trong bộ nhớ: gặp 429 thì khởi động lại máy chủ thử.
 - **Tránh lỗi quen:** không chạy `node backend/server.js` từ bản sao mà quên đặt `PORT=3100` (sẽ chiếm cổng 3000 của chủ dự án); script sửa file nhiều dòng ghi bằng công cụ Write (heredoc trong bash hay làm mất `\`); máy chủ thử cần 5–10 giây để khởi động (migration + tải font).

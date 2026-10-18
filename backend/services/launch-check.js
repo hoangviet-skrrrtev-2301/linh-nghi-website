@@ -2,6 +2,7 @@
 // Mọi thông tin đều lấy từ cài đặt, nên sửa xong là danh sách tự cập nhật.
 import { config } from '../config/index.js';
 import { getPublicSettings } from './settings.js';
+import { backupChecks } from './backup-status.js';
 
 export function launchChecks() {
   const s = getPublicSettings();
@@ -20,6 +21,9 @@ export function launchChecks() {
   if (!s.seo.og_image) add('info', 'seo', 'Chưa chọn ảnh chia sẻ mặc định (1200×630px), hiện đang dùng logo khi chia sẻ link.');
   if (!s.seo.google_site_verification) add('info', 'seo', 'Chưa nhập mã xác minh Google Search Console.');
   if (!s.schema?.address_locality) add('info', 'schema', 'Schema: chưa nhập quận / huyện, thành phố của cửa hàng.');
+  const unreviewed = (s.policies?.policy_pages || []).filter((x) => x.enabled && !x.reviewed);
+  if (unreviewed.length) add('warn', 'policies', `Trang chính sách đang dùng nội dung mẫu, cần đọc lại và tick "Đã xác nhận": ${unreviewed.map((x) => x.title).join(', ')}.`);
   if (config.isProd && /localhost|127\.0\.0\.1/.test(config.baseUrl)) add('warn', 'seo', 'BASE_URL trong file .env còn là localhost, canonical và sitemap sẽ sai địa chỉ.');
+  out.push(...backupChecks());
   return out;
 }

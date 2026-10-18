@@ -8,7 +8,8 @@ import Database from 'better-sqlite3';
 import { config } from '../config/index.js';
 import { SETTINGS_SCHEMA } from '../config/settings-schema.js';
 
-export const PACK_DIR = path.join(config.root, 'database/content-pack');
+// LN_PACK_DIR: nơi đặt gói nội dung (bộ kiểm thử dùng thư mục tạm để không ghi đè gói thật trong git)
+export const PACK_DIR = process.env.LN_PACK_DIR ? path.resolve(process.env.LN_PACK_DIR) : path.join(config.root, 'database/content-pack');
 export const PACK_DB = path.join(PACK_DIR, 'content.sqlite');
 export const PACK_UPLOADS = path.join(PACK_DIR, 'uploads');
 

@@ -196,6 +196,10 @@ Website đã tự động có: thẻ meta title/description/keywords, Open Graph
 
 > Khi website đang thử nghiệm, có thể tắt "Cho phép Google lập chỉ mục" để Google chưa lưu trang.
 
+## 10a. Trang chính sách (chân trang)
+
+Admin › Cài đặt › **Trang chính sách**: các trang đổi trả, bảo mật thông tin, điều khoản mua hàng, vận chuyển và thanh toán, hiện ở chân trang (dòng liên kết phía trên thanh bản quyền) và có trong sitemap. **Nội dung có sẵn chỉ là bản mẫu thông dụng**: hãy đọc từng trang, sửa cho đúng chính sách thật của shop (số ngày đổi trả, phí vận chuyển, hình thức thanh toán...), rồi tick **"Đã xác nhận nội dung đúng với shop"**. Chưa xác nhận thì Tổng quan còn nhắc. Có thể thêm trang mới, tắt hoặc xóa trang, đổi thứ tự (↑ ↓) và đổi đường dẫn (địa chỉ cũ tự chuyển sang địa chỉ mới). Nội dung không thay thế tư vấn pháp lý.
+
 ## 10b. Menu quản trị
 
 Menu bên trái gồm 4 nhóm chính (Bán hàng, Sản phẩm, Nội dung, Hệ thống) **thu gọn**: nhóm xổ ra khi bạn đang ở một trang của nhóm, hoặc khi bấm vào tên nhóm. Nhóm bạn đã mở được nhớ nên chuyển sang mục khác không tự đóng, chỉ đóng khi bạn bấm đóng. Menu Cài đặt cũng gom thành 5 mục lớn có mô tả và hoạt động tương tự. Mỗi trang admin có khung **Mô tả cách hoạt động** ở đầu trang, ẩn / hiện được.

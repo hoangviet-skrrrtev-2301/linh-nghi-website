@@ -4,6 +4,7 @@ import { config } from '../config/index.js';
 import { getRaw } from '../services/settings.js';
 import { safeJson } from './utils.js';
 import { listPublicProductGroups } from '../services/catalog.js';
+import { listPolicies, policyPath } from '../services/policies.js';
 
 const AI_BOTS = ['GPTBot', 'ChatGPT-User', 'OAI-SearchBot', 'ClaudeBot', 'anthropic-ai', 'CCBot', 'Google-Extended', 'PerplexityBot', 'Bytespider', 'Applebot-Extended'];
 const DIRECTIVE = /^(user-agent|allow|disallow|crawl-delay|sitemap|host)\s*:\s*\S*/i;
@@ -75,6 +76,7 @@ export function sitemapEntries() {
     if (f.size_guide) add({ loc: '/huong-dan-size', priority: '0.7' });
     if (f.custom_request) add({ loc: '/thiet-ke-rieng', priority: '0.7' });
     if (f.blog) add({ loc: '/blog', priority: '0.6', changefreq: 'weekly' });
+    for (const pol of listPolicies()) add({ loc: policyPath(pol.slug), priority: '0.3' });
   }
   if (sm.sitemap_categories) {
     for (const t of db.prepare(`SELECT slug FROM terms WHERE type = 'jade_type' AND active = 1`).all()) {

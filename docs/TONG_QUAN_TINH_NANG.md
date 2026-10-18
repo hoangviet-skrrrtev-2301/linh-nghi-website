@@ -16,6 +16,7 @@ Hướng dẫn thao tác từng trang admin: [HUONG_DAN_SU_DUNG.md](HUONG_DAN_SU
 | **Thiết kế riêng (custom)** | Khách mô tả vòng muốn làm (loại ngọc, màu, ni, ngân sách, mục đích). Khách **không** tải ảnh lên, gửi ảnh mẫu qua Zalo |
 | **Liên hệ / tư vấn** | Form lời nhắn, yêu cầu tư vấn về một sản phẩm |
 | **Gallery, Blog, Về shop, Hướng dẫn size** | Ảnh khách và sản phẩm; bài viết kiến thức (có chuyên mục, mục lục, tác giả); giới thiệu shop; cách đo ni tay |
+| **Trang chính sách** | Đổi trả, bảo mật thông tin, điều khoản mua hàng, vận chuyển và thanh toán: liên kết ở chân trang, nội dung sửa trong admin |
 | **Tiện ích** | Chế độ tối / sáng, popup chào mừng, nút Zalo và gọi nổi, dùng tốt trên điện thoại |
 
 ## 2. Bán hàng vận hành thế nào

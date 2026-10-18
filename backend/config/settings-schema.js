@@ -1,4 +1,5 @@
 import { TAGS, TAG_BG_OPTIONS, TAG_PATTERNS } from '../lib/tags.js';
+import { DEFAULT_POLICY_PAGES } from '../lib/policy-defaults.js';
 
 // ==========================================================
 // SCHEMA CẤU HÌNH WEBSITE
@@ -171,7 +172,7 @@ export const SETTINGS_SCHEMA = [
             options: [
               { value: 'none', label: 'Không có' }, { value: 'jade_type', label: 'Theo loại ngọc' }, { value: 'color', label: 'Theo màu sắc' },
               { value: 'style', label: 'Theo kiểu dáng' }, { value: 'element', label: 'Theo mệnh phong thủy' },
-              { value: 'product_type', label: 'Theo loại sản phẩm (Vòng ngọc, Pháp phục...)' }, { value: 'blog_category', label: 'Chuyên mục blog' }, { value: 'posts', label: 'Bài viết blog mới nhất' }, { value: 'custom', label: 'Tự nhập danh sách' },
+              { value: 'product_type', label: 'Theo loại sản phẩm (Vòng ngọc, Pháp phục...)' }, { value: 'blog_category', label: 'Chuyên mục blog' }, { value: 'policies', label: 'Các trang chính sách' }, { value: 'posts', label: 'Bài viết blog mới nhất' }, { value: 'custom', label: 'Tự nhập danh sách' },
             ],
           },
           { name: 'dropdown_custom', label: 'Danh sách tự nhập (mỗi dòng: Tên | /đường-dẫn)', type: 'textarea', showIf: "item.dropdown == 'custom'" },
@@ -371,6 +372,7 @@ export const SETTINGS_SCHEMA = [
           { key: 'jade', label: 'Danh sách dòng ngọc', enabled: true, title: 'Dòng ngọc' },
           { key: 'links', label: 'Liên kết tự thêm', enabled: false, title: 'Liên kết hữu ích' },
           { key: 'contact', label: 'Thông tin liên hệ', enabled: true, title: 'Liên hệ' },
+          { key: 'policies', label: 'Trang chính sách (đổi trả, bảo mật, điều khoản...)', enabled: true, title: 'Chính sách' },
         ],
         fields: [
           { name: 'key', label: 'Mã cột', type: 'text', hidden: true },
@@ -634,6 +636,27 @@ export const SETTINGS_SCHEMA = [
     ],
   },
   {
+    key: 'policies',
+    label: 'Trang chính sách',
+    description: 'Các trang chính sách (đổi trả, bảo mật, điều khoản mua hàng, vận chuyển và thanh toán) hiện thành đường dẫn /chinh-sach/<tên> và liên kết ở chân trang. Nội dung là BẢN MẪU: hãy đọc kỹ, sửa cho đúng với shop rồi tick "Đã xác nhận". Thêm, xóa, đổi tên, đổi thứ tự trang tùy ý. Nội dung chỉ mang tính tham khảo, không thay thế tư vấn pháp lý.',
+    fields: [
+      { name: 'show_in_footer', label: 'Hiện thêm một dòng liên kết chính sách nhỏ ở thanh dưới cùng của chân trang', type: 'toggle', default: false, help: 'Các trang chính sách đã có một CỘT riêng ở chân trang: bật / tắt, đổi tiêu đề và thứ tự ở Cài đặt › Chân trang › Các cột chân trang. Ô này chỉ thêm dòng liên kết nhỏ phía trên thanh bản quyền.' },
+      {
+        name: 'policy_pages', collapsible: true, itemTitle: 'title', label: 'Các trang chính sách', type: 'list',
+        help: 'Đổi đường dẫn của một trang đã có thì địa chỉ cũ tự chuyển hướng (301) sang địa chỉ mới.',
+        fields: [
+          { name: 'key', label: 'Mã trang', type: 'text', hidden: true },
+          { name: 'enabled', label: 'Hiển thị trang này trên website', type: 'toggle' },
+          { name: 'reviewed', label: 'Đã xác nhận nội dung đúng với shop', type: 'toggle', help: 'Chưa tick thì Tổng quan còn nhắc.' },
+          { name: 'title', label: 'Tiêu đề trang', type: 'text' },
+          { name: 'slug', label: 'Đường dẫn (để trống = tự tạo từ tiêu đề)', type: 'text', help: 'Địa chỉ trang: /chinh-sach/<đường dẫn>' },
+          { name: 'content', label: 'Nội dung', type: 'richtext' },
+        ],
+        default: DEFAULT_POLICY_PAGES,
+      },
+    ],
+  },
+  {
     key: 'sitemap',
     label: 'Sitemap & robots.txt',
     description: 'Quản lý những gì Google được thu thập. Xem kết quả tại /robots.txt và /sitemap.xml của website. Sau khi có tên miền, gửi địa chỉ sitemap.xml vào Google Search Console. Việc bật/tắt cho Google lập chỉ mục toàn website nằm ở nhóm "SEO & mã theo dõi".',
@@ -789,7 +812,7 @@ export const SCHEMA_BY_KEY = Object.fromEntries(SETTINGS_SCHEMA.map((g) => [g.ke
 // Mỗi nhóm phải thuộc đúng một mục (thiếu sẽ báo lỗi khi khởi động).
 export const SETTINGS_CATEGORIES = [
   { key: 'general', label: 'Thông tin chung & menu', description: 'Tên shop, liên hệ, logo, menu, chân trang và các công tắc bật / tắt tính năng.', groups: ['site', 'navigation', 'footer', 'features'] },
-  { key: 'pages', label: 'Nội dung từng trang', description: 'Chữ và ảnh của trang chủ, Về shop, Hướng dẫn size, Liên hệ, biểu mẫu đặt hàng và các trang Sản phẩm / Gallery / Blog.', groups: ['home', 'about', 'size_guide', 'contact', 'forms', 'pages'] },
+  { key: 'pages', label: 'Nội dung từng trang', description: 'Chữ và ảnh của trang chủ, Về shop, Hướng dẫn size, Liên hệ, biểu mẫu đặt hàng, các trang Sản phẩm / Gallery / Blog và các trang chính sách.', groups: ['home', 'about', 'size_guide', 'contact', 'forms', 'pages', 'policies'] },
   { key: 'design', label: 'Giao diện', description: 'Màu sắc, font chữ, nhãn sản phẩm, chế độ tối và bố cục các khối trang chủ.', groups: ['theme', 'home_layout'] },
   { key: 'seo', label: 'Tối ưu SEO', description: 'Mã theo dõi, SEO từng trang, schema cho Google, sitemap, robots.txt và công tắc cho phép Google lập chỉ mục.', groups: ['seo', 'seo_pages', 'schema', 'sitemap'] },
   { key: 'system', label: 'Email & hệ thống', description: 'Gửi thông báo đơn hàng qua email (chỉ người được cấp quyền).', groups: ['mail'] },

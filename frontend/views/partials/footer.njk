@@ -51,6 +51,14 @@
       </ul>
     </div>
 
+    {% elif col.key == 'policies' %}
+    <div>
+      {% if col.title %}<h2 class="mb-4 font-body text-xs font-semibold uppercase tracking-[0.2em] text-white">{{ col.title }}</h2>{% endif %}
+      <ul class="space-y-2.5 text-sm">
+        {% for l in policyLinks %}<li><a href="{{ l.url }}" class="transition hover:text-accent">{{ l.title }}</a></li>{% endfor %}
+      </ul>
+    </div>
+
     {% elif col.key == 'contact' %}
     <div>
       {% if col.title %}<h2 class="mb-4 font-body text-xs font-semibold uppercase tracking-[0.2em] text-white">{{ col.title }}</h2>{% endif %}
@@ -64,6 +72,13 @@
     {% endif %}
     {% endfor %}
   </div>
+  {% if policyBar and policyLinks.length %}
+  <div class="border-t border-white/10">
+    <nav class="container-x flex flex-wrap items-center justify-center gap-x-6 gap-y-0 py-3 text-xs text-white/60" aria-label="Chính sách">
+      {% for l in policyLinks %}<a href="{{ l.url }}" class="inline-block py-1.5 transition hover:text-accent">{{ l.title }}</a>{% endfor %}
+    </nav>
+  </div>
+  {% endif %}
   {% if f.show_bottom and (f.show_copyright or (f.show_bct and s.site.bct_image) or (f.show_bottom_slogan and s.site.slogan)) %}
   <div class="border-t border-white/10">
     <div class="container-x flex flex-col items-center justify-between gap-2 py-5 text-xs text-white/50 md:flex-row">

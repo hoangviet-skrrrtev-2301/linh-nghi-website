@@ -137,6 +137,7 @@ KHÁCH TRÊN WEBSITE                       SHOP TỰ NHẬP (admin)
 - **og:image**: ảnh riêng → `seo.og_image` → logo.
 - **Font** (`services/fonts.js`): font chọn ở Giao diện tải về `database/data/fonts` lúc khởi động và khi lưu cài đặt giao diện, phục vụ ở `/fonts`; template `base.njk` dùng `fonts.local` (CSS local + preload) hoặc `fonts.google` khi chưa có. Thêm font mới vào `FONT_OPTIONS` trong schema là đủ.
 - **JavaScript nặng tải khi cần**: Swiper (`loadSwiper` trong `app.js`) chỉ khi có slider cần chạy; PhotoSwipe chỉ khi có `[data-pswp]`.
+- **Bộ kiểm thử `npm test`**: `tests/*.test.js` (node:test). `boot({ content: true })` trong `tests/helpers.js` dựng app trên thư mục tạm (biến `LN_DATA_DIR`) với gói nội dung của dự án; `session().login()` / `.api()` gọi API admin kèm CSRF. Thêm kiểm thử mới = thêm file `tests/<tên>.test.js`.
 - **Kiểm tra tự động**: `npm run check:seo [-- <địa chỉ>]` (mặc định http://localhost:3000, cần server đang chạy). Báo lỗi canonical, noindex, robots, sitemap, 301 chuẩn hóa, 404, H1, ảnh, og:image, JSON-LD, liên kết hỏng. Chạy sau khi sửa template / route / cài đặt SEO hoặc thêm loại trang / tham số.
 
 ## Banner trang chủ
