@@ -64,7 +64,7 @@
     .table-stack td.max-w-xs { max-width: none; }
   }
 
-  .badge { @apply inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium; }
+  .badge { @apply inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium; }
   .nav-link { @apply flex items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] text-slate-300 transition hover:bg-white/5 hover:text-white; }
   .nav-link.active { @apply bg-white/10 font-medium text-white; }
   .nav-section { @apply mt-6 mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500; }

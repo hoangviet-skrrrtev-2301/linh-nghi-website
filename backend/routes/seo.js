@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import { config } from '../config/index.js';
 import { getPublicSettings, getRaw } from '../services/settings.js';
 import { buildRobots, buildSitemap } from '../lib/robots-sitemap.js';
+import { tagCss } from '../lib/tags.js';
 
 const router = Router();
 
@@ -42,7 +43,7 @@ ${t.dark_mode === 'off' ? '' : `:root[data-theme="dark"]{
   --c-bg:${t.dark_color_bg};--c-surface:${t.dark_color_surface};--c-text:${t.dark_color_text};--c-muted:${t.dark_color_muted};
   --c-border:${t.dark_color_border};--c-footer:${t.dark_color_footer_bg};
 }`}
-${custom}`;
+${tagCss(t)}${custom}`;
   const etag = `"${crypto.createHash('sha1').update(css).digest('base64url')}"`;
   res.set({ 'Content-Type': 'text/css; charset=utf-8', 'Cache-Control': 'no-cache', ETag: etag });
   if (req.get('if-none-match') === etag) return res.status(304).end();

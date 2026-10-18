@@ -124,7 +124,7 @@
               <td><img :src="p.cover?.sm" alt="" class="h-12 w-12 rounded-lg bg-slate-100 object-cover"></td>
               <td>
                 <a :href="'{{ A }}/products/' + p.id" class="font-medium text-slate-900 hover:text-brand-600" x-text="p.name"></a>
-                <div class="mt-0.5 flex gap-1.5 text-xs text-slate-500"><span x-text="p.sku"></span><span x-show="p.is_bestseller" class="badge bg-slate-900 text-white">Best Seller</span><span x-show="p.is_featured" class="badge bg-amber-50 text-amber-700">Nổi bật</span><span x-show="p.show_new" class="badge bg-emerald-50 text-emerald-700">Mới</span></div>
+                <div class="mt-0.5 flex gap-1.5 text-xs text-slate-500"><span x-text="p.sku"></span><span x-show="p.is_bestseller" class="badge bg-slate-900 text-slate-50">Best Seller</span><span x-show="p.is_featured" class="badge bg-amber-50 text-amber-700">Nổi bật</span><span x-show="p.show_new" class="badge bg-emerald-50 text-emerald-700">Mới</span></div>
               </td>
               <td><span x-text="p.product_type?.uses_jade_fields === false ? p.product_type.name : (p.jade_type?.name || '—')"></span></td>
               <td>

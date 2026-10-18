@@ -18,12 +18,12 @@
       {% endif %}
     </a>
     <div class="pointer-events-none absolute left-3 top-3 flex flex-col items-start gap-1.5">
-      {% if p.is_bestseller %}<span class="badge bg-ink/60 text-bg backdrop-blur-sm">★ Best Seller</span>{% endif %}
-      {% if p.show_new %}<span class="badge bg-primary/65 text-on-primary backdrop-blur-sm">Mới</span>{% endif %}
-      {% if p.on_sale and features.show_prices %}<span class="badge bg-accent/65 text-on-accent backdrop-blur-sm">Sale -{{ ((1 - p.sale_price / p.price) * 100) | round }}%</span>{% endif %}
-      {% if p.stock_status == 'sold_out' %}<span class="badge bg-ink/60 text-bg backdrop-blur-sm">Đã bán</span>
-      {% elif p.stock_status == 'made_to_order' %}<span class="badge bg-surface/65 text-ink backdrop-blur-sm">Đặt trước</span>{% endif %}
-      {% if p.is_customizable %}<span class="badge bg-surface/65 text-primary backdrop-blur-sm">Có thể custom</span>{% endif %}
+      {% if p.is_bestseller %}<span class="tag tag-bestseller">★ Best Seller</span>{% endif %}
+      {% if p.show_new %}<span class="tag tag-new">Mới</span>{% endif %}
+      {% if p.on_sale and features.show_prices %}<span class="tag tag-sale">Sale -{{ ((1 - p.sale_price / p.price) * 100) | round }}%</span>{% endif %}
+      {% if p.stock_status == 'sold_out' %}<span class="tag tag-soldout">Đã bán</span>
+      {% elif p.stock_status == 'made_to_order' %}<span class="tag tag-preorder">Đặt trước</span>{% endif %}
+      {% if p.is_customizable %}<span class="tag tag-custom">Có thể custom</span>{% endif %}
     </div>
     <button type="button" class="quick" @click="$store.quick.show('{{ p.slug }}')">{{ icon('eye', 'w-4 h-4') }} Xem nhanh</button>
   </div>

@@ -133,6 +133,8 @@
            hover:border-primary/50 has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-on-primary;
   }
   .badge { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium tracking-wide; }
+  /* Nhãn trên sản phẩm: màu, họa tiết, hình dạng, độ đặc lấy từ Cài đặt › Giao diện › Nhãn trên sản phẩm (biến --tg-* sinh tại /theme.css) */
+  .tag { @apply inline-flex items-center px-2.5 py-0.5 text-[11px] font-medium tracking-wide; border-radius: var(--tag-radius, 9999px); border: 1.5px solid transparent; color: var(--tg-fg); background-color: color-mix(in srgb, var(--tg-bg) var(--tag-op, 100%), transparent); background-image: var(--tg-pat, none); background-size: var(--tg-pat-size, auto); }
 
   .price { @apply font-heading text-lg font-semibold text-primary; }
   .price-old { @apply text-sm text-muted line-through; }

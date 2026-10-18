@@ -3,7 +3,7 @@
 <div x-data class="fixed bottom-4 right-4 z-[100] flex w-80 flex-col gap-2" aria-live="polite">
   <template x-for="t in $store.toast.items" :key="t.id">
     <div x-transition class="flex items-start gap-3 rounded-xl px-4 py-3 text-sm shadow-lg"
-      :class="t.type === 'error' ? 'toast-err bg-red-600 text-white' : 'toast-ok bg-slate-900 text-white'">
+      :class="t.type === 'error' ? 'toast-err bg-red-600 text-white' : 'toast-ok bg-slate-900 text-slate-50'">
       <span x-text="t.message" class="flex-1"></span>
     </div>
   </template>

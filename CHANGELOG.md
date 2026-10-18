@@ -4,6 +4,8 @@ Ghi lại các thay đổi đáng chú ý, mới nhất ở trên cùng.
 
 ## Chưa phát hành
 
+- **Nhãn trên sản phẩm** (Best Seller, Mới, Sale, Đã bán, Đặt trước, Có thể custom) tùy chỉnh được ở Admin › Cài đặt › Giao diện › Nhãn trên sản phẩm: kiểu (nền đặc / viền màu / kính mờ), hình dạng (tròn / bo góc / vuông), độ đặc nền, và từng nhãn: màu nền (màu theo giao diện hoặc màu tùy chọn), màu chữ, họa tiết (chấm, lưới, sọc chéo, vòng tròn, sóng). Độ đặc trở về 100% như bản gốc (trước đó đã giảm còn ~60–70% kèm làm mờ). Mã: `backend/lib/tags.js` (sinh CSS vào `/theme.css`), lớp `.tag .tag-<tên>` trong thẻ sản phẩm, trang chi tiết và popup xem nhanh. Admin: nhãn Best Seller trong danh sách sản phẩm chữ trắng trên nền trắng ở giao diện tối nay đã đọc rõ (`text-slate-50`, cùng lỗi ở thông báo nhỏ), nhãn không còn xuống dòng
+
 - Admin › Khách hàng: bộ lọc (tìm kiếm, tháng, nguồn), trang và số dòng giờ ghi vào địa chỉ trang như các danh sách khác, nên bấm vào một khách rồi Quay lại / Back vẫn về đúng trang đang xem (trước đây về trang 1)
 
 - Admin: danh sách **Đơn hàng, Custom, Liên hệ, Khách hàng, Sản phẩm, Blog** mặc định **20 dòng/trang**, chọn 20 / 30 / 50 / 100 ở chân danh sách (lựa chọn dùng chung và nhớ trên trình duyệt). API `/inquiries` và `/customers` nhận `per_page` (mặc định 20, tối đa 100); trang Khách hàng trước đây chưa có ô chọn

@@ -1,3 +1,5 @@
+import { TAGS, TAG_BG_OPTIONS, TAG_PATTERNS } from '../lib/tags.js';
+
 // ==========================================================
 // SCHEMA CẤU HÌNH WEBSITE
 // Mỗi nhóm (group) là một tab trong Admin > Cài đặt.
@@ -36,6 +38,23 @@ export const SECTION_PATTERNS = [
 ];
 
 const sectionBgOn = "item.bg_mode == 'color' || item.bg_mode == 'pattern'";
+
+// Nhãn trên sản phẩm (Best Seller, Mới, Sale...): kiểu chung + màu / họa tiết riêng từng nhãn
+const TAG_FIELDS = [
+  { name: 'tag_style', label: 'Kiểu nhãn', type: 'select', default: 'solid', options: [{ value: 'solid', label: 'Nền đặc' }, { value: 'outline', label: 'Viền màu, nền sáng' }, { value: 'glass', label: 'Kính mờ (trong, làm mờ ảnh phía sau)' }] },
+  { name: 'tag_shape', label: 'Hình dạng nhãn', type: 'select', default: 'pill', options: [{ value: 'pill', label: 'Bo tròn hẳn (viên thuốc)' }, { value: 'round', label: 'Bo góc nhẹ' }, { value: 'square', label: 'Vuông góc' }] },
+  { name: 'tag_opacity', label: 'Độ đặc của nền nhãn, 10–100 (100 = đặc hoàn toàn)', type: 'number', default: 100, help: 'Kiểu "Kính mờ" tối đa 70.' },
+  { name: 'tag_pattern_strength', label: 'Độ đậm họa tiết, 5–60', type: 'number', default: 28 },
+  ...TAGS.flatMap((t) => [
+    { name: 'tag_' + t.key + '_bg', label: 'Nhãn "' + t.label + '": màu nền', type: 'select', default: t.bg, options: TAG_BG_OPTIONS },
+    { name: 'tag_' + t.key + '_color', label: 'Nhãn "' + t.label + '": màu tùy chọn', type: 'color', default: '#2e6b94', help: 'Chỉ dùng khi ô màu nền ở trên chọn "Màu tùy chọn".' },
+    {
+      name: 'tag_' + t.key + '_tone', label: 'Nhãn "' + t.label + '": màu chữ', type: 'select', default: 'auto',
+      options: [{ value: 'auto', label: 'Tự chọn theo nền' }, { value: 'light', label: 'Chữ sáng' }, { value: 'dark', label: 'Chữ tối' }],
+    },
+    { name: 'tag_' + t.key + '_pattern', label: 'Nhãn "' + t.label + '": họa tiết', type: 'select', default: 'none', options: TAG_PATTERNS },
+  ]),
+];
 
 export const SETTINGS_SCHEMA = [
   {
@@ -112,6 +131,7 @@ export const SETTINGS_SCHEMA = [
         options: [{ value: 'none', label: 'Không có khung' }, { value: 'thin', label: 'Viền siêu mảnh quanh thẻ' }, { value: 'inset', label: 'Viền siêu mảnh + khung lồng trong ảnh' }],
       },
       { name: 'enable_animations', label: 'Bật hiệu ứng chuyển động khi cuộn trang', type: 'toggle', default: true },
+      ...TAG_FIELDS,
       { name: 'custom_css', label: 'CSS tùy chỉnh (nâng cao)', type: 'textarea', help: 'Dành cho người biết CSS. Để trống nếu không dùng.' },
     ],
   },
@@ -658,6 +678,7 @@ sectionize('theme', [
   { key: 'dark', label: 'Chế độ tối', hint: 'Bật/tắt và bộ màu riêng cho giao diện tối', fields: ['dark_mode', 'dark_color_primary', 'dark_color_primary_contrast', 'dark_color_accent', 'dark_color_bg', 'dark_color_surface', 'dark_color_text', 'dark_color_muted', 'dark_color_border', 'dark_color_footer_bg'] },
   { key: 'fonts', label: 'Font chữ & bo góc', hint: 'Font tiêu đề, font nội dung, độ bo góc', fields: ['font_heading', 'font_body', 'radius'] },
   { key: 'products', label: 'Thẻ sản phẩm & hiệu ứng', hint: 'Số cột, khung viền, hiệu ứng khi cuộn', fields: ['product_grid', 'product_frame', 'enable_animations'] },
+  { key: 'tags', label: 'Nhãn trên sản phẩm', hint: 'Best Seller, Mới, Sale, Đã bán, Đặt trước, Có thể custom: kiểu dáng, màu sắc, họa tiết, độ đặc', fields: TAG_FIELDS.map((f) => f.name) },
   { key: 'css', label: 'CSS tùy chỉnh (nâng cao)', hint: 'Dành cho người biết CSS', fields: ['custom_css'] },
 ]);
 
