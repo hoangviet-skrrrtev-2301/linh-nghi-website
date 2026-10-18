@@ -19,7 +19,10 @@
     "create-admin": "node backend/scripts/create-admin.js",
     "backup": "node backend/scripts/backup.js",
     "restore": "node backend/scripts/restore.js",
-    "setup": "npm run build && npm run migrate"
+    "setup": "npm run build && npm run migrate",
+    "bootstrap": "node backend/scripts/bootstrap.js",
+    "export-content": "node backend/scripts/export-content.js",
+    "import-content": "node backend/scripts/import-content.js"
   },
   "dependencies": {
     "@alpinejs/collapse": "^3.17.4",

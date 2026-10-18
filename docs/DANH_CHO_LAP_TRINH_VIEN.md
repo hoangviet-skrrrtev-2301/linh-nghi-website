@@ -139,6 +139,12 @@ KHÁCH TRÊN WEBSITE                       SHOP TỰ NHẬP (admin)
 - **JavaScript nặng tải khi cần**: Swiper (`loadSwiper` trong `app.js`) chỉ khi có slider cần chạy; PhotoSwipe chỉ khi có `[data-pswp]`.
 - **Kiểm tra tự động**: `npm run check:seo [-- <địa chỉ>]` (mặc định http://localhost:3000, cần server đang chạy). Báo lỗi canonical, noindex, robots, sitemap, 301 chuẩn hóa, 404, H1, ảnh, og:image, JSON-LD, liên kết hỏng. Chạy sau khi sửa template / route / cài đặt SEO hoặc thêm loại trang / tham số.
 
+## Gói nội dung và cài đặt máy mới
+
+- `backend/lib/content-pack.js`: `exportPack` dùng `VACUUM INTO` sao chép database rồi xóa khỏi BẢN SAO các bảng riêng tư (`PRIVATE_TABLES`: sessions, audit_logs, not_found_log, inquiries, customers, users) và các nhóm cài đặt `ownerOnly` (email SMTP), gỡ tham chiếu tài khoản, `VACUUM` lại và **kiểm tra không còn dữ liệu riêng tư (nếu còn thì hủy)**; chỉ chép ảnh được bảng `media` tham chiếu. `importPack` chỉ chạy khi database trống (hoặc `--force`, tự giữ bản sao lưu), thay file database rồi bạn phải `migrate` (script tự gọi). Module này không nạp `lib/db.js` để thay file trước khi database được mở.
+- Thêm bảng chứa dữ liệu riêng tư mới (khách, thanh toán, mã giảm giá cá nhân...) thì **thêm vào `PRIVATE_TABLES`**, nếu không nó sẽ lọt vào gói nội dung.
+- `npm run bootstrap` (`backend/scripts/bootstrap.js`): kiểm tra Node, tạo `.env`, build CSS nếu thiếu, nạp gói (hoặc seed), migrate, tạo Chủ shop với mật khẩu ngẫu nhiên. Chạy lại an toàn. `chay-thu.bat` / `chay-thu.sh` gói các bước này.
+
 ## Kiểm tra trước khi bàn giao bản sửa
 
 - [ ] `npm run build:css` không lỗi

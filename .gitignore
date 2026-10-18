@@ -10,3 +10,16 @@ logs/
 *.log
 .DS_Store
 Thumbs.db
+
+# Chặn commit nhầm dữ liệu / khóa bí mật (gói nội dung đã làm sạch được phép: database/content-pack/)
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+!database/content-pack/content.sqlite
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*

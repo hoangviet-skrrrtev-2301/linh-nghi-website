@@ -1,0 +1,17 @@
+{
+  "createdAt": "2026-10-18T03:35:31.849Z",
+  "lastMigration": "012_roles.sql",
+  "counts": {
+    "products": 23,
+    "product_types": 2,
+    "terms": 19,
+    "posts": 2,
+    "authors": 0,
+    "gallery_items": 12,
+    "media": 40,
+    "redirects": 3,
+    "roles": 1,
+    "settings": 12
+  },
+  "imageFiles": 120
+}

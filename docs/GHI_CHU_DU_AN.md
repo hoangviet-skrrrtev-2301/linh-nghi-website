@@ -38,6 +38,7 @@ _Cập nhật lần cuối: 18/10/2026 (cuối ngày)_
 | Số dòng mỗi trang | Danh sách admin mặc định 20, chọn 20 / 30 / 50 / 100 (nhớ trên trình duyệt); Quay lại / Back luôn về đúng trang đang xem (bộ lọc + trang ghi vào địa chỉ) | Ngày 18/10/2026 |
 | Tổng quan: so sánh | Nút "So sánh" mặc định tắt: kỳ liền trước / cùng kỳ năm trước / tùy chọn; biểu đồ không đổi; doanh thu chỉ tính đơn **Hoàn thành** | Ngày 18/10/2026 |
 | Nhãn sản phẩm | Best Seller / Mới / Sale / Đã bán / Đặt trước / Có thể custom tùy chỉnh kiểu, hình dạng, màu, họa tiết, độ đặc (mặc định 100%) ở Cài đặt › Giao diện | Ngày 18/10/2026 |
+| Bàn giao | Nội dung không nằm trong git; bàn giao bằng **gói nội dung sạch** `database/content-pack/` (`npm run export-content`) + `npm run bootstrap` ở máy nhận; trước khi mở bán: máy local là bản gốc, sau đó **server là bản gốc** (không ghi đè). Vercel không phù hợp (serverless, không ghi bền được SQLite / ảnh) | Ngày 18/10/2026; `docs/BAN_GIAO.md` |
 | Cấu trúc URL | Phân cấp cha → con: `/san-pham/<loại>/<sản phẩm>`, `/blog/<chuyên mục>/<bài>`; địa chỉ cũ chuyển 301; shop chỉnh chuyển hướng ở Admin › Chuyển hướng & 404 | Ngày 17/10/2026, làm trước khi có tên miền nên chưa mất xếp hạng |
 | Lên đơn | Custom / liên hệ "lên đơn" thì **chính bản ghi đó** chuyển thành đơn hàng (mã DH mới, mã cũ giữ ở `origin_code`, khách tra cứu được cả hai), không tạo bản ghi thứ hai | Ngày 17/10/2026; tránh đếm đôi. Bản ghi cũ tạo theo kiểu `parent_id` vẫn hiển thị bình thường |
 | Doanh thu | Tính theo **ngày hoàn thành** của đơn (giờ Việt Nam), đơn hoàn thành cũ lấy ngày cập nhật cuối làm gần đúng | Chủ dự án chốt |
@@ -192,6 +193,7 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 | Nhãn sản phẩm | `backend/lib/tags.js` (CSS sinh vào `/theme.css`), lớp `.tag .tag-<tên>`, nhóm cài đặt theme › Nhãn |
 | Menu admin / menu Cài đặt thu gọn | `navGroup` trong `admin/public/js/core.js`, `admin/views/layout.njk`; `SETTINGS_CATEGORIES` trong `settings-schema.js`, `admin/views/pages/settings.njk` |
 | Mô tả cách hoạt động từng trang admin | `admin/views/partials/page-help.njk` (thêm nhánh `helpKey`) |
+| Bàn giao, cài máy mới | `backend/lib/content-pack.js`, `backend/scripts/bootstrap.js` / `export-content.js` / `import-content.js`, `chay-thu.bat` / `chay-thu.sh`, tài liệu `docs/BAN_GIAO.md` |
 | Cấu trúc database | thêm file mới trong `database/migrations/` |
 | Dữ liệu mẫu | `backend/scripts/seed.js` |
 

@@ -158,6 +158,10 @@ Script tự sao lưu dữ liệu trước, cài thư viện, build lại giao di
 
 ## Đưa dữ liệu từ máy tính lên VPS (không bắt buộc)
 
+> **Cách nhanh qua GitHub (không có khách hàng / đơn hàng):** máy tính `npm run export-content`, commit và push; trên VPS `git pull`, `pm2 stop linh-nghi`, `npm run import-content -- --force`, `chmod -R o+rX database/uploads`, `npm run create-admin`, `pm2 start linh-nghi`. Xem [BAN_GIAO.md](BAN_GIAO.md) mục 1. **Chỉ làm trước khi mở bán**: sau khi có đơn thật, không ghi đè dữ liệu trên VPS.
+
+Cách sao lưu / khôi phục đầy đủ (giữ cả tài khoản):
+
 Dùng khi đã nhập sản phẩm, ảnh, cài đặt trên máy tính và muốn đưa nguyên lên VPS.
 
 1. Trên máy tính: `npm run backup`, sẽ có thư mục `database/backups/<ngày-giờ>/`.

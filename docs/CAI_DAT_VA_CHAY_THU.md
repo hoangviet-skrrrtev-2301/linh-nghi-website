@@ -6,6 +6,8 @@ Dùng khi: tải dự án từ GitHub về máy mới, chuyển sang máy khác 
 
 ## Phần 1: Cài đặt lần đầu trên máy mới
 
+> **Cách nhanh (khuyên dùng):** cài Node.js và Git (Bước 1), tải code (Bước 2), rồi **bấm đúp `chay-thu.bat`** (Windows) hoặc chạy `bash chay-thu.sh` (macOS, Linux). Hoặc gõ `npm install` rồi `npm run bootstrap` rồi `npm run dev`. Lệnh `bootstrap` tự làm Bước 3 đến Bước 6 bên dưới (tạo `.env`, database, nạp nội dung bàn giao, tạo tài khoản admin có mật khẩu ngẫu nhiên in ra một lần). Các bước dưới đây là cách làm từng bước bằng tay. Xem thêm [BAN_GIAO.md](BAN_GIAO.md).
+
 ### Bước 1: Cài phần mềm cần thiết (chỉ làm 1 lần mỗi máy)
 
 | Phần mềm | Tải ở đâu | Ghi chú |
@@ -75,7 +77,7 @@ Lệnh này build giao diện (CSS) và tạo database trống.
 npm run seed
 ```
 
-**Cách B: Dữ liệu thật mang từ máy cũ hoặc từ VPS:** xem [Phần 3](#phần-3-mang-dữ-liệu-thật-sang-máy-khác).
+**Cách B: Gói nội dung bàn giao** (có trong thư mục `database/content-pack/` nếu người giao đã xuất): `npm run import-content`. **Hoặc dữ liệu thật mang từ máy cũ / VPS:** xem [Phần 3](#phần-3-mang-dữ-liệu-thật-sang-máy-khác).
 
 **Cách C: Website trống:** bỏ qua bước này, tự nhập dữ liệu trong admin.
 
@@ -161,7 +163,11 @@ Sửa `PORT=3001` và `BASE_URL=http://localhost:3001` trong file `.env`, rồi 
 
 ## Phần 3: Mang dữ liệu thật sang máy khác
 
-Dữ liệu (sản phẩm, đơn hàng, cài đặt) và ảnh **không có trên GitHub** để bảo vệ thông tin khách hàng. Muốn mang theo thì làm như sau.
+Dữ liệu (sản phẩm, đơn hàng, cài đặt) và ảnh **không có trên GitHub** để bảo vệ thông tin khách hàng. Có 2 cách mang theo:
+
+**Cách 1: Gói nội dung đã làm sạch (qua GitHub, không có khách hàng / đơn hàng / mật khẩu).** Máy gốc: `npm run export-content`, commit và push thư mục `database/content-pack/`. Máy mới: `git pull`, rồi `npm run bootstrap` (database còn trống) hoặc `npm run import-content -- --force` (ghi đè, tự giữ bản sao lưu; tắt website trước; xong chạy `npm run create-admin`).
+
+**Cách 2: Sao lưu đầy đủ (có khách hàng, đơn hàng, tài khoản).** Chỉ chuyển qua kênh riêng tư, **không đưa lên GitHub**:
 
 **Trên máy cũ (hoặc VPS):**
 

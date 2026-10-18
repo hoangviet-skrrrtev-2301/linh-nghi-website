@@ -13,6 +13,8 @@ npm run create-admin    # tạo / đặt lại tài khoản admin (có thể tru
 npm run dev             # http://localhost:3000, admin: /admin
 npm run build:css       # bắt buộc sau khi sửa class Tailwind trong template hoặc file CSS
 npm run migrate | backup | restore -- <thư-mục>
+npm run bootstrap        # máy mới: .env + database + nạp gói nội dung + tạo admin (mật khẩu ngẫu nhiên hiện một lần)
+npm run export-content  # tạo gói nội dung sạch database/content-pack/ (commit khi bàn giao); import-content -- --force để nạp
 npm run check:seo       # kiểm tra SEO kỹ thuật của website đang chạy (nhận thêm địa chỉ: -- http://localhost:3100)
 ```
 
@@ -40,6 +42,11 @@ npm run check:seo       # kiểm tra SEO kỹ thuật của website đang chạy
 - **URL và SEO:** đường dẫn sản phẩm / bài viết chỉ lấy từ `p.url` / `post.url` (`backend/lib/urls.js`), không tự ghép chuỗi `/san-pham/<slug>` ở nơi khác. Đổi đường dẫn của trang phải tự tạo 301 (`addAutoRedirect` trong `services/redirects.js`). Mỗi trang khách đúng 1 H1, không nhảy cấp tiêu đề; ảnh có width / height, ảnh LCP có `fetchpriority=high`. Chữ trên trang 404 / lỗi lấy từ cài đặt, không viết cứng.
 - Lên đơn = đổi `type` của chính bản ghi (`convertToOrder`), không tạo bản ghi thứ hai.
 - `npm run dev` có thể không tự khởi động lại; tính năng mới không chạy thì nhờ chủ dự án khởi động lại (đừng tắt node của họ).
+
+## Bàn giao và dữ liệu nhạy cảm
+
+- Nội dung (ảnh, chữ, sản phẩm...) nằm trong `database/data/app.sqlite` + `database/uploads/`, **không** trong git. Muốn người nhận thấy: `npm run export-content` rồi commit `database/content-pack/` (công cụ tự xóa tài khoản, khách, đơn, nhật ký, phiên, mật khẩu email và tự kiểm tra). **Không bao giờ** commit `.env`, `database/data`, `database/backups`, `database/uploads` (đã chặn bằng `.gitignore`, kể cả mọi file `*.sqlite` trừ gói nội dung). Chỉ xuất gói ở mốc bàn giao (mỗi lần xuất, ảnh được ghi lại trong lịch sử git).
+- Sau khi website chạy thật, server là bản gốc của dữ liệu: không ghi đè dữ liệu server bằng bản local. Tài liệu: `docs/BAN_GIAO.md`.
 
 ## An toàn: sao lưu trước mỗi thay đổi
 
