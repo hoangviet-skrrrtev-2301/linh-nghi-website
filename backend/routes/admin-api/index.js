@@ -15,6 +15,7 @@ import * as media from '../../services/media.js';
 import * as catalog from '../../services/catalog.js';
 import * as content from '../../services/content.js';
 import * as inquiries from '../../services/inquiries.js';
+import { stockHistory } from '../../services/stock.js';
 import * as customerImport from '../../services/customer-import.js';
 import { dashboardStats } from '../../services/dashboard.js';
 import { launchChecks } from '../../services/launch-check.js';
@@ -179,10 +180,10 @@ router.delete('/product-types/:id', h((req) => {
 router.get('/products/:id', h((req) => {
   const p = catalog.getProduct(id(req), { publicOnly: false });
   if (!p) throw new HttpError(404, 'Không tìm thấy sản phẩm');
-  return p;
+  return { ...p, stock_history: stockHistory(p.id) };
 }));
 router.post('/products', h((req) => {
-  const pid = catalog.saveProduct(null, req.body);
+  const pid = catalog.saveProduct(null, req.body, req.user.id);
   audit(req, 'create', 'product', pid, req.body.name);
   return { id: pid };
 }));
@@ -194,7 +195,7 @@ router.patch('/products/:id/price', h((req) => {
   return r;
 }));
 router.put('/products/:id', h((req) => {
-  catalog.saveProduct(id(req), req.body);
+  catalog.saveProduct(id(req), req.body, req.user.id);
   audit(req, 'update', 'product', req.params.id, req.body.name);
   return { id: id(req) };
 }));
@@ -345,7 +346,7 @@ router.delete('/inquiries/:id', h((req) => {
 router.get('/customers/export.csv', (req, res) => {
   audit(req, 'export', 'customers');
   res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="khach-hang-${new Date().toISOString().slice(0, 10)}.csv"` });
-  res.send(inquiries.customersCsv({ q: req.query.q, months: req.query.months, by: req.query.by, source: req.query.source }));
+  res.send(inquiries.customersCsv({ q: req.query.q, months: req.query.months, by: req.query.by, source: req.query.source, segment: req.query.segment }));
 });
 // Nhập khách hàng hàng loạt: xem trước (không ghi) rồi nhập thật
 router.get('/customers/import-template.csv', (req, res) => {
@@ -353,15 +354,15 @@ router.get('/customers/import-template.csv', (req, res) => {
   res.send(customerImport.importTemplateCsv());
 });
 router.post('/customers/import/preview', h((req) => customerImport.previewCustomerImport(String(req.body?.text || ''), {
-  source: req.body?.source, tags: req.body?.tags, onDuplicate: req.body?.on_duplicate,
+  source: req.body?.source, tags: req.body?.tags, onDuplicate: req.body?.on_duplicate, defaultDate: req.body?.default_date,
 })));
 router.post('/customers/import', h((req) => {
-  const result = customerImport.importCustomers(String(req.body?.text || ''), { source: req.body?.source, tags: req.body?.tags, onDuplicate: req.body?.on_duplicate });
+  const result = customerImport.importCustomers(String(req.body?.text || ''), { source: req.body?.source, tags: req.body?.tags, onDuplicate: req.body?.on_duplicate, defaultDate: req.body?.default_date });
   audit(req, 'import', 'customers', '', `${result.created} mới, ${result.updated} cập nhật, ${result.skipped} bỏ qua, ${result.failed} lỗi`);
   return result;
 }));
 router.get('/customers', h((req) => inquiries.listCustomers({
-  q: req.query.q, months: req.query.months, by: req.query.by, source: req.query.source, page: toInt(req.query.page, 1),
+  q: req.query.q, months: req.query.months, by: req.query.by, source: req.query.source, segment: req.query.segment, page: toInt(req.query.page, 1),
   perPage: Math.min(100, Math.max(1, toInt(req.query.per_page, 20))),
 })));
 router.post('/customers', h((req) => {

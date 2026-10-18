@@ -54,6 +54,16 @@
         <div class="card card-body space-y-5" x-show="tab === 'specs'">
           {# Loại sản phẩm không phải ngọc: các thông số do chủ shop tự đặt trong "Loại sản phẩm" #}
           <div x-show="!isJade" x-cloak class="space-y-4">
+            <div>
+              <label class="label" for="pe-sizes" x-text="(type?.size_label || 'Kích cỡ') + ' có sẵn (khách chọn khi đặt hàng)'"></label>
+              <input id="pe-sizes" class="input" x-model="form.sizesText" placeholder="VD: S, M, L, XL">
+              <div class="mt-2 flex flex-wrap gap-1.5" x-show="(type?.size_options || []).length">
+                <template x-for="o in type?.size_options || []" :key="o">
+                  <button type="button" class="rounded-full border px-3 py-1 text-xs transition" :class="sizeList.some((x) => x.toLowerCase() === o.toLowerCase()) ? 'border-brand-600 bg-brand-600 text-white' : 'border-slate-300 text-slate-600 hover:border-slate-400'" @click="toggleSize(o)" x-text="o"></button>
+                </template>
+              </div>
+              <p class="help">Cách nhau bằng dấu phẩy, bấm gợi ý để thêm nhanh. Để trống nếu sản phẩm không cần chọn. Nhãn, gợi ý và ô “thông tin thêm” của loại này chỉnh ở <a href="{{ A }}/products" class="text-brand-600 underline">Sản phẩm › Loại sản phẩm</a>.</p>
+            </div>
             <template x-if="type && (type.spec_fields || []).length">
               <div class="grid gap-4 sm:grid-cols-2">
                 <template x-for="f in type.spec_fields" :key="f.key">
@@ -166,6 +176,26 @@
         <div class="card card-body space-y-4">
           <div><label class="label">Tình trạng hàng</label>
             <select class="input" x-model="form.stock_status">{% for k, v in meta.stockLabels %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
+          {% if meta.inventory.enabled %}
+          <div class="space-y-3 rounded-lg border border-slate-200 p-3">
+            {{ switch('form.track_stock', 'Theo dõi kho', 'Không bắt buộc. Tick thì số lượng tự giảm theo đơn; hết hàng tự hiện “Đã bán”') }}
+            <div x-show="form.track_stock" x-cloak class="space-y-2">
+              <div><label class="label" for="pe-stock">Số lượng còn trong kho</label><input id="pe-stock" type="number" step="1" class="input" x-model.number="form.stock_qty"></div>
+              <p class="help !mt-0" x-show="Number(form.stock_qty) <= 0">Đang hết hàng: khách thấy “Đã bán”.</p>
+              <p class="help !mt-0 text-amber-700" x-show="Number(form.stock_qty) > 0 && Number(form.stock_qty) <= {{ meta.inventory.low }}">Sắp hết hàng.</p>
+              <details x-show="(form.stock_history || []).length" class="text-xs text-slate-600">
+                <summary class="cursor-pointer text-slate-500">Lịch sử kho gần đây</summary>
+                <ul class="mt-2 space-y-1">
+                  <template x-for="h in form.stock_history" :key="h.id">
+                    <li class="flex justify-between gap-2"><span x-text="h.reason"></span><span class="shrink-0 font-mono" :class="h.delta > 0 ? 'text-emerald-600' : 'text-red-600'" x-text="(h.delta > 0 ? '+' : '') + h.delta + ' → ' + h.qty_after"></span></li>
+                  </template>
+                </ul>
+              </details>
+            </div>
+          </div>
+          {% else %}
+          <p class="help">Quản lý kho đang tắt. Bật tại Cài đặt › Thông tin chung & menu › Bật/tắt tính năng › Quản lý kho.</p>
+          {% endif %}
           {{ switch('form.is_bestseller', '★ Best Seller', 'Gắn nhãn và ưu tiên hiển thị ở trang chủ') }}
           {{ switch('form.is_new', 'Sản phẩm mới', 'Gắn nhãn "Mới" (ngoài nhãn tự động theo ngày đăng)') }}
           {{ switch('form.is_featured', 'Sản phẩm nổi bật', 'Hiển thị ở trang chủ') }}

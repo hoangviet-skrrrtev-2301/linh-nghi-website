@@ -16,7 +16,7 @@
 </div>
 
 <section class="container-x grid gap-10 py-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-16 lg:py-12"
-  x-data="productBuy({{ { id: p.id, name: p.name, slug: p.slug, final_price: p.final_price if features.show_prices else none, cover: p.cover, sizes: p.sizes, sku: p.sku } | attrjson }})">
+  x-data="productBuy({{ { id: p.id, name: p.name, slug: p.slug, final_price: p.final_price if features.show_prices else none, cover: p.cover, sizes: p.sizes, size_cfg: p.size_cfg, max_qty: p.max_qty, sku: p.sku } | attrjson }})">
 
   {# ===== Ảnh ===== #}
   <div class="min-w-0 lg:sticky lg:top-24 lg:self-start">
@@ -65,6 +65,7 @@
       {% if p.is_bestseller %}<span class="tag tag-bestseller">★ Best Seller</span>{% endif %}
       {% if p.show_new %}<span class="tag tag-new">Mới</span>{% endif %}
       <span class="badge {{ 'bg-emerald-50 text-emerald-700' if p.stock_status == 'in_stock' else ('bg-amber-50 text-amber-700' if p.stock_status == 'made_to_order' else 'bg-ink/5 text-muted') }}">{{ p.stock_label }}</span>
+      {% if p.stock_note %}<span class="badge bg-amber-50 text-amber-700">{{ p.stock_note }}</span>{% endif %}
       {% if p.certificates.length %}<span class="badge bg-primary/10 text-primary">{{ icon('shield', 'w-3 h-3 mr-1') }} Có kiểm định</span>{% endif %}
       {% if p.is_customizable %}<span class="tag tag-custom">Có thể custom</span>{% endif %}
     </div>
@@ -74,19 +75,27 @@
     {% if p.sizes.length %}
     <div class="mt-8">
       <div class="flex items-center justify-between">
-        <p class="label !mb-0">Ni tay (mm) <span class="font-normal text-muted" x-show="chosenSize" x-text="'· đã chọn ' + chosenSize"></span></p>
-        {% if features.size_guide %}<a href="/huong-dan-size" class="inline-flex items-center gap-1 text-xs text-accent hover:underline">{{ icon('ruler', 'w-3.5 h-3.5') }} Hướng dẫn đo</a>{% endif %}
+        <p class="label !mb-0">{{ p.size_cfg.label }}{% if p.size_cfg.unit %} ({{ p.size_cfg.unit }}){% endif %} <span class="font-normal text-muted" x-show="chosenSize" x-text="'· đã chọn ' + chosenSize"></span></p>
+        {% if features.size_guide and p.product_type.uses_jade_fields %}<a href="/huong-dan-size" class="inline-flex items-center gap-1 text-xs text-accent hover:underline">{{ icon('ruler', 'w-3.5 h-3.5') }} Hướng dẫn đo</a>{% endif %}
       </div>
       <div class="mt-3 flex flex-wrap gap-2">
         {% for sz in p.sizes %}
-        <button type="button" class="chip min-w-14 justify-center" :class="size === {{ sz }} && '!border-primary !bg-primary !text-on-primary'" @click="size = {{ sz }}">{{ sz }}</button>
+        <button type="button" class="chip min-w-14 justify-center" :class="size === {{ sz | attrjson }} && '!border-primary !bg-primary !text-on-primary'" @click="size = {{ sz | attrjson }}">{{ sz }}</button>
         {% endfor %}
-        <button type="button" class="chip" :class="size === 'other' && '!border-primary !bg-primary !text-on-primary'" @click="size = 'other'; $nextTick(() => $refs.otherSize.focus())">Ni khác</button>
+        {% if p.size_cfg.free %}<button type="button" class="chip" :class="size === 'other' && '!border-primary !bg-primary !text-on-primary'" @click="size = 'other'; $nextTick(() => $refs.otherSize.focus())">{{ p.size_cfg.label }} khác</button>{% endif %}
       </div>
+      {% if p.size_cfg.free %}
       <div x-show="size === 'other'" x-cloak x-transition class="mt-3">
-        <input x-ref="otherSize" x-model.trim="customSize" maxlength="20" class="input !w-64" placeholder="Nhập ni hoặc chu vi tay, VD: 55" aria-label="Nhập ni tay riêng">
-        <p class="mt-1 text-xs text-muted">Shop sẽ tìm ngọc đúng ni hoặc tư vấn ni phù hợp nhất cho bạn.</p>
+        <input x-ref="otherSize" x-model.trim="customSize" maxlength="20" class="input !w-64" placeholder="{{ 'Nhập ni hoặc chu vi tay, VD: 55' if p.product_type.uses_jade_fields else 'Nhập ' + (p.size_cfg.label | lower) + ' của bạn' }}" aria-label="Nhập {{ p.size_cfg.label | lower }} riêng">
+        {% if p.product_type.uses_jade_fields %}<p class="mt-1 text-xs text-muted">Shop sẽ tìm ngọc đúng ni hoặc tư vấn ni phù hợp nhất cho bạn.</p>{% endif %}
       </div>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% if p.size_cfg.info_label %}
+    <div class="mt-5">
+      <label class="label" for="buy-note">{{ p.size_cfg.info_label }}</label>
+      <input id="buy-note" x-model.trim="note" maxlength="200" class="input">
     </div>
     {% endif %}
 
@@ -95,7 +104,7 @@
       <div class="flex items-center justify-between rounded-md border border-line bg-surface">
         <button type="button" class="px-3.5 py-3 text-muted hover:text-ink" @click="qty = Math.max(1, qty - 1)" aria-label="Giảm">{{ icon('minus', 'w-4 h-4') }}</button>
         <span class="w-8 text-center font-medium" x-text="qty">1</span>
-        <button type="button" class="px-3.5 py-3 text-muted hover:text-ink" @click="qty = Math.min(20, qty + 1)" aria-label="Tăng">{{ icon('plus', 'w-4 h-4') }}</button>
+        <button type="button" class="px-3.5 py-3 text-muted hover:text-ink" @click="qty = Math.min(maxQty, qty + 1)" aria-label="Tăng">{{ icon('plus', 'w-4 h-4') }}</button>
       </div>
       <button type="button" class="btn btn-primary flex-1" @click="addToCart()">{{ icon('bag', 'w-4 h-4') }} Thêm vào giỏ hàng</button>
       <button type="button" class="btn btn-accent flex-1" @click="quickOrder()">Đặt nhanh</button>
@@ -120,7 +129,7 @@
         ['Màu sắc', p.color.name if p.color else ''],
         ['Kiểu dáng', p.style.name if p.style else ''],
         ['Hợp mệnh', p.elements | join(', ', 'name')],
-        ['Ni có sẵn', (p.sizes | join(', ')) + ' mm' if p.sizes.length else ''],
+        [p.size_cfg.label + ' có sẵn', (p.sizes | join(', ')) + ((' ' + p.size_cfg.unit) if p.size_cfg.unit else '') if p.sizes.length else ''],
         ['Kích thước hạt', p.bead_size],
         ['Xuất xứ', p.origin],
         ['Trọng lượng', p.weight]

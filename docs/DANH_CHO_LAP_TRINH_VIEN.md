@@ -112,7 +112,35 @@ KHÁCH TRÊN WEBSITE                       SHOP TỰ NHẬP (admin)
 - Mỗi sản phẩm có `products.product_type_id` (mặc định 1 = Vòng tay ngọc). Loại có `uses_jade_fields = 1` dùng bộ thuộc tính ngọc (loại ngọc, màu, kiểu dáng, mệnh, ni, chứng chỉ). Loại khác dùng thông số tự đặt: khai báo ở `product_types.spec_fields`, giá trị lưu ở `products.attrs` (mã thông số → giá trị).
 - Thông số có 3 kiểu: `text`, `number`, `select`. Giá trị mới ở thông số `select` tự được thêm vào danh sách khi lưu sản phẩm (`sanitizeAttrs` trong `catalog.js`).
 - **Loại `active = 0` (chưa hoạt động) bị ẩn hoàn toàn phía khách.** Mọi truy vấn phía khách phải có điều kiện `TYPE_ACTIVE` (xuất từ `catalog.js`): danh sách, tìm kiếm, chi tiết, gợi ý, giỏ hàng (`productsByIds`), sitemap, link sản phẩm trong Gallery. Truy vấn mới về sản phẩm phía khách nhớ thêm điều kiện này.
-- Việc còn lại khi muốn mở bán một loại mới (ví dụ Pháp phục): trang danh sách riêng (có sẵn bộ lọc `?nhom=<slug>` trong `buildFilter`), mục menu, bộ lọc theo thông số tự đặt, chọn kích cỡ khi đặt hàng (giỏ hàng hiện chỉ hiểu "ni" dạng số), schema SEO cho loại không phải ngọc.
+- **Kích cỡ khi đặt hàng**: `products.sizes` (JSON). Loại ngọc: danh sách số (mm), sắp tăng dần, khách còn chọn "Ni khác". Loại khác: danh sách chữ (S, M, L...), giữ thứ tự nhập. Cách hiển thị theo loại: `product_types.size_label / size_unit / size_options / size_free / info_label`, `hydrate` gắn `p.size_cfg`. `createInquiry` bắt buộc chọn khi sản phẩm có danh sách và (nếu loại không cho nhập riêng) chỉ nhận giá trị trong danh sách. Dòng hàng lưu `size`, `size_label`, `note` (ô thông tin thêm, chỉ lưu khi loại có `info_label`). Giỏ hàng (localStorage) lưu `size_cfg`, `note`, `max_qty`, khóa dòng = `id-size-note`.
+- Việc còn lại khi muốn mở bán một loại mới (ví dụ Pháp phục): trang danh sách riêng (có sẵn bộ lọc `?nhom=<slug>` trong `buildFilter`), mục menu, bộ lọc theo thông số tự đặt, schema SEO cho loại không phải ngọc.
+
+## Quản lý kho (tùy chọn)
+
+- Công tắc `features.inventory_enabled` (mặc định tắt). `products.track_stock` (0/1) + `stock_qty`. `hydrate` tính `stock_status` hiệu lực: bật + theo dõi + hết hàng ⇒ `sold_out` (không ghi vào database, nên tắt tính năng là trở lại như cũ) và `stock_note`, `max_qty`, `stock_left`, `stock_low`.
+- `syncInquiryStock(id)` (`services/stock.js`): đưa kho của đơn về đúng trạng thái đơn: "chiếm kho" nếu loại là đơn hàng, không hủy và trạng thái ≥ `inventory_deduct_at`. Phần đã trừ lưu ở `inquiries.stock_applied` (JSON `[{id, qty}]`) nên gọi lại nhiều lần không trừ đôi; chênh lệch ghi `stock_log`. Gọi sau: tạo đơn (web / admin), `updateInquiry`, `convertToOrder`; `deleteInquiry` gọi với `remove: true` trước khi xóa. Kho có thể âm khi bán vượt (hiển thị chặn ở 0).
+- Sửa tay số lượng qua `saveProduct` → `setStockQty` (ghi nhật ký). Tắt tính năng thì mọi thứ dừng, không động tới số liệu.
+
+## Phân loại khách, ngày nhập lại, gợi ý tìm kiếm
+
+- `customerQuery` tính `order_count` / `done_count` (đơn không hủy / hoàn thành, toàn thời gian) rồi `segment` (`lead | ordered | bought | repeat`). Không lưu vào bảng. Liên hệ / custom kết thúc không mua dùng status `cancelled` với nhãn riêng trong `STATUS_LABEL_BY_TYPE`; trang tra cứu của khách vẫn hiện "Đã hủy".
+- Ngày do admin chọn: `vnDateToUtc(YYYY-MM-DD)` (`lib/utils.js`): hôm nay hoặc trống ⇒ giờ hiện tại, ngày khác ⇒ 12:00 giờ Việt Nam lưu dạng UTC; từ chối ngày tương lai, sai định dạng, trước năm 2000. `inquiryCode(type, date)` đặt mã theo ngày. Tham số API: `created_date`, `completed_date` (đơn thủ công, `PATCH` đơn), `created_date` (khách), `default_date` (nhập hàng loạt).
+- `suggestProducts(q, limit)` (`catalog.js`): chỉ chạy khi `features.search_suggest`, từ 2 ký tự, tối đa 10, qua `apiLimiter`. Trình duyệt chờ 220 ms sau lần gõ cuối và bỏ kết quả về muộn (`searchSuggest` trong `app.js`).
+
+## Khi nào cần nâng cấp (hiệu năng và giới hạn của SQLite)
+
+Đo ngày 18/10/2026 trên máy dev, 20.000 sản phẩm + 50.000 khách + 100.000 yêu cầu (database 50 MB):
+
+| Thao tác | Thời gian |
+|---|---|
+| Trang sản phẩm khách (12 sản phẩm) | 23 ms |
+| Tìm chữ / gợi ý tìm kiếm (quét `vn()`) | ~270 ms |
+| Danh sách đơn admin (có chỉ mục) | 14 ms |
+| Danh sách khách admin (đếm đơn, phân loại) | 0,8 s (tìm theo tên: 2 s) |
+| Tổng quan 30 ngày | 0,4 s |
+| Sắp xếp "Bán chạy" | 6 s (đã sửa từ cấp số nhân; chỉ đáng kể ở quy mô này) |
+
+Ở quy mô thực tế của một shop (vài trăm sản phẩm, vài nghìn khách / đơn): mọi thao tác dưới 0,2 s. Dấu hiệu cần can thiệp: tìm kiếm hoặc danh sách khách admin chậm quá ~1 s (thường từ ~50.000 khách hoặc ~20.000 sản phẩm), file `app.sqlite` vượt vài GB, hoặc cần chạy nhiều server. Thứ tự xử lý: (1) thêm chỉ mục / cột đã chuẩn hóa không dấu để tìm không phải quét bảng (FTS5 của SQLite), (2) cache số liệu Tổng quan và "Bán chạy", (3) nâng VPS (RAM, SSD), (4) chỉ khi cần nhiều server hoặc ghi đồng thời rất nhiều mới chuyển PostgreSQL. SQLite ghi tuần tự (WAL), hàng chục đơn mỗi giây vẫn dư sức.
 
 ## Địa chỉ trang (URL) và chuyển hướng
 

@@ -46,7 +46,7 @@
     </nav>
 
     <div class="ml-auto flex items-center gap-1 lg:ml-0">
-      <button class="icon-btn" @click="searchOpen = true; $nextTick(() => $refs.q.focus())" aria-label="Tìm kiếm">{{ icon('search') }}</button>
+      <button class="icon-btn" @click="searchOpen = true; $nextTick(() => document.getElementById('search-input')?.focus())" aria-label="Tìm kiếm">{{ icon('search') }}</button>
       {% if s.theme.dark_mode != 'off' %}
       <button class="icon-btn" @click="$store.theme.toggle()" :aria-label="$store.theme.dark ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'" :title="$store.theme.dark ? 'Giao diện sáng' : 'Giao diện tối'">
         <span x-show="!$store.theme.dark">{{ icon('moon') }}</span><span x-cloak x-show="$store.theme.dark">{{ icon('sun') }}</span>
@@ -66,12 +66,46 @@
   {# Ô tìm kiếm #}
   <div x-cloak x-show="searchOpen" x-transition.opacity class="fixed inset-0 z-[70] bg-ink/40 backdrop-blur-sm" @click.self="searchOpen = false" @keydown.escape.window="searchOpen = false">
     <div x-show="searchOpen" x-transition:enter="transition duration-300" x-transition:enter-start="-translate-y-6 opacity-0" class="bg-surface shadow-xl">
-      <form action="/san-pham" method="get" class="container-x flex items-center gap-3 py-5" role="search">
+      <div x-data="searchSuggest" @keydown.escape="close()">
+      <form action="/san-pham" method="get" class="container-x flex items-center gap-3 py-5" role="search" @submit="close()">
         {{ icon('search', 'w-5 h-5 text-muted') }}
-        <input x-ref="q" type="search" name="q" placeholder="Tìm vòng ngọc, loại ngọc, mã sản phẩm..." class="flex-1 bg-transparent py-2 text-lg outline-none" aria-label="Từ khóa tìm kiếm">
+        <input id="search-input" type="search" name="q" x-model="q" @input="onInput()" @keydown.arrow-down.prevent="move(1)" @keydown.arrow-up.prevent="move(-1)" @keydown.enter="enter($event)"
+          autocomplete="off" role="combobox" aria-autocomplete="list" :aria-expanded="open" aria-controls="search-suggest-list"
+          placeholder="Tìm vòng ngọc, loại ngọc, mã sản phẩm..." class="flex-1 bg-transparent py-2 text-lg outline-none" aria-label="Từ khóa tìm kiếm">
         <button type="submit" class="btn btn-primary btn-sm">Tìm</button>
         <button type="button" class="icon-btn" @click="searchOpen = false" aria-label="Đóng">{{ icon('close') }}</button>
       </form>
+      {% if s.features.search_suggest %}
+      <div id="search-suggest-list" class="container-x max-h-[60vh] overflow-y-auto pb-4" x-show="open" x-cloak role="listbox" aria-label="Gợi ý tìm kiếm">
+        <div class="flex flex-wrap gap-2 pb-3" x-show="groups.length">
+          <template x-for="(g, gi) in groups" :key="g.url">
+            <a :href="g.url" class="chip" :class="active === gi && '!border-primary !bg-primary !text-on-primary'" role="option" :aria-selected="active === gi" x-text="g.name"></a>
+          </template>
+        </div>
+        <ul class="divide-y divide-line">
+          <template x-for="(it, ii) in items" :key="it.url">
+            <li>
+              <a :href="it.url" class="flex items-center gap-3 rounded-md px-2 py-2.5 hover:bg-bg" :class="active === groups.length + ii && 'bg-bg ring-1 ring-primary'" role="option" :aria-selected="active === groups.length + ii">
+                <span class="h-14 w-14 shrink-0 overflow-hidden rounded-md bg-bg">
+                  <img x-show="it.cover" :src="it.cover && it.cover.sm" alt="" width="56" height="56" loading="lazy" class="h-full w-full object-cover">
+                </span>
+                <span class="min-w-0 flex-1">
+                  <span class="block truncate font-medium" x-text="it.name"></span>
+                  <span class="block truncate text-xs text-muted" x-text="it.type" x-show="it.type"></span>
+                </span>
+                <span class="shrink-0 text-right text-sm">
+                  <span class="block font-semibold text-primary" x-show="it.final_price != null" x-text="vnd(it.final_price)"></span>
+                  <span class="block text-xs text-muted" x-show="it.sold_out">Đã bán</span>
+                </span>
+              </a>
+            </li>
+          </template>
+        </ul>
+        <p class="py-3 text-center text-sm text-muted" x-show="empty">Chưa có sản phẩm phù hợp. Thử từ khóa khác hoặc bấm “Tìm” để xem tất cả kết quả.</p>
+        <a :href="'/san-pham?q=' + encodeURIComponent(q.trim())" class="mt-1 block text-center text-sm font-medium text-accent hover:underline" x-show="items.length">Xem tất cả kết quả cho “<span x-text="q.trim()"></span>”</a>
+      </div>
+      {% endif %}
+      </div>
       {% if jadeTypes.length %}
       <div class="container-x flex flex-wrap items-center gap-2 pb-5 text-sm">
         <span class="text-muted">Gợi ý:</span>

@@ -31,7 +31,7 @@
               <td class="font-mono text-xs" x-text="i.code"></td>
               {% if not query.type %}<td x-text="i.type_label"></td>{% endif %}
               <td><p class="font-medium" x-text="i.name"></p><p class="text-xs text-slate-500" x-text="i.phone"></p></td>
-              <td class="max-w-xs"><p class="line-clamp-2 text-slate-600" x-text="i.type === 'order' ? i.items.map(x => x.qty + '× ' + x.name + (x.size ? ' (ni ' + x.size + ')' : '')).join(', ') : i.message"></p></td>
+              <td class="max-w-xs"><p class="line-clamp-2 text-slate-600" x-text="i.type === 'order' ? i.items.map(x => x.qty + '× ' + x.name + (x.size ? ' (' + (x.size_label || 'ni').toLowerCase() + ' ' + x.size + ')' : '')).join(', ') : i.message"></p></td>
               {% if query.type == 'order' %}<td class="whitespace-nowrap" x-text="$fmt.vnd(i.total)"></td>{% endif %}
               <td><span class="badge" :class="Admin.STATUS_COLOR[i.status]" x-text="i.status_label"></span></td>
               <td><span class="text-xs" :class="{ 'text-emerald-600': i.mail_status === 'sent', 'text-red-600': i.mail_status === 'failed', 'text-slate-400': !['sent','failed'].includes(i.mail_status) }" x-text="{ sent: 'Đã gửi', failed: 'Lỗi', not_configured: 'Chưa cấu hình', pending: 'Đang gửi', none: '—' }[i.mail_status]"></span></td>
@@ -80,6 +80,24 @@
           <label class="label">Khách đến từ đâu</label>
           <input class="input" list="add-via-list" x-model="add.via" maxlength="60" placeholder="Zalo, Facebook, Tại cửa hàng...">
           <datalist id="add-via-list"><option>Zalo</option><option>Facebook</option><option>Instagram</option><option>TikTok</option><option>Điện thoại</option><option>Tại cửa hàng</option><option>Khách giới thiệu</option></datalist>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label class="label" for="add-date">Ngày phát sinh</label>
+            <input id="add-date" type="date" class="input" x-model="add.date" :max="new Date(Date.now() + 7 * 36e5).toISOString().slice(0, 10)">
+            <p class="help">Để “Hôm nay” nếu đang ghi nhận ngay. Chọn ngày cũ khi nhập lại đơn / khách đã có từ trước để báo cáo và doanh thu rơi đúng ngày.</p>
+          </div>
+          <div>
+            <label class="label" for="add-status">Trạng thái hiện tại</label>
+            <select id="add-status" class="input" x-model="add.status">
+              {% for k, v in meta.statusByType[query.type or 'order'] %}<option value="{{ k }}">{{ v }}</option>{% endfor %}
+            </select>
+          </div>
+          <div x-show="add.status === 'completed'" x-cloak>
+            <label class="label" for="add-done">Ngày hoàn thành</label>
+            <input id="add-done" type="date" class="input" x-model="add.doneDate" :min="add.date" :max="new Date(Date.now() + 7 * 36e5).toISOString().slice(0, 10)">
+            <p class="help">Doanh thu của đơn được tính vào ngày này.</p>
+          </div>
         </div>
         <p class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" x-show="add.error" x-text="add.error"></p>
       </div>

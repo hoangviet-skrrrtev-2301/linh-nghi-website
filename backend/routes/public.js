@@ -65,6 +65,7 @@ export function publicLocals(req, res) {
   res.locals.clientConfig = {
     checkout: !!s.features.checkout,
     showPrices: !!s.features.show_prices,
+    searchSuggest: !!s.features.search_suggest,
     animations: !!s.theme.enable_animations,
     welcome: !!s.features.welcome_popup,
     welcomeDelay: Number(s.features.welcome_popup_delay) || 5,

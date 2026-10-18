@@ -75,7 +75,7 @@
             <ul class="mt-2 divide-y divide-line text-sm">
               <template x-for="it in result.items" :key="it.name + it.size">
                 <li class="flex items-start justify-between gap-4 py-2.5">
-                  <span><span x-text="it.name"></span><span class="text-muted" x-show="it.size" x-text="' · ni ' + it.size"></span><span class="text-muted" x-text="' × ' + it.qty"></span></span>
+                  <span><span x-text="it.name"></span><span class="text-muted" x-show="it.size" x-text="' · ' + (it.size_label || 'Ni').toLowerCase() + ' ' + it.size"></span><span class="text-muted" x-show="it.note" x-text="' · ' + it.note"></span><span class="text-muted" x-text="' × ' + it.qty"></span></span>
                   <span class="shrink-0" x-show="it.price != null" x-text="vnd(it.price * it.qty)"></span>
                 </li>
               </template>

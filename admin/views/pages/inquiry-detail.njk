@@ -24,6 +24,13 @@
             <div x-show="d.contact_via"><dt class="text-xs text-slate-500">Muốn liên hệ qua</dt><dd x-text="d.contact_via"></dd></div>
             <div x-show="d.address" class="sm:col-span-2"><dt class="text-xs text-slate-500">Địa chỉ</dt><dd x-text="d.address"></dd></div>
             <template x-for="r in detailRows"><div><dt class="text-xs text-slate-500" x-text="r[0]"></dt><dd class="font-medium" x-text="r[1]"></dd></div></template>
+            <div class="sm:col-span-2"><dt class="text-xs text-slate-500">Ngày ghi nhận</dt>
+              <dd class="flex flex-wrap items-end gap-3">
+                <label class="text-xs text-slate-500">Ngày tạo<input type="date" class="input mt-1 !w-44" x-model="dates.created" :max="new Date(Date.now() + 7 * 36e5).toISOString().slice(0, 10)"></label>
+                <label class="text-xs text-slate-500" x-show="d.status === 'completed'" x-cloak>Ngày hoàn thành (tính doanh thu)<input type="date" class="input mt-1 !w-44" x-model="dates.completed" :min="dates.created" :max="new Date(Date.now() + 7 * 36e5).toISOString().slice(0, 10)"></label>
+                <button type="button" class="btn btn-secondary btn-sm" :disabled="saving" @click="saveDates()">Lưu ngày</button>
+              </dd>
+              <p class="help">Sửa khi nhập lại dữ liệu cũ để báo cáo đúng ngày. Giờ không đổi trừ khi bạn đổi sang ngày khác.</p></div>
             <div x-show="d.message" class="sm:col-span-2"><dt class="text-xs text-slate-500">Lời nhắn / mô tả</dt><dd class="whitespace-pre-line rounded-lg bg-slate-50 p-3" x-text="d.message"></dd></div>
             <div x-show="d.origin_code" class="sm:col-span-2"><dt class="text-xs text-slate-500">Nguồn gốc</dt>
               <dd>Lên đơn từ <b x-text="d.origin_label.toLowerCase()"></b>, mã cũ <span class="font-mono text-xs" x-text="d.origin_code"></span> (khách tra cứu được bằng cả hai mã)</dd></div>
@@ -44,11 +51,12 @@
           </div>
           <div class="overflow-x-auto">
             <table class="table table-stack md:min-w-[700px]">
-              <thead><tr><th class="stack-title md:min-w-[220px]">Sản phẩm</th><th class="w-24">Ni</th><th class="w-20">SL</th><th class="w-40">Đơn giá (₫)</th><th class="w-32 text-right">Thành tiền</th><th class="w-10"></th></tr></thead>
+              <thead><tr><th class="stack-title md:min-w-[220px]">Sản phẩm</th><th class="w-28">Ni / kích cỡ</th><th class="w-20">SL</th><th class="w-40">Đơn giá (₫)</th><th class="w-32 text-right">Thành tiền</th><th class="w-10"></th></tr></thead>
               <tbody>
                 <template x-for="(it, i) in edit.items" :key="i">
                   <tr>
                     <td><input class="input" x-model="it.name" placeholder="Tên sản phẩm / mô tả" @input="dirty = true">
+                      <input class="input mt-1.5 !py-1 text-xs" x-model="it.note" maxlength="200" placeholder="Thông tin thêm (chiều cao, cân nặng...)" aria-label="Thông tin thêm" @input="dirty = true" x-show="it.note || it.size_label === 'Kích cỡ' || (it.size_label && it.size_label !== 'Ni tay')">
                       <p class="mt-1 text-xs text-slate-500" x-show="it.sku" x-text="'Mã: ' + it.sku"></p></td>
                     <td><input class="input" x-model="it.size" @input="dirty = true"></td>
                     <td><input type="number" min="1" class="input" x-model.number="it.qty" @input="dirty = true"></td>

@@ -62,7 +62,7 @@
           </template>
 
           <div class="mt-5" x-show="p.sizes.length">
-            <p class="label">Chọn ni tay (mm)</p>
+            <p class="label" x-text="'Chọn ' + (p.size_cfg.label || 'ni tay').toLowerCase() + (p.size_cfg.unit ? ' (' + p.size_cfg.unit + ')' : '')"></p>
             <div class="flex flex-wrap gap-2">
               <template x-for="sz in p.sizes" :key="sz">
                 <button type="button" @click="$store.quick.size = sz" class="chip"
@@ -71,16 +71,21 @@
             </div>
           </div>
 
+          <div class="mt-5" x-show="p.size_cfg.info_label" x-cloak>
+            <label class="label" for="quick-note" x-text="p.size_cfg.info_label"></label>
+            <input id="quick-note" class="input" maxlength="200" x-model.trim="$store.quick.note">
+          </div>
+
           <div class="mt-auto flex flex-col gap-3 pt-6 sm:flex-row">
             <template x-if="$store.app.checkout && p.stock_status !== 'sold_out'">
-              <button class="btn btn-primary flex-1" @click="$store.cart.add(p, $store.quick.size); $store.quick.close()">{{ icon('bag', 'w-4 h-4') }} Thêm vào giỏ</button>
+              <button class="btn btn-primary flex-1" @click="if ($store.cart.add(p, $store.quick.size, 1, $store.quick.note)) $store.quick.close()">{{ icon('bag', 'w-4 h-4') }} Thêm vào giỏ</button>
             </template>
             <template x-if="!$store.app.checkout || p.stock_status === 'sold_out'">
               <a class="btn btn-primary flex-1" :href="'https://zalo.me/' + $store.app.zalo" target="_blank" rel="noopener">{{ icon('chat', 'w-4 h-4') }} Nhắn Zalo tư vấn</a>
             </template>
             <a class="btn btn-outline flex-1" :href="p.url || '/san-pham/' + p.slug">Xem chi tiết {{ icon('arrow-right', 'w-4 h-4') }}</a>
           </div>
-          <button type="button" class="btn btn-ghost mt-2 w-full text-primary" @click="$store.quick.close(); $store.consult.show(p, 'consult', $store.quick.size)">{{ icon('mail', 'w-4 h-4') }} Gửi yêu cầu tư vấn về mẫu này</button>
+          <button type="button" class="btn btn-ghost mt-2 w-full text-primary" @click="$store.quick.close(); $store.consult.show(p, 'consult', $store.quick.size, 1, $store.quick.note)">{{ icon('mail', 'w-4 h-4') }} Gửi yêu cầu tư vấn về mẫu này</button>
         </div>
       </div>
     </template>
@@ -116,7 +121,7 @@
         <img :src="$store.consult.p?.cover?.sm" alt="" class="h-14 w-14 rounded object-cover">
         <div class="min-w-0 text-sm">
           <p class="truncate font-medium" x-text="$store.consult.p?.name"></p>
-          <p class="text-muted"><span x-show="$store.consult.size" x-text="'Ni ' + $store.consult.size"></span><span x-show="$store.consult.mode === 'order'" x-text="' · SL ' + $store.consult.qty"></span></p>
+          <p class="text-muted"><span x-show="$store.consult.size" x-text="($store.consult.p?.size_cfg?.label || 'Ni') + ' ' + $store.consult.size"></span><span x-show="$store.consult.mode === 'order'" x-text="' · SL ' + $store.consult.qty"></span></p>
         </div>
       </div>
       <div class="mt-5 grid gap-4">
@@ -124,7 +129,7 @@
         {{ field('phone', 'Số điện thoại', 'tel', true, '', 'tel', '', 'q') }}
         <template x-if="$store.consult.mode === 'order'">{{ field('address', 'Địa chỉ nhận hàng', 'text', true, '', 'street-address', '', 'q') }}</template>
         <div x-show="$store.consult.mode !== 'order'">
-          <label class="label" for="q-size">Ni tay của bạn (nếu biết)</label>
+          <label class="label" for="q-size" x-text="($store.consult.p?.size_cfg?.label || 'Ni tay') + ' của bạn (nếu biết)'"></label>
           <input id="q-size" name="size" class="input" maxlength="60" :value="$store.consult.size">
         </div>
         {{ field('message', 'Lời nhắn', 'textarea', false, 'Bạn muốn shop tư vấn thêm điều gì?', '', '', 'q') }}

@@ -6,6 +6,7 @@ import { slugify, safeJson, HttpError, toInt, bool, stripHtml, truncate } from '
 import { cleanHtml, cleanText } from '../lib/sanitize.js';
 import { getMediaMap } from './media.js';
 import { getRaw } from './settings.js';
+import { setStockQty } from './stock.js';
 
 export const TERM_TYPES = {
   jade_type: 'Loại ngọc',
@@ -114,6 +115,8 @@ function hydrate(rows, { withImages = false } = {}) {
   const marks = ids.map(() => '?').join(',');
   const terms = Object.fromEntries(db.prepare('SELECT * FROM terms').all().map((t) => [t.id, t]));
   const types = Object.fromEntries(db.prepare('SELECT * FROM product_types').all().map((t) => [t.id, { ...t, spec_fields: safeJson(t.spec_fields, []) }]));
+  const feat = getRaw('features');
+  const invOn = !!feat.inventory_enabled;
   const elements = db.prepare(`SELECT product_id, term_id FROM product_elements WHERE product_id IN (${marks})`).all(...ids);
   const images = db.prepare(`SELECT product_id, media_id FROM product_images WHERE product_id IN (${marks}) ORDER BY sort_order`).all(...ids);
   const newDays = Number(getRaw('pages').new_days) || 0;
@@ -126,8 +129,21 @@ function hydrate(rows, { withImages = false } = {}) {
     const cover = media[r.cover_media_id] || gallery[0] || null;
     const type = types[r.product_type_id] || null;
     const attrs = safeJson(r.attrs, {});
+    // Kho (tùy chọn): chỉ sản phẩm được tick theo dõi; hết hàng thì tự hiện "Đã bán" mà không sửa dữ liệu gốc
+    const tracked = invOn && !!r.track_stock;
+    const left = tracked ? Math.max(0, r.stock_qty) : null;
+    const low = Math.max(1, Number(feat.inventory_low) || 3);
+    const shows = tracked && left > 0 && (feat.inventory_display === 'always' || (feat.inventory_display === 'low' && left <= low));
+    const stockText = shows ? String((left <= low ? feat.inventory_text_low : feat.inventory_text_in) || '').replace(/\{n\}/g, left) : '';
     const item = {
       ...r,
+      stock_status: tracked && left <= 0 ? 'sold_out' : r.stock_status,
+      stock_tracked: tracked,
+      stock_left: left,
+      stock_low: tracked && left <= low,
+      stock_note: stockText,
+      max_qty: tracked && feat.inventory_block_over ? Math.max(1, Math.min(20, left)) : 20,
+      size_cfg: type ? { label: type.size_label || 'Kích cỡ', unit: type.size_unit || '', free: !!type.size_free, info_label: type.info_label || '' } : { label: 'Kích cỡ', unit: '', free: false, info_label: '' },
       product_type: type ? { id: type.id, name: type.name, slug: type.slug, uses_jade_fields: !!type.uses_jade_fields, active: !!type.active } : null,
       type_active: type ? !!type.active : true,
       attrs,
@@ -145,7 +161,7 @@ function hydrate(rows, { withImages = false } = {}) {
       hover: gallery.find((g) => g.id !== cover?.id) || null,
       final_price: r.sale_price ?? r.price,
       on_sale: r.sale_price != null && r.price != null && r.sale_price < r.price,
-      stock_label: STOCK_LABEL[r.stock_status],
+      stock_label: STOCK_LABEL[tracked && left <= 0 ? 'sold_out' : r.stock_status],
       show_new: !!r.is_new || (newDays > 0 && Date.now() - new Date(String(r.created_at).replace(' ', 'T') + 'Z').getTime() < newDays * 864e5),
     };
     // Đường dẫn chuẩn theo phân cấp: /san-pham/<loại>/<sản phẩm>
@@ -206,6 +222,9 @@ function buildFilter(f, { includeDrafts = false } = {}) {
   return { sql: where.length ? `WHERE ${where.join(' AND ')}` : '', params };
 }
 
+const SOLD_JOIN = `LEFT JOIN (SELECT json_extract(j.value, '$.id') AS pid, SUM(json_extract(j.value, '$.qty')) AS qty
+  FROM inquiries i, json_each(i.items) j WHERE i.type = 'order' AND i.status IN ('confirmed', 'shipping', 'completed') GROUP BY pid) sold ON sold.pid = p.id`;
+
 const SORTS = {
   moi: 'p.created_at DESC, p.id DESC',
   gia_tang: `(${EFFECTIVE_PRICE} IS NULL), ${EFFECTIVE_PRICE} ASC`,
@@ -213,8 +232,8 @@ const SORTS = {
   // Thứ tự kéo thả trong admin (sort_order) đứng đầu; sản phẩm chưa sắp xếp (sort_order bằng nhau) thì Best Seller, nổi bật lên trước
   noi_bat: 'p.sort_order ASC, p.is_bestseller DESC, p.is_featured DESC, p.id DESC',
   // Best Seller trước, sau đó theo số lượng đã bán (đơn đã xác nhận / hoàn thành)
-  ban_chay: `p.is_bestseller DESC, (SELECT COALESCE(SUM(json_extract(j.value, '$.qty')), 0) FROM inquiries i, json_each(i.items) j
-    WHERE i.type = 'order' AND i.status IN ('confirmed', 'shipping', 'completed') AND json_extract(j.value, '$.id') = p.id) DESC, p.id DESC`,
+  // Số đã bán tính MỘT lần cho cả bảng (SOLD_JOIN) rồi ghép vào, không tính lại cho từng sản phẩm (cách cũ chậm theo cấp số nhân khi nhiều đơn)
+  ban_chay: 'p.is_bestseller DESC, COALESCE(sold.qty, 0) DESC, p.id DESC',
   ten: 'p.name COLLATE NOCASE ASC',
 };
 export const SORT_OPTIONS = [
@@ -232,9 +251,31 @@ export function searchProducts(filters = {}, { page = 1, perPage = 12, includeDr
   const total = db.prepare(`SELECT COUNT(*) FROM products p ${sql}`).pluck().get(...params);
   const pages = Math.max(1, Math.ceil(total / perPage));
   const current = Math.min(Math.max(1, toInt(page, 1)), pages);
-  const rows = db.prepare(`SELECT p.* FROM products p ${sql} ORDER BY ${order} LIMIT ? OFFSET ?`)
+  const rows = db.prepare(`SELECT p.* FROM products p ${filters.sap_xep === 'ban_chay' ? SOLD_JOIN : ''} ${sql} ORDER BY ${order} LIMIT ? OFFSET ?`)
     .all(...params, perPage, (current - 1) * perPage);
   return { items: hydrate(rows), total, page: current, pages, perPage };
+}
+
+// Gợi ý khi khách gõ vào ô tìm kiếm: sản phẩm (tên bắt đầu bằng từ khóa xếp trước, rồi tên chứa, rồi mã / mô tả / loại ngọc)
+// và vài loại ngọc / loại sản phẩm khớp tên để bấm vào thẳng trang loại. Không phân biệt hoa thường và dấu.
+export function suggestProducts(q, limit = 6) {
+  const text = String(q || '').trim().slice(0, 60);
+  if (text.length < 2) return { items: [], groups: [] };
+  const max = Math.min(10, Math.max(3, Number(limit) || 6));
+  const contains = likeVn(text);
+  const prefix = likeVn(text).replace(/^%/, '');
+  const rows = db.prepare(`SELECT p.* FROM products p
+    WHERE p.status = 'published' AND ${TYPE_ACTIVE}
+      AND (vn(p.name) LIKE @c OR vn(p.sku) LIKE @c OR vn(p.short_description) LIKE @c OR p.jade_type_id IN (SELECT id FROM terms WHERE vn(name) LIKE @c))
+    ORDER BY (vn(p.name) LIKE @p) DESC, (vn(p.name) LIKE @c) DESC, (p.stock_status = 'sold_out') ASC, p.sort_order ASC, p.id DESC LIMIT @n`)
+    .all({ c: contains, p: prefix, n: max });
+  const groups = [
+    ...db.prepare("SELECT name, slug FROM terms WHERE type = 'jade_type' AND active = 1 AND vn(name) LIKE ? ORDER BY sort_order, name LIMIT 3").all(contains)
+      .map((t) => ({ name: t.name, url: `/san-pham/${t.slug}` })),
+    ...db.prepare('SELECT name, slug FROM product_types WHERE active = 1 AND uses_jade_fields = 0 AND vn(name) LIKE ? ORDER BY sort_order LIMIT 2').all(contains)
+      .map((t) => ({ name: t.name, url: `/san-pham/${t.slug}` })),
+  ].slice(0, 4);
+  return { items: hydrate(rows), groups };
 }
 
 // Đổi vị trí sản phẩm bằng kéo thả. ids = các sản phẩm đang hiện (một trang, hoặc đã lọc) theo thứ tự MỚI.
@@ -309,7 +350,7 @@ export function productsByIds(ids) {
 const SPEC_KINDS = ['text', 'number', 'select'];
 
 function parseType(row) {
-  return row && { ...row, uses_jade_fields: !!row.uses_jade_fields, in_main_list: !!row.in_main_list, active: !!row.active, spec_fields: safeJson(row.spec_fields, []) };
+  return row && { ...row, uses_jade_fields: !!row.uses_jade_fields, in_main_list: !!row.in_main_list, active: !!row.active, size_free: !!row.size_free, spec_fields: safeJson(row.spec_fields, []), size_options: safeJson(row.size_options, []) };
 }
 
 export function getProductType(id) {
@@ -366,15 +407,23 @@ export function saveProductType(id, data) {
     sort_order: toInt(data.sort_order, 0),
     // Loại dùng bộ thuộc tính ngọc chỉ có loại chính; không cho đổi từ giao diện
     spec_fields: JSON.stringify(current?.uses_jade_fields ? [] : cleanSpecFields(data.spec_fields)),
+    // Lựa chọn khi đặt hàng: nhãn ("Ni tay", "Kích cỡ"), đơn vị, gợi ý nhanh, cho khách nhập riêng, ô thông tin thêm
+    // Loại ngọc có cách chọn ni cố định (số, mm) nên giữ nguyên
+    size_label: current?.uses_jade_fields ? current.size_label : (cleanText(data.size_label, 40) || 'Kích cỡ'),
+    size_unit: current?.uses_jade_fields ? current.size_unit : cleanText(data.size_unit, 12),
+    size_options: JSON.stringify(current?.uses_jade_fields ? current.size_options : cleanOptions(data.size_options).map((o) => o.slice(0, 20))),
+    size_free: current?.uses_jade_fields ? 1 : (bool(data.size_free) ? 1 : 0),
+    info_label: current?.uses_jade_fields ? current.info_label : cleanText(data.info_label, 120),
   };
   if (id) {
     const before = current && current.slug !== values.slug && !current.uses_jade_fields ? snapUrls(productIdsOf('product_type_id', id)) : null;
-    db.prepare('UPDATE product_types SET name=@name, slug=@slug, description=@description, active=@active, in_main_list=@in_main_list, sort_order=@sort_order, spec_fields=@spec_fields WHERE id=@id').run({ ...values, id });
+    db.prepare(`UPDATE product_types SET name=@name, slug=@slug, description=@description, active=@active, in_main_list=@in_main_list, sort_order=@sort_order, spec_fields=@spec_fields,
+      size_label=@size_label, size_unit=@size_unit, size_options=@size_options, size_free=@size_free, info_label=@info_label WHERE id=@id`).run({ ...values, id });
     if (before) { addAutoRedirect(`/san-pham/${current.slug}`, `/san-pham/${values.slug}`); redirectMoved(before); }
     return id;
   }
-  return db.prepare(`INSERT INTO product_types (name, slug, description, uses_jade_fields, spec_fields, active, in_main_list, sort_order)
-    VALUES (@name, @slug, @description, 0, @spec_fields, @active, @in_main_list, @sort_order)`).run(values).lastInsertRowid;
+  return db.prepare(`INSERT INTO product_types (name, slug, description, uses_jade_fields, spec_fields, active, in_main_list, sort_order, size_label, size_unit, size_options, size_free, info_label)
+    VALUES (@name, @slug, @description, 0, @spec_fields, @active, @in_main_list, @sort_order, @size_label, @size_unit, @size_options, @size_free, @info_label)`).run(values).lastInsertRowid;
 }
 
 export function deleteProductType(id) {
@@ -428,16 +477,13 @@ export function updateProductPrice(id, data) {
   return { id, before: { price: cur.price, sale_price: cur.sale_price }, price, sale_price: sale, final_price: sale ?? price, on_sale: sale != null && price != null && sale < price };
 }
 
-export function saveProduct(id, data) {
+export function saveProduct(id, data, userId = null) {
   const name = cleanText(data.name, 200);
   if (!name) throw new HttpError(400, 'Vui lòng nhập tên sản phẩm');
   let slug = uniqueSlug('products', slugify(data.slug || name), id);
   // Không trùng tên với trang loại ngọc / loại sản phẩm (cùng nằm dưới /san-pham/)
   { let i = 2; const base = slug; while (categorySlugTaken(slug)) slug = `${base}-${i++}`; }
   const urlBefore = id ? snapUrls([id]) : {};
-  const sizes = [].concat(data.sizes || [])
-    .flatMap((s) => String(s).split(/[,;\s]+/))
-    .map((s) => toInt(s)).filter((s) => s > 0 && s < 200);
   const specs = (Array.isArray(data.specs) ? data.specs : [])
     .map((s) => ({ label: cleanText(s?.label, 100), value: cleanText(s?.value, 300) }))
     .filter((s) => s.label && s.value).slice(0, 30);
@@ -446,6 +492,10 @@ export function saveProduct(id, data) {
   const type = getProductType(toInt(data.product_type_id)) || getProductType(1);
   const jade = !!type.uses_jade_fields;
   const { attrs, fields: typeFields } = sanitizeAttrs(type, jade ? {} : data.attrs);
+  // Ngọc: ni là số (mm), sắp xếp tăng dần. Loại khác: kích cỡ là chữ tự đặt (S, M, L, Free size...), giữ thứ tự nhập
+  const sizes = jade
+    ? [...new Set([].concat(data.sizes || []).flatMap((s) => String(s).split(/[,;\s]+/)).map((s) => toInt(s)).filter((s) => s > 0 && s < 200))].sort((a, b) => a - b)
+    : [...new Set([].concat(data.sizes || []).flatMap((s) => String(s).split(/[,;\n]+/)).map((s) => cleanText(s, 20)).filter(Boolean))].slice(0, 30);
 
   const values = {
     name, slug,
@@ -459,7 +509,8 @@ export function saveProduct(id, data) {
     jade_type_id: jade ? toInt(data.jade_type_id) : null,
     color_id: jade ? toInt(data.color_id) : null,
     style_id: jade ? toInt(data.style_id) : null,
-    sizes: JSON.stringify(jade ? [...new Set(sizes)].sort((a, b) => a - b) : []),
+    sizes: JSON.stringify(sizes),
+    track_stock: bool(data.track_stock) ? 1 : 0,
     bead_size: jade ? cleanText(data.bead_size, 100) : '',
     origin: jade ? cleanText(data.origin, 150) : '',
     weight: jade ? cleanText(data.weight, 60) : '',
@@ -509,6 +560,8 @@ export function saveProduct(id, data) {
     return pid;
   });
   if (id) redirectMoved(urlBefore);
+  // Số lượng tồn nhập tay (ghi nhật ký kho); chỉ nhận khi form gửi lên ô này
+  if (data.stock_qty !== undefined && data.stock_qty !== '' && data.stock_qty !== null) setStockQty(id || result, data.stock_qty, { reason: id ? 'Sửa tay' : 'Nhập kho ban đầu', userId });
   return id || result;
 }
 
@@ -537,6 +590,7 @@ export function duplicateProduct(id) {
     name: `${p.name} (bản sao)`,
     slug: '',
     status: 'draft',
+    stock_qty: 0,
     element_ids: p.element_ids,
     image_ids: p.image_ids,
     certificates: [],

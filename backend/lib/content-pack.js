@@ -14,7 +14,7 @@ export const PACK_DB = path.join(PACK_DIR, 'content.sqlite');
 export const PACK_UPLOADS = path.join(PACK_DIR, 'uploads');
 
 // Thứ tự xóa tôn trọng khóa ngoại; đây là dữ liệu riêng tư / vận hành, không đưa vào gói
-const PRIVATE_TABLES = ['sessions', 'audit_logs', 'not_found_log', 'inquiries', 'customers', 'users'];
+const PRIVATE_TABLES = ['sessions', 'audit_logs', 'not_found_log', 'stock_log', 'inquiries', 'customers', 'users'];
 const q = (s) => `'${String(s).replace(/'/g, "''")}'`;
 const has = (db, table) => !!db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?").get(table);
 const count = (db, table) => (has(db, table) ? db.prepare(`SELECT COUNT(*) FROM ${table}`).pluck().get() : 0);

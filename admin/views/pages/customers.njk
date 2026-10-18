@@ -16,6 +16,15 @@
     </div>
   </div>
 
+  {# ---- Phân loại tự tính từ lịch sử: người chỉ nhắn hỏi chưa phải khách mua hàng ---- #}
+  <div class="mb-4 flex flex-wrap items-center gap-2" role="group" aria-label="Phân loại khách">
+    <button type="button" class="tab" :class="filters.segment === '' && 'active'" @click="filters.segment = ''; search()">Tất cả</button>
+    <template x-for="k in Object.keys(segmentLabels)" :key="k">
+      <button type="button" class="tab" :class="filters.segment === k && 'active'" @click="setSegment(k)"><span x-text="segmentLabels[k]"></span> <span class="ml-1 text-xs opacity-70" x-text="segments[k] ?? 0"></span></button>
+    </template>
+    <span class="ml-auto text-xs text-slate-500" title="Tự tính, không cần cập nhật tay">Người quan tâm: chưa có đơn · Đã đặt hàng: có đơn chưa hoàn thành · Đã mua: 1 đơn hoàn thành · Mua lại: từ 2 đơn hoàn thành</span>
+  </div>
+
   {# ---- Bộ lọc thu gọn: chip hiện bộ lọc đang bật; bấm "Bộ lọc" để mở khung chỉnh ---- #}
   <div class="mb-4 space-y-3">
     <div class="flex flex-wrap items-center gap-2" x-show="chips.length || summary.customers >= 0" x-cloak>
@@ -73,7 +82,7 @@
       <div class="flex items-start justify-between gap-3">
         <div>
           <h3 class="card-title">Nhập khách hàng hàng loạt</h3>
-          <p class="help !mt-1">Dán danh sách copy từ Excel / Google Sheets, hoặc chọn file CSV. Cột theo thứ tự: <b>Họ tên, Số điện thoại, Email, Địa chỉ, Nguồn, Nhãn, Ni tay, Ghi chú</b> (có dòng tiêu đề thì hệ thống tự nhận cột). Chỉ <b>họ tên</b> và <b>số điện thoại</b> là bắt buộc; tối đa 2.000 khách mỗi lần.
+          <p class="help !mt-1">Dán danh sách copy từ Excel / Google Sheets, hoặc chọn file CSV. Cột theo thứ tự: <b>Họ tên, Số điện thoại, Email, Địa chỉ, Nguồn, Nhãn, Ni tay, Ghi chú, Ngày tạo</b> (có dòng tiêu đề thì hệ thống tự nhận cột). Chỉ <b>họ tên</b> và <b>số điện thoại</b> là bắt buộc; tối đa 2.000 khách mỗi lần.
             <a href="{{ A }}/api/customers/import-template.csv" class="text-brand-600 underline">Tải file mẫu</a></p>
         </div>
         <button type="button" class="btn btn-ghost btn-sm" @click="imp.open = false">{{ icon('close', 'w-4 h-4') }}</button>
@@ -86,6 +95,7 @@
       <div class="grid gap-4 sm:grid-cols-3">
         <div><label class="label">Nguồn mặc định cho cả lô</label><input class="input" list="source-list" x-model="imp.source" placeholder="Dùng khi dòng không có nguồn" @input="imp.preview = null"></div>
         <div><label class="label">Thêm nhãn cho cả lô</label><input class="input" x-model="imp.tags" placeholder="VD: Sự kiện tháng 10" @input="imp.preview = null"></div>
+        <div><label class="label" for="imp-date">Ngày mặc định cho cả lô</label><input id="imp-date" type="date" class="input" x-model="imp.date" :max="new Date(Date.now() + 7 * 36e5).toISOString().slice(0, 10)" @change="imp.preview = null"><p class="help">Dùng cho dòng không có cột “Ngày tạo” (định dạng 15/09/2026 hoặc 2026-09-15).</p></div>
         <div><label class="label">Khi trùng số điện thoại với khách đã có</label>
           <select class="input" x-model="imp.onDuplicate" @change="imp.preview = null"><option value="skip">Bỏ qua dòng đó</option><option value="update">Cập nhật thông tin khách đã có</option></select></div>
       </div>
@@ -144,6 +154,7 @@
         <datalist id="source-list"><option>Zalo</option><option>Facebook</option><option>Instagram</option><option>TikTok</option><option>Shopee</option><option>Cửa hàng</option><option>Giới thiệu</option></datalist></div>
       <div><label class="label">Ni tay / số đo</label><input class="input" x-model="form.wrist_size"></div>
       <div><label class="label">Nhãn</label><input class="input" x-model="form.tags" placeholder="VIP, khách sỉ... cách nhau bằng dấu phẩy"></div>
+      <div><label class="label" for="new-customer-date">Ngày bắt đầu là khách</label><input id="new-customer-date" type="date" class="input" x-model="form.created_date" :max="new Date(Date.now() + 7 * 36e5).toISOString().slice(0, 10)" :class="errors.created_date && 'border-red-400'"><p class="help">Để “Hôm nay” nếu đang ghi nhận ngay. Chọn ngày cũ khi nhập lại đơn / khách đã có từ trước để báo cáo và doanh thu rơi đúng ngày.</p><p class="text-xs text-red-600" x-text="errors.created_date"></p></div>
       <div class="sm:col-span-2 lg:col-span-3"><label class="label">Địa chỉ</label><input class="input" x-model="form.address"></div>
       <div class="sm:col-span-2 lg:col-span-3"><label class="label">Ghi chú</label><textarea class="input" rows="2" x-model="form.note" placeholder="Sở thích, mệnh, dịp tặng, lần liên hệ đầu..."></textarea></div>
     </div>
@@ -158,12 +169,13 @@
   <div class="card overflow-hidden">
     <div class="overflow-x-auto">
       <table class="table table-stack">
-        <thead><tr><th class="stack-title">Khách hàng</th><th>Liên hệ</th><th>Nguồn</th><th>Ni tay</th><th>Nhãn</th><th>Số yêu cầu</th><th>Đã mua</th><th>Gần nhất</th></tr></thead>
+        <thead><tr><th class="stack-title">Khách hàng</th><th>Liên hệ</th><th>Phân loại</th><th>Nguồn</th><th>Ni tay</th><th>Nhãn</th><th>Số yêu cầu</th><th>Đã mua</th><th>Gần nhất</th></tr></thead>
         <tbody>
           <template x-for="c in items" :key="c.id">
             <tr class="cursor-pointer" @click="location.href = '{{ A }}/customers/' + c.id">
               <td class="font-medium" x-text="c.name"></td>
               <td><p x-text="c.phone"></p><p class="text-xs text-slate-500" x-text="c.email"></p></td>
+              <td><span class="badge" :class="{ lead: 'bg-slate-100 text-slate-600', ordered: 'bg-blue-50 text-blue-700', bought: 'bg-emerald-50 text-emerald-700', repeat: 'bg-amber-50 text-amber-700' }[c.segment]" x-text="c.segment_label"></span></td>
               <td x-text="c.source || '—'"></td>
               <td x-text="c.wrist_size || '—'"></td>
               <td><template x-for="t in c.tags.split(',').map(s => s.trim()).filter(Boolean)"><span class="badge mr-1 bg-slate-100 text-slate-600" x-text="t"></span></template></td>
@@ -172,7 +184,7 @@
               <td class="text-slate-500" x-text="$fmt.date(c.last_inquiry_at || c.created_at, false)"></td>
             </tr>
           </template>
-          <tr x-show="!loading && !items.length"><td colspan="8" class="py-14 text-center text-slate-500">Không có khách hàng phù hợp.</td></tr>
+          <tr x-show="!loading && !items.length"><td colspan="9" class="py-14 text-center text-slate-500">Không có khách hàng phù hợp.</td></tr>
         </tbody>
       </table>
     </div>

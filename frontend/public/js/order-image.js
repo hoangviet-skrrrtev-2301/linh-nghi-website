@@ -96,7 +96,7 @@ function layout(ctx, d, measure) {
     const lines = wrap(ctx, it.name, W - PAD * 2 - priceW - 16);
     const top = y;
     lines.forEach((l, i) => { y += i === 0 ? 38 : 26; text(l, PAD, 19, { weight: 600 }); });
-    const sub = [it.size ? `Ni ${it.size}` : '', `SL ${it.qty}`].filter(Boolean).join(' · ');
+    const sub = [it.size ? `${it.size_label || 'Ni'} ${it.size}` : '', it.note || '', `SL ${it.qty}`].filter(Boolean).join(' · ');
     y += 24; text(sub, PAD, 15, { color: theme.muted });
     if (d.showPrices) {
       const save = y; y = top + 38;

@@ -2,7 +2,7 @@
 
 Tài liệu "sổ tay" để tiếp tục phát triển: bối cảnh, các quyết định đã chốt, những gì đã xong, việc còn chờ. Cập nhật file này mỗi khi có quyết định hoặc thay đổi lớn.
 
-_Cập nhật lần cuối: 18/10/2026 (cuối ngày)_
+_Cập nhật lần cuối: 18/10/2026 (cuối ngày, sau đợt kích cỡ / kho / gợi ý tìm kiếm / phân loại khách / chọn ngày)_
 
 ---
 
@@ -47,6 +47,11 @@ _Cập nhật lần cuối: 18/10/2026 (cuối ngày)_
 | Menu | Mỗi mục có thể sổ dọc theo loại ngọc / màu / kiểu dáng / mệnh / loại sản phẩm / chuyên mục blog / bài mới / danh sách tự nhập. Mục Sản phẩm mặc định sổ theo loại ngọc, tự thêm các loại hàng khác đang hoạt động (Pháp phục) | |
 | Giao diện admin | Menu bên trái: 4 nhóm chính (Bán hàng, Sản phẩm, Nội dung, Hệ thống) thu gọn, xổ ra khi đang dùng hoặc khi bấm tên nhóm; **trạng thái mở được nhớ** nên chuyển sang mục khác không tự đóng nhóm đang mở. Cài đặt: các nhóm gom thành 5 mục lớn có mô tả, mỗi mục cũng thu gọn và nhớ trạng thái. Trang nhiều thành phần chia phần thu gọn / mở ra; mỗi trang có khung "Mô tả cách hoạt động" ẩn / hiện | Ngày 18/10/2026 |
 | Loại hàng khác ngọc (Pháp phục) | Hiện giống ngọc (thẻ sản phẩm, trang chi tiết) nhưng **không có bộ lọc** (bộ lọc chỉ cho ngọc), không hiện chung trong "Tất cả sản phẩm", chỉ xem qua menu / đường dẫn `?nhom=<slug>` / tìm kiếm | Chủ dự án chốt |
+| Kích cỡ khi đặt hàng | Theo từng loại sản phẩm (nhãn, đơn vị, gợi ý, cho nhập riêng, ô thông tin thêm). Ngọc: ni số mm + "Ni khác"; loại khác: kích cỡ chữ, chỉ nhận trong danh sách, kèm ô thông tin thêm tùy loại (Pháp phục: chiều cao / cân nặng) | Ngày 18/10/2026; `product_types.size_*`, `info_label` |
+| Quản lý kho | **Tùy chọn, mặc định tắt**; theo từng sản phẩm (tick "Theo dõi kho"), chưa theo từng kích cỡ. Trừ kho theo trạng thái đơn chọn được (mặc định Đã xác nhận), hoàn khi lùi / hủy / sửa / xóa; hết hàng tự hiện "Đã bán" | Ngày 18/10/2026; `services/stock.js`. Đơn chưa đến mốc trừ kho chưa giữ chỗ, nên khách đặt cùng lúc vẫn có thể vượt tồn (shop xử lý khi xác nhận) |
+| Khách vs. người chỉ hỏi | **Không tách bảng**: một người một hồ sơ (SĐT là khóa); phân loại tự tính Người quan tâm / Đã đặt hàng / Đã mua / Mua lại. Liên hệ / custom kết thúc không mua dùng trạng thái Đã hủy, nhãn "Không phát sinh đơn" / "Không chốt đơn" | Ngày 18/10/2026; tránh trùng hồ sơ và gộp lại khi họ mua |
+| Nhập lại dữ liệu cũ | Mọi form thêm thủ công / nhập hàng loạt có ô ngày (mặc định hôm nay, không cho tương lai); doanh thu tính theo ngày hoàn thành đã chọn | Ngày 18/10/2026; `vnDateToUtc` trong `lib/utils.js` (ngày khác hôm nay lưu 12:00 giờ Việt Nam) |
+| Gợi ý tìm kiếm | Gõ từ 2 ký tự: sản phẩm + loại ngọc / loại sản phẩm khớp, bật / tắt ở Cài đặt | Ngày 18/10/2026 |
 | Bộ lọc | Loại ngọc, giá (khoảng giá cấu hình được), ni tay, màu, kiểu dáng, mệnh | Danh mục quản lý trong admin |
 | Chế độ tối | Có, khách tự chuyển; mặc định theo thiết bị; chủ shop chỉnh màu tối / tắt trong Admin › Giao diện | Biến CSS `:root[data-theme="dark"]` sinh tại `/theme.css` |
 | Đơn của shop tự tạo | Admin tạo khách / đơn / custom thủ công; đơn lên từ custom có mã DH riêng (parent_id); giá đơn sửa được sau khi liên hệ, tổng = dòng hàng + điều chỉnh | Khách tra cứu bằng mã + SĐT |
@@ -87,12 +92,16 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 
 **Trạng thái dữ liệu thật (database/data/app.sqlite) cần nhớ:** `allow_indexing` đang **TẮT**; nhóm Schema đã lưu (loại hình `LocalBusiness`, `author_type` = person, `search_action` = tắt); migration 009 → 012 đã chạy; còn dữ liệu mẫu (số điện thoại 0900 000 000, email hello@example.com, địa chỉ "Thành phố Hà Nội", mạng xã hội chưa trỏ về trang thật, 2 sản phẩm Pháp phục thử). Khung "Chuẩn bị mở website chính thức" ở Tổng quan liệt kê đúng những mục này.
 
+**Đã làm 18/10/2026 (đợt cuối ngày, xem CHANGELOG.md):** kích cỡ theo loại sản phẩm (Pháp phục chọn S/M/L + thông tin thêm), quản lý kho tùy chọn, gợi ý khi gõ tìm kiếm, phân loại khách tự tính, ô chọn ngày khi nhập lại dữ liệu cũ, sửa sắp xếp "Bán chạy" quá chậm. **Migration 013 chưa chạy trên database thật** (chạy khi `npm run dev` khởi động lại; đã sao lưu `database/backups/2026-10-18-07-23`). Kho đang TẮT, gợi ý tìm kiếm đang BẬT.
+
 **Mở web chính thức (làm cuối cùng):** bật "Cho phép Google lập chỉ mục", điền thông tin thật (khung "Chuẩn bị mở website chính thức" ở Tổng quan liệt kê các mục còn mẫu), đặt BASE_URL đúng tên miền, chạy `npm run check:seo -- https://tenmien.vn`, rồi gửi sitemap lên Search Console.
 
 **Việc đầu tiên của phiên sau:** nhắc chủ dự án **khởi động lại `npm run dev`** (Ctrl+C rồi chạy lại). Bộ tự khởi động lại của `node --watch` trên máy này đã không nạp mã mới (server vẫn chạy bản 16:33 ngày 17/10, chưa có bảng `redirects`, trang Chuyển hướng & 404 chưa dùng được). Khi khởi động lại, migration 009 và 010 tự chạy; bản sao lưu trước migration ở `database/backups/2026-10-17-11-26`.
 
 ## 4. Việc tiếp theo
 
+- [ ] Thử kích cỡ Pháp phục + kho trên điện thoại thật và trên bản chạy thật (đã kiểm tra bằng Chrome trên bản sao); chọn có bật Quản lý kho không
+- [ ] Nhập lại đơn / khách đã có bên ngoài bằng ô chọn ngày; kiểm tra Tổng quan khớp doanh thu cũ
 - [ ] Nhận mẫu giao diện + tông màu từ chủ dự án → chỉnh `frontend/src/css/app.css`, các template trong `frontend/views/`, và giá trị mặc định nhóm `theme` trong `settings-schema.js` (bố cục chưa chốt)
 - [ ] Mua VPS + tên miền, chạy `deploy/setup-vps.sh`
 - [ ] Cấu hình Gmail App Password, thử gửi đơn thật và email báo giao hàng
@@ -110,15 +119,14 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 - [ ] **Đặt lịch sao lưu chép ra ngoài server** (`npm run pull-backup` + `deploy/dat-lich-tai-sao-luu.ps1`, hoặc rclone `deploy/offsite-backup.sh`), chưa thử trên server thật
 - [ ] Nên bật 2FA cho Chủ shop (Tài khoản & bảo mật); cân nhắc giao quyền sao lưu / email / xóa dữ liệu cho ai
 
-**Khi muốn mở bán Pháp phục** (loại đã có sẵn, đang thử nghiệm): nhập sản phẩm thật, kiểm tra bằng "Xem thử như khách", rồi Admin › Sản phẩm › Loại sản phẩm › Bật hoạt động. Còn thiếu trước khi mở bán thật: chọn **kích cỡ** (S/M/L...) khi đặt hàng (giỏ hàng hiện chỉ hiểu "ni" dạng số), thanh toán/chuyển khoản nếu cần, schema SEO riêng cho loại không phải ngọc.
+**Khi muốn mở bán Pháp phục** (loại đã có sẵn, đang thử nghiệm): nhập sản phẩm thật, kiểm tra bằng "Xem thử như khách", rồi Admin › Sản phẩm › Loại sản phẩm › Bật hoạt động. Còn thiếu trước khi mở bán thật: thanh toán/chuyển khoản nếu cần, kho theo từng kích cỡ nếu cần (hiện kho theo sản phẩm), schema SEO riêng cho loại không phải ngọc. Kích cỡ khi đặt hàng đã có (Sản phẩm › Loại sản phẩm › Lựa chọn khi khách đặt hàng).
 
 **Ý tưởng có thể làm sau (chưa ai yêu cầu):**
 - Menu máy tính mở submenu bằng chạm cho iPad nằm ngang (hiện chỉ rê chuột / bàn phím)
 - Tự lưu font Google trên máy chủ, thêm AVIF và Brotli (tối ưu tốc độ thêm)
 - Bảng trong trình soạn thảo: gộp ô, dòng tiêu đề (cần thư viện bảng riêng, Quill 2 chỉ có bảng cơ bản)
 - Nút Quay lại giữ riêng loại đơn khi mở thẳng danh sách (hiện về /inquiries tất cả loại); trang Khách hàng chưa ghi bộ lọc vào URL
-- Trạng thái thanh toán và trừ kho tự động khi có đơn (hiện chưa có)
-- Tách "khách hàng" khỏi "người chỉ nhắn hỏi" (mọi lời nhắn liên hệ hiện đều tạo hồ sơ khách)
+- Trạng thái thanh toán (trừ kho tự động đã có, tùy chọn); kho theo từng kích cỡ; giữ chỗ tồn kho cho đơn chưa xác nhận
 - Gộp "SEO Google & chia sẻ" vào cùng trang với nội dung từng trang (hiện tách 2 nhóm, đã ghi rõ ô nào lấy từ đâu)
 - Hỗ trợ ảnh HEIC của iPhone (cần sharp build kèm libheif)
 - Tra cứu mã chứng chỉ kiểm định trên website
@@ -134,12 +142,12 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 | Vấn đề | Ghi chú |
 |---|---|
 | Ảnh HEIC (iPhone) không upload được | Hướng dẫn người dùng chụp JPG, đã ghi trong HUONG_DAN_SU_DUNG.md |
-| SQLite chạy 1 tiến trình | Đủ cho hàng nghìn sản phẩm / đơn. Nếu sau này cần nhiều server thì chuyển sang PostgreSQL |
+| SQLite chạy 1 tiến trình | Đủ cho hàng nghìn sản phẩm / đơn. Nếu sau này cần nhiều server thì chuyển sang PostgreSQL. Số đo 18/10/2026 (máy dev): 20.000 sản phẩm + 50.000 khách + 100.000 yêu cầu: trang sản phẩm 23 ms, tìm chữ 270 ms, danh sách khách admin 0,8 s, tìm khách 2 s. Với vài nghìn dòng mọi thao tác dưới 0,2 s. Xem mục "Khi nào cần nâng cấp" trong DANH_CHO_LAP_TRINH_VIEN.md |
 | Alpine.js cần `'unsafe-eval'` trong CSP | Toàn bộ nội dung người dùng nhập đều escape/sanitize; ghi chú tại `backend/middleware/security.js` |
 | Trên Windows, `node --watch` in dòng "Completed running..." sau mỗi lần tự khởi động lại | Chỉ là thông báo, server vẫn chạy bình thường. `npm run dev` chỉ theo dõi thư mục `backend` (sửa `frontend` / `admin` chỉ cần tải lại trang) |
 | **Migration chạy tự động mỗi lần server khởi động** | Kể cả `npm run dev` tự khởi động lại khi sửa file `backend`. Luôn `npm run backup` trước khi thêm migration |
 | `.npmrc` đặt `ignore-scripts=true` | Thư viện native (better-sqlite3, sharp, tailwind) dùng bản build sẵn, máy mới không cần Python / trình biên dịch. Nếu sau này thêm thư viện **bắt buộc** chạy script cài đặt thì cần xem lại |
-| Giỏ hàng chỉ hiểu "ni" dạng số | Loại hàng khác ngọc (Pháp phục) chưa chọn được kích cỡ khi đặt hàng |
+| Kho theo sản phẩm, chưa theo kích cỡ; đơn chưa xác nhận chưa giữ chỗ | Hai khách đặt cùng lúc món chỉ còn 1 đều gửi được đơn (chặn khi đặt chỉ dựa vào số còn tại lúc gửi); shop xử lý khi xác nhận, kho có thể về âm (hiện "Kho: 0", admin thấy số âm trong lịch sử) |
 | `npm run dev` có thể không tự khởi động lại khi sửa file `backend` (đã gặp 17/10/2026) | Nếu thấy tính năng mới không chạy, kiểm tra thời gian khởi động tiến trình (`Get-Process -Id <PID>`) rồi khởi động lại thủ công. Không dùng `taskkill /IM node.exe` |
 | CSP cần `'unsafe-eval'` (Alpine), font Google tải ngoài, `npm audit` mức thấp của Quill 2.0.3 | Xem mục 5b |
 | Ảnh đơn hàng cho khách vẽ trên trình duyệt | Cần font đã tải; nếu trình duyệt khách quá cũ có thể không tạo được ảnh (khách vẫn đặt hàng bình thường) |
@@ -178,6 +186,10 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 | Trạng thái đơn, vận chuyển, email báo khách | `INQUIRY_FLOW` + `updateInquiry` trong `services/inquiries.js`, `customerStatusUpdate` trong `mailer.js`, trang tra cứu `frontend/views/pages/track.njk` |
 | Nhập khách hàng hàng loạt | `backend/services/customer-import.js` + panel trong `admin/views/pages/customers.njk` |
 | Loại sản phẩm, thông số tự đặt, xem thử | `product_types` trong `services/catalog.js` (`TYPE_ACTIVE`, `IN_MAIN_LIST`), `/admin/preview/san-pham/:id` trong `routes/admin.js` |
+| Kích cỡ khi đặt hàng, ô thông tin thêm | `size_cfg` trong `hydrate` (`catalog.js`), kiểm tra ở `createInquiry` (`inquiries.js`), `productBuy` / giỏ hàng trong `app.js`, form loại ở `admin/views/pages/products.njk` |
+| Quản lý kho | `services/stock.js` (`syncInquiryStock`, `setStockQty`), trường `track_stock` / `stock_qty` trong `saveProduct`, nhóm cài đặt `features` (mục Quản lý kho) |
+| Gợi ý tìm kiếm | `suggestProducts` (`catalog.js`), `/api/search-suggest` (`api-public.js`), `searchSuggest` trong `app.js`, `partials/header.njk` |
+| Phân loại khách, ngày nhập lại | `CUSTOMER_SEGMENTS` / `customerQuery` (`inquiries.js`), `vnDateToUtc` / `vnDayOf` (`lib/utils.js`), cột ngày trong `customer-import.js` |
 | Địa chỉ phân cấp, chuyển hướng, trang 404 | `backend/lib/urls.js` (đường dẫn chuẩn), `backend/middleware/urls.js` (chuẩn hóa + áp dụng chuyển hướng), `backend/services/redirects.js`, `admin/views/pages/redirects.njk`; trang lỗi `frontend/views/pages/error.njk` + nhóm `pages` (phần errors) trong `settings-schema.js` |
 | Chuyên mục blog | `services/content.js` (`listPostCategories`...), `routes/public.js` (`renderBlogList`) |
 | Ảnh đơn hàng khách tải về | `frontend/public/js/order-image.js`, `buildReceipt` trong `app.js` |

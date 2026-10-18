@@ -35,6 +35,7 @@ router.use((req, res, next) => {
   res.locals.can = (perm) => can(req.user, perm);   // dùng trong template để ẩn mục menu / nút không có quyền
   res.locals.meta = {
     termTypes: TERM_TYPES, stockLabels: STOCK_LABEL, inquiryTypes: INQUIRY_TYPES, inquiryStatus: INQUIRY_STATUS, statusByType: INQUIRY_STATUS_BY_TYPE, roles: ROLES,
+    inventory: { enabled: !!s.features.inventory_enabled, low: Number(s.features.inventory_low) || 3 },
   };
   next();
 });

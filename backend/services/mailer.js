@@ -71,7 +71,7 @@ function rows(pairs) {
 function itemsTable(items, total) {
   if (!items?.length) return '';
   const body = items.map((i) => `<tr>
-    <td style="border-bottom:1px solid #eee">${escapeHtml(i.name)}${i.size ? `<br><small style="color:#777">Ni: ${escapeHtml(i.size)}</small>` : ''}</td>
+    <td style="border-bottom:1px solid #eee">${escapeHtml(i.name)}${i.size ? `<br><small style="color:#777">${escapeHtml(i.size_label || 'Ni')}: ${escapeHtml(i.size)}</small>` : ''}${i.note ? `<br><small style="color:#777">${escapeHtml(i.note)}</small>` : ''}</td>
     <td style="border-bottom:1px solid #eee;text-align:center">${i.qty}</td>
     <td style="border-bottom:1px solid #eee;text-align:right">${i.price != null ? formatVnd(i.price * i.qty) : 'Liên hệ'}</td></tr>`).join('');
   return `<h3 style="font-size:15px;margin:24px 0 8px">Sản phẩm</h3>

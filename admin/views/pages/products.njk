@@ -79,6 +79,19 @@
               </div>
               <button type="button" class="btn btn-secondary btn-sm mt-2" @click="addField()">{{ icon('plus', 'w-3.5 h-3.5') }} Thêm thông số</button>
             </div>
+            <div x-show="!typeForm.uses_jade_fields" class="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
+              <div>
+                <p class="label !mb-0">Lựa chọn khi khách đặt hàng</p>
+                <p class="help !mt-0">Mỗi sản phẩm của loại này có thể có danh sách kích cỡ (nhập trong tab “Thông số” của sản phẩm). Khách phải chọn trước khi thêm vào giỏ.</p>
+              </div>
+              <div class="grid gap-3 sm:grid-cols-3">
+                <div><label class="label" for="tf-size-label">Tên lựa chọn</label><input id="tf-size-label" class="input" x-model="typeForm.size_label" maxlength="40" placeholder="Kích cỡ"></div>
+                <div><label class="label" for="tf-size-unit">Đơn vị (nếu có)</label><input id="tf-size-unit" class="input" x-model="typeForm.size_unit" maxlength="12" placeholder="VD: cm"></div>
+                <div><label class="label" for="tf-size-opts">Gợi ý nhanh</label><input id="tf-size-opts" class="input" x-model="typeForm.size_options_text" placeholder="S, M, L, XL"></div>
+              </div>
+              <label class="flex items-start gap-2 text-sm"><input type="checkbox" class="mt-0.5 h-4 w-4 accent-brand-600" x-model="typeForm.size_free"><span>Cho khách nhập kích cỡ riêng (ngoài danh sách của sản phẩm)</span></label>
+              <div><label class="label" for="tf-info">Ô thông tin thêm cho từng sản phẩm khách đặt</label><input id="tf-info" class="input" x-model="typeForm.info_label" maxlength="120" placeholder="VD: Chiều cao / cân nặng (để shop tư vấn size). Để trống nếu không cần"></div>
+            </div>
             <div class="flex gap-2"><button class="btn btn-primary" :disabled="typeSaving">Lưu loại sản phẩm</button><button type="button" class="btn btn-ghost" @click="typeForm = null">Hủy</button></div>
           </div>
         </template>
@@ -146,7 +159,7 @@
                   </div>
                 </template>
               </td>
-              <td x-text="p.stock_label"></td>
+              <td><span x-text="p.stock_label"></span><template x-if="p.stock_tracked"><span class="mt-0.5 block text-xs" :class="p.stock_low ? 'font-medium text-amber-700' : 'text-slate-500'" x-text="'Kho: ' + p.stock_left + (p.stock_low ? ' · sắp hết' : '')"></span></template></td>
               <td><span class="badge" :class="p.status !== 'published' ? 'bg-slate-100 text-slate-500' : p.type_active ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'" x-text="p.status !== 'published' ? 'Bản nháp' : p.type_active ? 'Đang hiển thị' : 'Thử nghiệm (khách chưa thấy)'"></span></td>
               <td class="text-right whitespace-nowrap">
                 <a :href="p.status === 'published' && p.type_active ? p.url : '{{ A }}/preview/san-pham/' + p.id" target="_blank" rel="noopener" class="btn btn-ghost btn-sm" :title="p.status === 'published' && p.type_active ? 'Xem trên website' : 'Xem thử như khách (khách chưa thấy sản phẩm này)'">{{ icon('eye', 'w-4 h-4') }}</a>

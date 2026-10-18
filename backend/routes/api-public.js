@@ -1,6 +1,6 @@
 // API công khai: dữ liệu popup sản phẩm, giỏ hàng, gửi đơn / yêu cầu.
 import { Router } from 'express';
-import { getProduct, productsByIds } from '../services/catalog.js';
+import { getProduct, productsByIds, suggestProducts } from '../services/catalog.js';
 import { createInquiry, lookupInquiry } from '../services/inquiries.js';
 import { getPublicSettings } from '../services/settings.js';
 import { publicFormGuard, formLimiter, trackLimiter, apiLimiter } from '../middleware/security.js';
@@ -21,6 +21,9 @@ function card(p, showPrice) {
     final_price: showPrice ? p.final_price : null,
     on_sale: showPrice && p.on_sale,
     sizes: p.sizes,
+    size_cfg: p.size_cfg,
+    max_qty: p.max_qty,
+    stock_note: p.stock_note,
     stock_status: p.stock_status,
     stock_label: p.stock_label,
     cover: p.cover,
@@ -52,6 +55,21 @@ router.get('/products/:slug', (req, res, next) => {
     fengshui: p.fengshui,
     sku: p.sku,
     certificates: p.certificates.map((c) => ({ issuer: c.issuer, code: c.code, issued_date: c.issued_date, note: c.note, image: c.image })),
+  });
+});
+
+// Gợi ý tìm kiếm khi khách đang gõ (tắt được ở Cài đặt › Bật/tắt tính năng)
+router.get('/search-suggest', (req, res) => {
+  const f = getPublicSettings().features;
+  if (!f.search_suggest) return res.json({ items: [], groups: [] });
+  const showPrice = f.show_prices;
+  const r = suggestProducts(req.query.q, f.search_suggest_limit);
+  res.json({
+    groups: r.groups,
+    items: r.items.map((p) => ({
+      name: p.name, url: p.url, sold_out: p.stock_status === 'sold_out', type: p.jade_type?.name || p.product_type?.name || '',
+      final_price: showPrice ? p.final_price : null, cover: p.cover ? { sm: p.cover.sm, width: p.cover.width, height: p.cover.height } : null,
+    })),
   });
 });
 

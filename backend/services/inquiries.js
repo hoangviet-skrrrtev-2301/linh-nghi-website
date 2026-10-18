@@ -1,9 +1,10 @@
 // Đơn đặt hàng, yêu cầu custom, lời nhắn liên hệ và danh sách khách hàng.
 import { z } from 'zod';
 import { db, tx, likeVn } from '../lib/db.js';
-import { inquiryCode, safeJson, HttpError, toInt } from '../lib/utils.js';
+import { inquiryCode, safeJson, HttpError, toInt, vnDateToUtc, vnDayOf, vnToday } from '../lib/utils.js';
 import { cleanText } from '../lib/sanitize.js';
 import { productsByIds } from './catalog.js';
+import { syncInquiryStock } from './stock.js';
 import { getRaw, getPublicSettings } from './settings.js';
 import { sendMail, mailReady, shopNotification, customerConfirmation, customerStatusUpdate } from './mailer.js';
 
@@ -23,7 +24,8 @@ export const INQUIRY_FLOW = {
   custom: ['new', 'contacted', 'confirmed', 'completed', 'cancelled'],
   contact: ['new', 'contacted', 'completed', 'cancelled'],
 };
-const STATUS_LABEL_BY_TYPE = { contact: { completed: 'Đã xử lý' } };
+// Với liên hệ / custom, "Đã hủy" chính là kết thúc mà khách không mua: gọi đúng tên để thống kê tỉ lệ chốt đơn
+const STATUS_LABEL_BY_TYPE = { contact: { completed: 'Đã xử lý', cancelled: 'Không phát sinh đơn' }, custom: { cancelled: 'Không chốt đơn' } };
 export const statusLabel = (type, status) => STATUS_LABEL_BY_TYPE[type]?.[status] || INQUIRY_STATUS[status] || status;
 // Danh sách trạng thái (mã + nhãn) của một loại; withCancelled = false cho thanh tiến trình khách xem
 export const flowOf = (type, { withCancelled = true } = {}) => (INQUIRY_FLOW[type] || INQUIRY_FLOW.order)
@@ -53,6 +55,7 @@ const schemas = {
       id: z.coerce.number().int().positive(),
       qty: z.coerce.number().int().min(1).max(20),
       size: z.string().trim().max(20).optional().default(''),
+      note: z.string().trim().max(200).optional().default(''),
     })).min(1, 'Giỏ hàng đang trống').max(30),
   }),
   custom: base.extend({
@@ -123,14 +126,14 @@ export function lookupInquiry(code, phone) {
     type: inq.type,
     type_label: inq.type_label,
     status: inq.status,
-    status_label: inq.status_label,
+    status_label: inq.status === 'cancelled' ? INQUIRY_STATUS.cancelled : inq.status_label,
     flow: flowOf(inq.type, { withCancelled: false }),
     carrier: inq.carrier,
     tracking_code: inq.tracking_code,
     shipped_at: inq.shipped_at,
     created_at: inq.created_at,
     updated_at: inq.updated_at,
-    items: inq.items.map((i) => ({ name: i.name, size: i.size, qty: i.qty, price: showPrice ? i.price : null })),
+    items: inq.items.map((i) => ({ name: i.name, size: i.size, size_label: i.size_label || '', note: i.note || '', qty: i.qty, price: showPrice ? i.price : null })),
     adjustment: showPrice ? inq.adjustment : 0,
     adjustment_note: showPrice ? inq.adjustment_note : '',
     total: showPrice ? inq.total : null,
@@ -160,18 +163,46 @@ export async function createInquiry(type, input, meta = {}) {
   let total = null;
   if (type === 'order') {
     const products = Object.fromEntries(productsByIds(data.items.map((i) => i.id)).map((p) => [p.id, p]));
-    items = data.items.filter((i) => products[i.id]).map((i) => ({
-      id: i.id,
-      name: products[i.id].name,
-      sku: products[i.id].sku,
-      slug: products[i.id].slug,
-      size: cleanText(i.size, 20),
-      qty: i.qty,
-      price: products[i.id].final_price,
-    }));
+    items = data.items.filter((i) => products[i.id]).map((i) => {
+      const p = products[i.id];
+      const cfg = p.size_cfg;
+      let size = cleanText(i.size, 20);
+      // Sản phẩm có danh sách kích cỡ thì bắt buộc chọn; loại không cho nhập riêng thì chỉ nhận kích cỡ trong danh sách
+      if (p.sizes.length) {
+        const label = cfg.label.toLowerCase();
+        if (!size) throw new HttpError(422, `Vui lòng chọn ${label} cho “${p.name}”`, { items: `Chưa chọn ${label}` });
+        const listed = p.sizes.map(String).find((s) => s.toLowerCase() === size.toLowerCase());
+        if (listed) size = listed;
+        else if (!cfg.free) throw new HttpError(422, `${cfg.label} “${size}” không có ở “${p.name}”`, { items: `${cfg.label} không hợp lệ` });
+      } else {
+        size = '';
+      }
+      return {
+        id: i.id,
+        name: p.name,
+        sku: p.sku,
+        slug: p.slug,
+        size,
+        size_label: size ? cfg.label : '',
+        note: cfg.info_label ? cleanText(i.note, 200) : '',
+        qty: i.qty,
+        price: p.final_price,
+      };
+    });
     if (!items.length) throw new HttpError(422, 'Sản phẩm trong giỏ không còn tồn tại', { items: 'Giỏ hàng không hợp lệ' });
     const soldOut = items.filter((i) => products[i.id].stock_status === 'sold_out');
     if (soldOut.length) throw new HttpError(422, `Sản phẩm đã bán: ${soldOut.map((i) => i.name).join(', ')}`);
+    // Quản lý kho (tùy chọn): không cho đặt quá số lượng còn
+    if (features.inventory_enabled && features.inventory_block_over) {
+      const want = new Map();
+      for (const i of items) want.set(i.id, (want.get(i.id) || 0) + i.qty);
+      for (const [pid, qty] of want) {
+        const p = products[pid];
+        if (p.stock_tracked && qty > p.stock_left) {
+          throw new HttpError(422, `“${p.name}” chỉ còn ${p.stock_left} sản phẩm, vui lòng giảm số lượng`, { items: 'Vượt số lượng còn' });
+        }
+      }
+    }
     total = items.every((i) => i.price != null) ? items.reduce((s, i) => s + i.price * i.qty, 0) : null;
   }
 
@@ -184,7 +215,7 @@ export async function createInquiry(type, input, meta = {}) {
   const id = tx(() => {
     const customerId = upsertCustomer({
       name: data.name, phone, email: data.email, address: data.address,
-      wrist: type === 'custom' ? data.size : (items.find((i) => i.size)?.size || ''),
+      wrist: type === 'custom' ? data.size : (items.find((i) => /^\d/.test(i.size))?.size || ''),
     });
     return db.prepare(`INSERT INTO inquiries (code, type, customer_id, name, phone, email, address, contact_via, items, total, details, message, ip, user_agent)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
@@ -193,6 +224,7 @@ export async function createInquiry(type, input, meta = {}) {
       String(meta.ip || '').slice(0, 64), String(meta.userAgent || '').slice(0, 300),
     ).lastInsertRowid;
   });
+  syncInquiryStock(id);
 
   const inquiry = getInquiry(id);
   // Gửi email nền, không bắt khách chờ
@@ -256,6 +288,8 @@ export function cleanItems(items) {
       sku: cleanText(i.sku, 60),
       slug: String(i.slug || '').toLowerCase().replace(slugRe, '').slice(0, 200),
       size: cleanText(i.size, 20),
+      size_label: cleanText(i.size_label, 40),
+      note: cleanText(i.note, 200),
       qty: Math.min(999, Math.max(1, toInt(i.qty, 1) || 1)),
       price: Number.isFinite(price) && price >= 0 ? price : null,
     };
@@ -292,7 +326,7 @@ export function listInquiries({ type, status, q, page = 1, perPage = 30, custome
   return { items: rows.map(present), total, page, pages: Math.max(1, Math.ceil(total / perPage)) };
 }
 
-export function updateInquiry(id, { status, admin_note, items, adjustment, adjustment_note, carrier, tracking_code }) {
+export function updateInquiry(id, { status, admin_note, items, adjustment, adjustment_note, carrier, tracking_code, created_date, completed_date }) {
   const cur = getInquiry(id);
   if (!cur) throw new HttpError(404, 'Không tìm thấy');
   // Chỉ nhận trạng thái thuộc chuỗi của loại này (ví dụ lời nhắn liên hệ không có "Đang giao hàng")
@@ -301,13 +335,19 @@ export function updateInquiry(id, { status, admin_note, items, adjustment, adjus
   const now = db.prepare("SELECT datetime('now')").pluck().get();
   // Mốc thời gian: giao hàng và hoàn thành (doanh thu tính theo ngày hoàn thành). Lùi trạng thái thì xóa mốc đã qua.
   const shippedAt = ['shipping', 'completed'].includes(nextStatus) ? (cur.shipped_at || (nextStatus === 'shipping' ? now : null)) : null;
-  const completedAt = nextStatus === 'completed' ? (cur.completed_at || now) : null;
+  // Admin sửa ngày tạo / ngày hoàn thành (nhập lại đơn cũ); không đổi nếu ngày không khác ngày đang lưu
+  const createdAt = created_date && created_date !== vnDayOf(cur.created_at) ? (vnDateToUtc(created_date, 'created_date') || now) : cur.created_at;
+  let completedAt = nextStatus === 'completed' ? (cur.completed_at || now) : null;
+  if (completedAt && completed_date && completed_date !== vnDayOf(completedAt)) completedAt = vnDateToUtc(completed_date, 'completed_date') || now;
+  if (completedAt && vnDayOf(completedAt) < vnDayOf(createdAt)) {
+    throw new HttpError(422, 'Ngày hoàn thành không thể trước ngày tạo', { completed_date: 'Không thể trước ngày tạo' });
+  }
   // Chỉ khi admin gửi lên danh sách dòng hàng / điều chỉnh mới tính lại tổng tiền
   const repriced = items !== undefined || adjustment !== undefined;
   const nextItems = items !== undefined ? cleanItems(items) : cur.items;
   const nextAdj = adjustment !== undefined ? cleanAdjustment(adjustment) : cur.adjustment;
   db.prepare(`UPDATE inquiries SET status = ?, admin_note = ?, items = ?, adjustment = ?, adjustment_note = ?, total = ?,
-    carrier = ?, tracking_code = ?, shipped_at = ?, completed_at = ?, updated_at = datetime('now') WHERE id = ?`).run(
+    carrier = ?, tracking_code = ?, shipped_at = ?, completed_at = ?, created_at = ?, updated_at = datetime('now') WHERE id = ?`).run(
     nextStatus,
     admin_note !== undefined ? cleanText(admin_note, 5000) : cur.admin_note,
     JSON.stringify(nextItems),
@@ -318,8 +358,10 @@ export function updateInquiry(id, { status, admin_note, items, adjustment, adjus
     tracking_code !== undefined ? cleanText(tracking_code, 100) : cur.tracking_code,
     shippedAt,
     completedAt,
+    createdAt,
     id,
   );
+  syncInquiryStock(id);
   return getInquiry(id);
 }
 
@@ -342,12 +384,21 @@ export async function notifyStatusChange(id) {
 // Shop tự lên đơn / ghi nhận yêu cầu cho khách (khách nhắn qua Zalo, Facebook, đến cửa hàng...)
 export function createAdminInquiry(type, input, userId = null) {
   if (!INQUIRY_TYPES[type]) throw new HttpError(400, 'Loại không hợp lệ');
+  // Nhập lại dữ liệu cũ: ngày tạo (mặc định hôm nay) và, với đơn đã hoàn thành, ngày hoàn thành (mặc định bằng ngày tạo khi nhập đơn cũ)
+  const createdTs = vnDateToUtc(input.created_date, 'created_date');
+  const createdDay = input.created_date && createdTs ? String(input.created_date).trim() : '';
+  const wantsDone = input.status === 'completed' && INQUIRY_FLOW[type].includes('completed');
+  const doneTs = wantsDone && input.completed_date ? vnDateToUtc(input.completed_date, 'completed_date') : (wantsDone ? createdTs : null);
+  const doneDay = wantsDone && input.completed_date && doneTs ? String(input.completed_date).trim() : createdDay;
+  if (wantsDone && (doneDay || createdDay) && (doneDay || vnToday()) < (createdDay || vnToday())) {
+    throw new HttpError(422, 'Ngày hoàn thành không thể trước ngày tạo', { completed_date: 'Không thể trước ngày tạo' });
+  }
   let customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(toInt(input.customer_id));
   // Khách mới nhập ngay trong form tạo đơn: dùng lại khách cùng số điện thoại nếu đã có, chưa có thì tạo
   if (!customer && input.customer && typeof input.customer === 'object') {
     const rawPhone = String(input.customer.phone || '').trim();
     const found = phoneRe.test(rawPhone) ? db.prepare('SELECT * FROM customers WHERE phone = ?').get(normalizePhone(rawPhone)) : null;
-    customer = found || createCustomer(input.customer);
+    customer = found || createCustomer({ created_date: input.created_date, ...input.customer });
   }
   if (!customer) throw new HttpError(422, 'Vui lòng chọn khách hàng');
   let parentId = null;
@@ -360,12 +411,14 @@ export function createAdminInquiry(type, input, userId = null) {
   const id = db.prepare(`INSERT INTO inquiries (code, type, customer_id, name, phone, email, address, contact_via, items, total, details, message,
       status, parent_id, adjustment, adjustment_note, channel, created_by, mail_status)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'admin', ?, 'none')`).run(
-    inquiryCode(type), type, customer.id, customer.name, customer.phone, customer.email, customer.address, cleanText(input.contact_via, 60),
+    inquiryCode(type, createdDay), type, customer.id, customer.name, customer.phone, customer.email, customer.address, cleanText(input.contact_via, 60),
     JSON.stringify(items), computeTotal(items, adjustment), JSON.stringify(details), cleanText(input.message, 3000),
     INQUIRY_FLOW[type].includes(input.status) ? input.status : (parentId ? 'contacted' : 'new'),
     parentId, adjustment, cleanText(input.adjustment_note, 300), userId,
   ).lastInsertRowid;
-  if (input.status === 'completed' && INQUIRY_FLOW[type].includes('completed')) db.prepare("UPDATE inquiries SET completed_at = datetime('now') WHERE id = ?").run(id);
+  if (createdTs) db.prepare('UPDATE inquiries SET created_at = ?, updated_at = ? WHERE id = ?').run(createdTs, createdTs, id);
+  if (wantsDone) db.prepare("UPDATE inquiries SET completed_at = COALESCE(?, datetime('now')) WHERE id = ?").run(doneTs, id);
+  syncInquiryStock(id, { userId });
   return getInquiry(id);
 }
 
@@ -387,10 +440,12 @@ export function convertToOrder(id) {
     completed_at = NULL, shipped_at = NULL, updated_at = datetime('now') WHERE id = ?`).run(
     inquiryCode('order'), src.type, src.code, JSON.stringify(items), computeTotal(items, src.adjustment), status, id,
   );
+  syncInquiryStock(id);
   return getInquiry(id);
 }
 
 export function deleteInquiry(id) {
+  syncInquiryStock(id, { remove: true });
   db.prepare('DELETE FROM inquiries WHERE id = ?').run(id);
 }
 
@@ -411,6 +466,15 @@ export function parseMonths(months) {
   const list = Array.isArray(months) ? months : String(months || '').split(',');
   return [...new Set(list.map((m) => String(m).trim()).filter((m) => /^\d{4}-(0[1-9]|1[0-2])$/.test(m)))].slice(0, 36);
 }
+
+// Phân loại khách tự tính từ lịch sử (không lưu riêng, không cần cập nhật tay): một người chỉ nhắn hỏi chưa phải khách mua hàng.
+export const CUSTOMER_SEGMENTS = {
+  lead: 'Người quan tâm',
+  ordered: 'Đã đặt hàng',
+  bought: 'Đã mua',
+  repeat: 'Mua lại',
+};
+const SEGMENT_SQL = `CASE WHEN done_count >= 2 THEN 'repeat' WHEN done_count = 1 THEN 'bought' WHEN order_count > 0 THEN 'ordered' ELSE 'lead' END`;
 
 function customerQuery({ q, months, by = 'active', source } = {}) {
   const ms = parseMonths(months);
@@ -436,24 +500,33 @@ function customerQuery({ q, months, by = 'active', source } = {}) {
   if (source) { where.push('vn(c.source) LIKE ?'); params.push(likeVn(source)); }
   const sql = `WITH f AS (
     SELECT c.*, COUNT(i.id) AS inquiry_count, MAX(i.created_at) AS last_inquiry_at,
-      COALESCE(SUM(CASE WHEN i.type = 'order' AND i.status = 'completed' THEN i.total END), 0) AS total_spent
+      COALESCE(SUM(CASE WHEN i.type = 'order' AND i.status = 'completed' THEN i.total END), 0) AS total_spent,
+      (SELECT COUNT(*) FROM inquiries o WHERE o.customer_id = c.id AND o.type = 'order' AND o.status != 'cancelled') AS order_count,
+      (SELECT COUNT(*) FROM inquiries o WHERE o.customer_id = c.id AND o.type = 'order' AND o.status = 'completed') AS done_count
     FROM customers c ${join} ${where.length ? `WHERE ${where.join(' AND ')}` : ''} GROUP BY c.id ${having})`;
-  return { sql, params: [...joinParams, ...params] };
+  return { sql: `${sql}, g AS (SELECT f.*, ${SEGMENT_SQL} AS segment FROM f)`, params: [...joinParams, ...params] };
 }
 
-export function listCustomers({ q, page = 1, perPage = 30, months, by, source } = {}) {
+export function listCustomers({ q, page = 1, perPage = 30, months, by, source, segment } = {}) {
   const { sql, params } = customerQuery({ q, months, by, source });
+  const seg = CUSTOMER_SEGMENTS[segment] ? 'WHERE segment = ?' : '';
+  const segParams = seg ? [segment] : [];
   const summary = db.prepare(`${sql} SELECT COUNT(*) AS customers, COALESCE(SUM(inquiry_count), 0) AS inquiries,
-    COALESCE(SUM(total_spent), 0) AS spent FROM f`).get(...params);
-  const items = db.prepare(`${sql} SELECT * FROM f ORDER BY COALESCE(last_inquiry_at, created_at) DESC LIMIT ? OFFSET ?`)
-    .all(...params, perPage, (Math.max(1, page) - 1) * perPage);
+    COALESCE(SUM(total_spent), 0) AS spent FROM g ${seg}`).get(...params, ...segParams);
+  // Số khách theo từng phân loại (không bị bộ lọc phân loại hiện tại che)
+  const segments = Object.fromEntries(Object.keys(CUSTOMER_SEGMENTS).map((k) => [k, 0]));
+  for (const r of db.prepare(`${sql} SELECT segment, COUNT(*) AS c FROM g GROUP BY segment`).all(...params)) segments[r.segment] = r.c;
+  const items = db.prepare(`${sql} SELECT * FROM g ${seg} ORDER BY COALESCE(last_inquiry_at, created_at) DESC LIMIT ? OFFSET ?`)
+    .all(...params, ...segParams, perPage, (Math.max(1, page) - 1) * perPage)
+    .map((c) => ({ ...c, segment_label: CUSTOMER_SEGMENTS[c.segment] }));
   // Các nguồn khách đang có (Zalo, Facebook...) để chọn nhanh trong bộ lọc
   const sources = db.prepare("SELECT source AS name, COUNT(*) AS count FROM customers WHERE source != '' GROUP BY source ORDER BY count DESC, source").all();
-  return { items, total: summary.customers, summary, sources, page, pages: Math.max(1, Math.ceil(summary.customers / perPage)) };
+  return { items, total: summary.customers, summary, sources, segments, page, pages: Math.max(1, Math.ceil(summary.customers / perPage)) };
 }
 
 // Admin thêm khách (khách nhắn Zalo/Facebook, đến cửa hàng...). Số điện thoại là khóa duy nhất.
 export function createCustomer(data) {
+  const createdTs = vnDateToUtc(data.created_date, 'created_date');
   const name = cleanText(data.name, 120);
   if (name.length < 2) throw new HttpError(422, 'Vui lòng nhập họ tên', { name: 'Vui lòng nhập họ tên' });
   const rawPhone = String(data.phone || '').trim();
@@ -467,6 +540,7 @@ export function createCustomer(data) {
     name, phone, email, cleanText(data.address, 400), cleanText(data.wrist_size, 60), cleanText(data.note, 5000),
     cleanText(data.tags, 300), cleanText(data.source, 100),
   ).lastInsertRowid;
+  if (createdTs) db.prepare('UPDATE customers SET created_at = ?, updated_at = ? WHERE id = ?').run(createdTs, createdTs, id);
   return getCustomer(id);
 }
 
@@ -493,10 +567,10 @@ export function deleteCustomer(id) {
 
 export function customersCsv(filters = {}) {
   const rows = listCustomers({ ...filters, perPage: 100000 }).items;
-  const head = ['Họ tên', 'Điện thoại', 'Email', 'Địa chỉ', 'Ni tay', 'Nhãn', 'Nguồn', 'Ghi chú', 'Số yêu cầu', 'Đã mua (VND)', 'Ngày tạo'];
+  const head = ['Họ tên', 'Điện thoại', 'Email', 'Địa chỉ', 'Ni tay', 'Nhãn', 'Nguồn', 'Ghi chú', 'Phân loại', 'Số yêu cầu', 'Đã mua (VND)', 'Ngày tạo'];
   const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
   // Chặn công thức Excel độc hại (CSV injection)
   const safe = (v) => (/^[=+\-@]/.test(String(v ?? '')) ? `'${v}` : v);
-  const lines = rows.map((r) => [r.name, r.phone, r.email, r.address, r.wrist_size, r.tags, r.source, r.note, r.inquiry_count, r.total_spent, r.created_at].map((v) => esc(safe(v))).join(','));
+  const lines = rows.map((r) => [r.name, r.phone, r.email, r.address, r.wrist_size, r.tags, r.source, r.note, r.segment_label, r.inquiry_count, r.total_spent, r.created_at].map((v) => esc(safe(v))).join(','));
   return '﻿' + [head.map(esc).join(','), ...lines].join('\r\n');
 }

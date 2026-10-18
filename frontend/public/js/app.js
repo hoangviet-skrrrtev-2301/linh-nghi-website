@@ -86,15 +86,17 @@ document.addEventListener('alpine:init', () => {
       return this.items.reduce((s, i) => s + i.final_price * i.qty, 0);
     },
     save() { storage.set(CART_KEY, this.items); },
-    add(p, size = '', qty = 1) {
+    add(p, size = '', qty = 1, note = '') {
       if (p.sizes?.length && !size) {
-        Alpine.store('toast').show('Vui lòng chọn ni tay trước khi thêm vào giỏ');
+        Alpine.store('toast').show(`Vui lòng chọn ${(p.size_cfg?.label || 'ni tay').toLowerCase()} trước khi thêm vào giỏ`);
         return false;
       }
-      const key = `${p.id}-${size || ''}`;
+      note = String(note || '').trim();
+      const max = p.max_qty || 20;
+      const key = `${p.id}-${size || ''}-${note}`;
       const found = this.items.find((i) => i.key === key);
-      if (found) found.qty = Math.min(20, found.qty + qty);
-      else this.items.push({ key, id: p.id, name: p.name, slug: p.slug, final_price: p.final_price, cover: p.cover, sizes: p.sizes || [], size: size ? String(size) : '', qty });
+      if (found) found.qty = Math.min(max, found.qty + qty);
+      else this.items.push({ key, id: p.id, name: p.name, slug: p.slug, final_price: p.final_price, cover: p.cover, sizes: p.sizes || [], size_cfg: p.size_cfg || null, max_qty: max, size: size ? String(size) : '', note, qty: Math.min(max, qty) });
       this.save();
       Alpine.store('toast').show(`Đã thêm “${p.name}” vào giỏ`, { url: '/gio-hang', label: 'Xem giỏ' });
       return true;
@@ -104,14 +106,21 @@ document.addEventListener('alpine:init', () => {
       const it = this.items.find((i) => i.key === key);
       if (!it) return;
       if (qty < 1) return this.remove(key);
-      it.qty = Math.min(20, qty);
+      it.qty = Math.min(it.max_qty || 20, qty);
       this.save();
     },
     setSize(key, size) {
       const it = this.items.find((i) => i.key === key);
       if (!it) return;
       it.size = String(size || '');
-      it.key = `${it.id}-${it.size}`;
+      it.key = `${it.id}-${it.size}-${it.note || ''}`;
+      this.save();
+    },
+    setNote(key, note) {
+      const it = this.items.find((i) => i.key === key);
+      if (!it) return;
+      it.note = String(note || '').trim().slice(0, 200);
+      it.key = `${it.id}-${it.size}-${it.note}`;
       this.save();
     },
     clear() { this.items = []; this.save(); },
@@ -124,7 +133,8 @@ document.addEventListener('alpine:init', () => {
         this.items.forEach((it) => {
           const p = map[it.id];
           if (!p || p.stock_status === 'sold_out') { it.unavailable = true; return; }
-          Object.assign(it, { url: p.url, name: p.name, final_price: p.final_price, cover: p.cover, sizes: p.sizes, unavailable: false });
+          Object.assign(it, { url: p.url, name: p.name, final_price: p.final_price, cover: p.cover, sizes: p.sizes, size_cfg: p.size_cfg, max_qty: p.max_qty, stock_note: p.stock_note, unavailable: false });
+          if (it.qty > (p.max_qty || 20)) it.qty = p.max_qty || 20;
         });
         this.save();
       } catch { /* bỏ qua lỗi mạng */ }
@@ -133,11 +143,12 @@ document.addEventListener('alpine:init', () => {
 
   // ---------------- Popup xem nhanh sản phẩm ----------------
   Alpine.store('quick', {
-    open: false, loading: false, p: null, img: 0, size: '', cache: {},
+    open: false, loading: false, p: null, img: 0, size: '', note: '', cache: {},
     async show(slug) {
       this.open = true;
       this.img = 0;
       this.size = '';
+      this.note = '';
       if (this.cache[slug]) { this.p = this.cache[slug]; return; }
       this.loading = true;
       try {
@@ -170,6 +181,38 @@ document.addEventListener('alpine:init', () => {
     onScroll() { this.scrolled = window.scrollY > 10; },
   }));
 
+  // Gợi ý sản phẩm khi gõ vào ô tìm kiếm: chờ khách dừng gõ 220ms rồi mới hỏi máy chủ, bỏ kết quả cũ về muộn
+  Alpine.data('searchSuggest', () => ({
+    q: '', items: [], groups: [], open: false, active: -1, seq: 0, timer: null, empty: false,
+    vnd,
+    get links() { return [...this.groups.map((g) => g.url), ...this.items.map((i) => i.url)]; },
+    onInput() {
+      clearTimeout(this.timer);
+      this.active = -1;
+      if (!CONFIG.searchSuggest || this.q.trim().length < 2) { this.items = []; this.groups = []; this.open = false; this.empty = false; return; }
+      this.timer = setTimeout(() => this.load(), 220);
+    },
+    async load() {
+      const mine = ++this.seq;
+      try {
+        const r = await api(`/api/search-suggest?q=${encodeURIComponent(this.q.trim())}`);
+        if (mine !== this.seq) return;
+        this.items = r.items; this.groups = r.groups;
+        this.empty = !r.items.length && !r.groups.length;
+        this.open = true;
+      } catch { this.open = false; }
+    },
+    move(d) {
+      const n = this.links.length;
+      if (!this.open || !n) return;
+      this.active = (this.active + 1 + d + n + 1) % (n + 1) - 1;   // -1 = đang ở ô gõ
+    },
+    enter(e) {
+      if (this.open && this.active >= 0 && this.links[this.active]) { e.preventDefault(); window.location.href = this.links[this.active]; }
+    },
+    close() { this.open = false; this.active = -1; },
+  }));
+
   Alpine.data('welcomePopup', () => ({
     open: false,
     init() {
@@ -181,9 +224,9 @@ document.addEventListener('alpine:init', () => {
 
   // ---------------- Popup tư vấn / đặt nhanh 1 sản phẩm ----------------
   Alpine.store('consult', {
-    open: false, mode: 'consult', p: null, size: '', qty: 1,
-    show(p, mode = 'consult', size = '', qty = 1) {
-      Object.assign(this, { open: true, mode: mode === 'order' && CONFIG.checkout ? 'order' : 'consult', p, size: size ? String(size) : '', qty });
+    open: false, mode: 'consult', p: null, size: '', qty: 1, note: '',
+    show(p, mode = 'consult', size = '', qty = 1, note = '') {
+      Object.assign(this, { open: true, mode: mode === 'order' && CONFIG.checkout ? 'order' : 'consult', p, size: size ? String(size) : '', qty, note: String(note || '') });
       window.dispatchEvent(new CustomEvent('consult-open'));
     },
   });
@@ -200,8 +243,8 @@ document.addEventListener('alpine:init', () => {
       const body = Object.fromEntries(new FormData(form).entries());
       const type = st.mode === 'order' ? 'order' : 'contact';
       if (type === 'order') {
-        if (st.p.sizes?.length && !st.size) { this.message = 'Vui lòng chọn ni tay trước khi đặt'; return; }
-        body.items = [{ id: st.p.id, qty: st.qty, size: st.size }];
+        if (st.p.sizes?.length && !st.size) { this.message = `Vui lòng chọn ${(st.p.size_cfg?.label || 'ni tay').toLowerCase()} trước khi đặt`; return; }
+        body.items = [{ id: st.p.id, qty: st.qty, size: st.size, note: st.note }];
       } else {
         body.product = [st.p?.name, st.p?.sku && `(mã ${st.p.sku})`].filter(Boolean).join(' ');
         if (!body.message) body.message = `Tôi cần tư vấn về sản phẩm ${st.p?.name || ''}`;
@@ -217,7 +260,7 @@ document.addEventListener('alpine:init', () => {
         if (type === 'order') {
           this.receipt = await buildReceipt({
             code: this.code, customer: body, total: st.p.final_price != null ? st.p.final_price * st.qty : null,
-            items: [{ name: st.p.name, size: st.size, qty: st.qty, price: st.p.final_price }],
+            items: [{ name: st.p.name, size: st.size, size_label: st.p.size_cfg?.label, note: st.note, qty: st.qty, price: st.p.final_price }],
           });
         }
         form.reset();
@@ -235,19 +278,22 @@ document.addEventListener('alpine:init', () => {
   Alpine.data('productBuy', (p) => ({
     size: p.sizes?.length === 1 ? p.sizes[0] : '',
     customSize: '',
+    note: '',
     qty: 1,
+    maxQty: p.max_qty || 20,
     // "Ni khác": khách tự nhập ni riêng
     get chosenSize() { return this.size === 'other' ? this.customSize : this.size; },
     check() {
       if (p.sizes?.length && !this.chosenSize) {
-        Alpine.store('toast').show(this.size === 'other' ? 'Vui lòng nhập ni tay của bạn' : 'Vui lòng chọn ni tay');
+        const label = (p.size_cfg?.label || 'ni tay').toLowerCase();
+        Alpine.store('toast').show(this.size === 'other' ? `Vui lòng nhập ${label} của bạn` : `Vui lòng chọn ${label}`);
         return false;
       }
       return true;
     },
-    addToCart() { if (this.check()) Alpine.store('cart').add(p, this.chosenSize, this.qty); },
-    quickOrder() { if (this.check()) Alpine.store('consult').show(p, 'order', this.chosenSize, this.qty); },
-    consult() { Alpine.store('consult').show(p, 'consult', this.chosenSize); },
+    addToCart() { if (this.check()) Alpine.store('cart').add(p, this.chosenSize, this.qty, this.note); },
+    quickOrder() { if (this.check()) Alpine.store('consult').show(p, 'order', this.chosenSize, this.qty, this.note); },
+    consult() { Alpine.store('consult').show(p, 'consult', this.chosenSize, 1, this.note); },
   }));
 
   Alpine.data('productFilters', () => ({
@@ -325,9 +371,9 @@ document.addEventListener('alpine:init', () => {
       if (type === 'order') {
         const cart = Alpine.store('cart');
         const missing = cart.items.find((i) => i.sizes?.length && !i.size);
-        if (missing) { this.message = `Vui lòng chọn ni cho “${missing.name}”`; return; }
+        if (missing) { this.message = `Vui lòng chọn ${(missing.size_cfg?.label || 'ni').toLowerCase()} cho “${missing.name}”`; return; }
         if (cart.items.some((i) => i.unavailable)) { this.message = CONFIG.cartUnavailable || ''; return; }
-        body.items = cart.items.map((i) => ({ id: i.id, qty: i.qty, size: i.size }));
+        body.items = cart.items.map((i) => ({ id: i.id, qty: i.qty, size: i.size, note: i.note || '' }));
       }
       this.loading = true;
       try {
@@ -340,7 +386,7 @@ document.addEventListener('alpine:init', () => {
           // Chụp thông tin giỏ trước khi xóa để vẽ ảnh đơn hàng
           this.receipt = await buildReceipt({
             code: this.code, customer: body, total: cart.total,
-            items: cart.items.map((i) => ({ name: i.name, size: i.size, qty: i.qty, price: i.final_price })),
+            items: cart.items.map((i) => ({ name: i.name, size: i.size, size_label: i.size_cfg?.label, note: i.note, qty: i.qty, price: i.final_price })),
           });
           cart.clear();
         }

@@ -10,7 +10,7 @@ let ctx;
 let owner;
 let pack;
 
-const PRIVATE = ['sessions', 'audit_logs', 'not_found_log', 'inquiries', 'customers', 'users'];
+const PRIVATE = ['sessions', 'audit_logs', 'not_found_log', 'stock_log', 'inquiries', 'customers', 'users'];
 const countOf = (db, t) => db.prepare(`SELECT COUNT(*) FROM ${t}`).pluck().get();
 
 before(async () => {
@@ -63,7 +63,9 @@ test('nạp gói vào database đã có dữ liệu bị từ chối nếu khôn
 
 test('gói đang lưu trong git cũng sạch (đây là thứ được đưa lên GitHub)', () => {
   const db = new Database(path.join(REPO_PACK, 'content.sqlite'), { readonly: true });
-  for (const t of PRIVATE) assert.equal(countOf(db, t), 0, `bảng ${t} trong gói git phải rỗng`);
+  // Gói xuất từ trước khi có bảng mới thì chưa có bảng đó: bỏ qua bảng không tồn tại
+  const has = (t) => !!db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?").get(t);
+  for (const t of PRIVATE.filter(has)) assert.equal(countOf(db, t), 0, `bảng ${t} trong gói git phải rỗng`);
   assert.equal(db.prepare("SELECT COUNT(*) FROM settings WHERE key = 'mail'").pluck().get(), 0);
   db.close();
   const raw = fs.readFileSync(path.join(REPO_PACK, 'content.sqlite'));

@@ -154,6 +154,20 @@ export const SETTINGS_SCHEMA = [
       { name: 'welcome_popup_image', label: 'Ảnh popup chào mừng', type: 'image' },
       { name: 'welcome_popup_delay', label: 'Hiện popup sau (giây)', type: 'number', default: 5 },
       { name: 'announcement', label: 'Thanh thông báo đầu trang', type: 'text', default: 'Miễn phí vận chuyển toàn quốc · Kiểm định 100% ngọc tự nhiên', help: 'Để trống để ẩn' },
+      { name: 'search_suggest', label: 'Gợi ý khi gõ ô tìm kiếm', type: 'toggle', default: true, help: 'Hiện danh sách sản phẩm (kèm ảnh, giá) phù hợp ngay khi khách đang gõ' },
+      { name: 'search_suggest_limit', label: 'Số gợi ý tối đa', type: 'number', default: 6, help: 'Từ 3 đến 10' },
+      { name: 'inventory_enabled', label: 'Bật quản lý kho', type: 'toggle', default: false, help: 'Không bắt buộc. Bật thì trong từng sản phẩm có ô “Theo dõi kho”; chỉ sản phẩm được tick mới bị trừ kho, các sản phẩm khác hoạt động như cũ. Hết hàng thì sản phẩm tự hiện “Đã bán”.' },
+      { name: 'inventory_deduct_at', label: 'Trừ kho khi đơn chuyển sang', type: 'select', default: 'confirmed', options: [
+        { value: 'new', label: 'Ngay khi có đơn (Mới)' }, { value: 'confirmed', label: 'Đã xác nhận (khuyên dùng)' },
+        { value: 'shipping', label: 'Đang giao hàng' }, { value: 'completed', label: 'Hoàn thành' },
+      ], help: 'Đơn lùi về trạng thái trước mốc này, bị hủy hoặc bị xóa thì kho được hoàn lại tự động.' },
+      { name: 'inventory_block_over', label: 'Không cho khách đặt quá số lượng còn', type: 'toggle', default: true },
+      { name: 'inventory_display', label: 'Hiện số lượng còn cho khách', type: 'select', default: 'low', options: [
+        { value: 'none', label: 'Không hiện số lượng' }, { value: 'low', label: 'Chỉ hiện khi sắp hết' }, { value: 'always', label: 'Luôn hiện' },
+      ] },
+      { name: 'inventory_low', label: 'Coi là “sắp hết” khi còn từ', type: 'number', default: 3, help: 'Cũng dùng để cảnh báo trong trang Sản phẩm của admin' },
+      { name: 'inventory_text_in', label: 'Chữ khi còn hàng', type: 'text', default: 'Còn {n} sản phẩm', help: '{n} sẽ được thay bằng số lượng' },
+      { name: 'inventory_text_low', label: 'Chữ khi sắp hết', type: 'text', default: 'Sắp hết hàng, chỉ còn {n}', help: '{n} sẽ được thay bằng số lượng' },
     ],
   },
   {
@@ -776,6 +790,8 @@ sectionize('features', [
   { key: 'pages', label: 'Bật/tắt trang và tính năng', hint: 'Đặt hàng, custom, Blog, Gallery, Hướng dẫn size, hiện giá, nút liên hệ nổi', fields: ['checkout', 'custom_request', 'blog', 'gallery', 'size_guide', 'show_prices', 'floating_contact'] },
   { key: 'popup', label: 'Popup chào mừng', hint: 'Nội dung và thời điểm hiện popup khi khách vào trang', toggle: 'welcome_popup', fields: ['welcome_popup', 'welcome_popup_title', 'welcome_popup_content', 'welcome_popup_image', 'welcome_popup_delay'] },
   { key: 'announce', label: 'Thanh thông báo đầu trang', hint: 'Dòng chữ hiện trên cùng website', fields: ['announcement'] },
+  { key: 'search', label: 'Gợi ý tìm kiếm', hint: 'Danh sách gợi ý khi khách gõ vào ô tìm kiếm', toggle: 'search_suggest', fields: ['search_suggest', 'search_suggest_limit'] },
+  { key: 'inventory', label: 'Quản lý kho (tùy chọn)', hint: 'Theo dõi số lượng tồn từng sản phẩm, tự trừ kho theo đơn, hiện “còn N” cho khách', toggle: 'inventory_enabled', fields: ['inventory_enabled', 'inventory_deduct_at', 'inventory_block_over', 'inventory_display', 'inventory_low', 'inventory_text_in', 'inventory_text_low'] },
 ]);
 
 sectionize('about', [

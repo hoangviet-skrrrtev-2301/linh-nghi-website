@@ -47,11 +47,27 @@ export function safeJson(value, fallback) {
   }
 }
 
-export function inquiryCode(type) {
+// Ngày hôm nay theo giờ Việt Nam (YYYY-MM-DD)
+export const vnToday = () => new Date(Date.now() + 7 * 36e5).toISOString().slice(0, 10);
+
+// Ngày (giờ Việt Nam) do admin chọn khi nhập lại dữ liệu cũ → thời điểm lưu trong database (UTC, "YYYY-MM-DD HH:MM:SS").
+// Hôm nay hoặc để trống: dùng đúng giờ hiện tại (trả null để SQL tự lấy datetime('now')). Ngày khác: 12:00 trưa giờ Việt Nam.
+// Ngày sai định dạng, không có thật, ở tương lai hoặc trước năm 2000 thì báo lỗi 422.
+export function vnDateToUtc(value, field = 'date') {
+  const d = String(value ?? '').trim();
+  if (!d) return null;
+  const ok = /^\d{4}-\d{2}-\d{2}$/.test(d) && !Number.isNaN(Date.parse(d + 'T00:00:00Z')) && new Date(d + 'T00:00:00Z').toISOString().slice(0, 10) === d;
+  if (!ok) throw new HttpError(422, 'Ngày không hợp lệ', { [field]: 'Ngày không hợp lệ' });
+  if (d > vnToday()) throw new HttpError(422, 'Không chọn ngày ở tương lai', { [field]: 'Không chọn ngày ở tương lai' });
+  if (d < '2000-01-01') throw new HttpError(422, 'Ngày quá xa', { [field]: 'Ngày quá xa' });
+  return d === vnToday() ? null : `${d} 05:00:00`;
+}
+
+export function inquiryCode(type, date) {
   const prefix = { order: 'DH', custom: 'CT', contact: 'LH' }[type] || 'YC';
-  const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh', year: '2-digit', month: '2-digit', day: '2-digit' })
-    .format(new Date()).replace(/-/g, '');
-  return `${prefix}${date}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+  const day = /^\d{4}-\d{2}-\d{2}$/.test(date || '') ? date : vnToday();
+  const code6 = day.slice(2).replace(/-/g, '');
+  return `${prefix}${code6}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
 }
 
 export const toInt = (v, def = null) => {
@@ -73,3 +89,9 @@ export class HttpError extends Error {
     this.details = details;
   }
 }
+
+// Ngày (giờ Việt Nam) của một thời điểm lưu trong database ("YYYY-MM-DD HH:MM:SS" UTC); rỗng nếu không có
+export const vnDayOf = (ts) => {
+  const t = Date.parse(String(ts || '').replace(' ', 'T') + 'Z');
+  return Number.isNaN(t) ? '' : new Date(t + 7 * 36e5).toISOString().slice(0, 10);
+};

@@ -33,13 +33,17 @@
                   <button type="button" class="p-1 text-muted hover:text-red-600" @click="$store.cart.remove(it.key)" aria-label="Xóa">{{ icon('trash', 'w-4 h-4') }}</button>
                 </div>
                 <p class="mt-0.5 text-xs text-red-600" x-show="it.unavailable">{{ s.forms.cart_unavailable }}</p>
+                <p class="mt-0.5 text-xs text-amber-700" x-show="it.stock_note && !it.unavailable" x-text="it.stock_note"></p>
+                <template x-if="it.size_cfg && it.size_cfg.info_label">
+                  <input class="input mt-2 !py-1.5 text-sm" maxlength="200" :value="it.note" :placeholder="it.size_cfg.info_label" :aria-label="it.size_cfg.info_label" @change="$store.cart.setNote(it.key, $event.target.value)">
+                </template>
                 <div class="mt-auto flex flex-wrap items-center justify-between gap-3 pt-3">
                   <div class="flex items-center gap-3">
                     <template x-if="it.sizes && it.sizes.length">
-                      <select class="input !w-auto !py-1.5 text-sm" :value="it.size" @change="$store.cart.setSize(it.key, $event.target.value)" aria-label="Ni tay">
-                        <option value="">Chọn ni</option>
-                        <template x-if="it.size && !it.sizes.map(String).includes(String(it.size))"><option :value="it.size" selected x-text="'Ni riêng: ' + it.size"></option></template>
-                        <template x-for="sz in it.sizes"><option :value="sz" x-text="'Ni ' + sz" :selected="String(sz) === String(it.size)"></option></template>
+                      <select class="input !w-auto !py-1.5 text-sm" :value="it.size" @change="$store.cart.setSize(it.key, $event.target.value)" :aria-label="it.size_cfg ? it.size_cfg.label : 'Ni tay'">
+                        <option value="" x-text="'Chọn ' + (it.size_cfg ? it.size_cfg.label.toLowerCase() : 'ni')"></option>
+                        <template x-if="it.size && !it.sizes.map(String).includes(String(it.size))"><option :value="it.size" selected x-text="(it.size_cfg ? it.size_cfg.label : 'Ni') + ' riêng: ' + it.size"></option></template>
+                        <template x-for="sz in it.sizes"><option :value="sz" x-text="(it.size_cfg ? it.size_cfg.label : 'Ni') + ' ' + sz" :selected="String(sz) === String(it.size)"></option></template>
                       </select>
                     </template>
                     <div class="flex items-center rounded-md border border-line">
