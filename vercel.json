@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "",
+  "installCommand": "npm install --omit=dev",
+  "rewrites": [{ "source": "/(.*)", "destination": "/api" }],
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 30,
+      "memory": 1024,
+      "includeFiles": "{backend,frontend,admin}/**,database/migrations/**,database/seeds/**,database/content-pack/**,node_modules/alpinejs/dist/**,node_modules/@alpinejs/*/dist/**,node_modules/swiper/**,node_modules/gsap/dist/**,node_modules/photoswipe/dist/**,node_modules/quill/dist/**"
+    }
+  }
+}

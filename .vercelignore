@@ -1,0 +1,10 @@
+.env
+.env.*
+database/data
+database/backups
+database/uploads
+tests
+docs
+*.md
+chay-thu.*
+deploy
