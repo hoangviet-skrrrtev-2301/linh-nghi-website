@@ -471,31 +471,124 @@ async function initLightbox() {
   });
 }
 
-// Gallery trang chủ lướt phải → trái: nhân đôi dãy ảnh để chạy vòng liên tục.
+// Gallery băng chuyền: luôn cuộn / vuốt / kéo chuột được. Có data-marquee thì tự chạy liên tục (vòng lặp liền mạch
+// bằng cách nhân bản dãy ảnh); rê chuột, chạm hoặc kéo thì dừng rồi tự chạy lại. Hướng theo data-dir (rtl | ltr).
 // Bản sao bỏ thuộc tính Alpine / PhotoSwipe, khi bấm thì chuyển về ảnh gốc tương ứng.
-function initMarquee() {
-  document.querySelectorAll('[data-marquee]').forEach((box) => {
+function initCarousels() {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('[data-gallery-carousel]').forEach((box) => {
     const track = box.querySelector('.gallery-marquee-track');
     const group = track.querySelector('.gallery-group');
     const originals = [...group.children];
-    if (originals.length < 2) return;
-    const copy = group.cloneNode(true);
-    copy.setAttribute('aria-hidden', 'true');
-    [...copy.children].forEach((clone, i) => {
-      [...clone.attributes].forEach((a) => {
-        if (a.name.startsWith('@') || a.name.startsWith('x-') || a.name.startsWith('data-pswp')) clone.removeAttribute(a.name);
-      });
-      clone.tabIndex = -1;
-      clone.dataset.cloneOf = i;
+    const auto = box.hasAttribute('data-marquee') && !reduce && originals.length > 1;
+    const dir = box.dataset.dir === 'ltr' ? -1 : 1; // 1: nội dung chạy sang trái (cuộn tăng dần)
+    const seconds = Math.max(5, parseFloat(getComputedStyle(box).getPropertyValue('--marquee-time')) || 45);
+
+    let W = 0; // chiều rộng một dãy ảnh
+    let m = 0; // số dãy nhân bản mỗi bên
+    let pos = 0;
+    let dragging = false;
+    let moved = false;
+    let hover = false;
+    let inView = true;
+    let resumeAt = 0;
+    let last = 0;
+
+    const build = () => {
+      track.querySelectorAll('[data-clone-group]').forEach((g) => g.remove());
+      W = group.offsetWidth;
+      if (!auto || !W) return;
+      m = Math.max(1, Math.ceil(box.clientWidth / W));
+      for (let i = 0; i < m * 2; i++) {
+        const copy = group.cloneNode(true);
+        copy.dataset.cloneGroup = '1';
+        copy.setAttribute('aria-hidden', 'true');
+        [...copy.children].forEach((clone, idx) => {
+          [...clone.attributes].forEach((a) => {
+            if (a.name.startsWith('@') || a.name.startsWith('x-') || a.name.startsWith('data-pswp')) clone.removeAttribute(a.name);
+          });
+          clone.querySelectorAll('a').forEach((a) => { a.tabIndex = -1; });
+          clone.dataset.cloneOf = idx;
+        });
+        track.appendChild(copy);
+      }
+      pos = box.scrollLeft = m * W; // bắt đầu ở dãy giữa để kéo được cả hai phía
+    };
+    // Giữ vị trí trong dãy giữa: các dãy giống hệt nhau nên nhảy một số nguyên dãy không thấy được
+    const wrap = () => {
+      if (!auto || !W) return;
+      const rel = (((pos - m * W) % W) + W) % W;
+      const next = m * W + rel;
+      if (Math.abs(next - pos) > 0.5) { pos = next; box.scrollLeft = pos; }
+    };
+    const pause = (ms) => { resumeAt = Math.max(resumeAt, performance.now() + ms); };
+
+    build();
+    let rt;
+    window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { const keep = W ? (pos - m * W) / W : 0; build(); if (auto && W) { pos = box.scrollLeft = m * W + keep * W; } }, 200); });
+
+    // Người dùng tự cuộn / vuốt: đồng bộ vị trí, hoãn tự chạy
+    let idle;
+    box.addEventListener('scroll', () => {
+      if (Math.abs(box.scrollLeft - pos) > 2) {
+        pos = box.scrollLeft;
+        pause(2500);
+        clearTimeout(idle);
+        idle = setTimeout(wrap, 250);
+      }
+    }, { passive: true });
+    box.addEventListener('wheel', () => pause(2500), { passive: true });
+    box.addEventListener('keydown', () => pause(3000));
+
+    // Kéo bằng chuột (cảm ứng đã có vuốt sẵn của trình duyệt)
+    let startX = 0;
+    let startScroll = 0;
+    box.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'mouse' || e.button !== 0) { pause(2500); return; }
+      dragging = true; moved = false; startX = e.clientX; startScroll = box.scrollLeft;
     });
-    track.appendChild(copy);
+    box.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - startX;
+      if (!moved && Math.abs(dx) > 5) { moved = true; box.classList.add('is-dragging'); try { box.setPointerCapture(e.pointerId); } catch { /* bỏ qua */ } }
+      if (moved) { box.scrollLeft = startScroll - dx; pos = box.scrollLeft; }
+    });
+    const endDrag = () => {
+      if (!dragging) return;
+      dragging = false; box.classList.remove('is-dragging');
+      pause(1200);
+      clearTimeout(idle);
+      idle = setTimeout(wrap, 250);
+    };
+    box.addEventListener('pointerup', endDrag);
+    box.addEventListener('pointercancel', endDrag);
+    // Vừa kéo xong thì không coi là bấm vào ảnh
+    box.addEventListener('click', (e) => { if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; } }, true);
+    box.addEventListener('dragstart', (e) => e.preventDefault());
+    box.addEventListener('touchend', () => pause(2500), { passive: true });
+
     track.addEventListener('click', (e) => {
       const clone = e.target.closest('[data-clone-of]');
       if (!clone) return;
       e.preventDefault();
       originals[Number(clone.dataset.cloneOf)]?.click();
     });
-    box.classList.add('is-running');
+
+    if (!auto) return;
+    box.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') hover = true; });
+    box.addEventListener('pointerleave', () => { hover = false; });
+    if ('IntersectionObserver' in window) new IntersectionObserver((es) => { inView = es[es.length - 1].isIntersecting; }).observe(box);
+    const step = (now) => {
+      requestAnimationFrame(step);
+      const dt = Math.min(0.1, (now - last) / 1000);
+      last = now;
+      if (!W || dragging || hover || !inView || now < resumeAt || document.hidden) return;
+      pos += (dir * W / seconds) * dt;
+      const rel = pos - m * W;
+      if (rel >= W || rel < 0) pos = m * W + (((rel % W) + W) % W);
+      box.scrollLeft = pos;
+    };
+    requestAnimationFrame((now) => { last = now; step(now); });
   });
 }
 
@@ -547,7 +640,7 @@ function ready(fn) {
 ready(() => {
   initReveal();
   initLightbox();
-  initMarquee();
+  initCarousels();
   initToc();
   // Slider chạy khi trình duyệt rảnh, không chen vào lúc hiển thị nội dung đầu trang
   (window.requestIdleCallback || ((fn) => setTimeout(fn, 200)))(initSwipers);

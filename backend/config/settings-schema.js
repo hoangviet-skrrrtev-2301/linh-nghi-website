@@ -1,5 +1,6 @@
 import { TAGS, TAG_BG_OPTIONS, TAG_PATTERNS } from '../lib/tags.js';
 import { DEFAULT_POLICY_PAGES } from '../lib/policy-defaults.js';
+import { GALLERY_LAYOUTS, GALLERY_ROWS, GALLERY_COLS, GALLERY_COLS_MOBILE, GALLERY_DIRECTIONS, GALLERY_RATIOS } from '../lib/gallery-view.js';
 
 // ==========================================================
 // SCHEMA CẤU HÌNH WEBSITE
@@ -217,7 +218,7 @@ export const SETTINGS_SCHEMA = [
       { key: 'fengshui', label: 'Ý nghĩa ngọc & phong thủy', hint: 'Tiêu đề, ảnh và các ý nghĩa', toggle: 'show_fengshui' },
       { key: 'size', label: 'Bảng số đo ni', hint: 'Tiêu đề và công cụ tính ni nhanh' },
       { key: 'custom', label: 'Thiết kế riêng (custom)', hint: 'Tiêu đề, mô tả và ảnh khối custom' },
-      { key: 'gallery', label: 'Gallery', hint: 'Số ảnh, tự lướt và tốc độ', toggle: 'show_gallery' },
+      { key: 'gallery', label: 'Gallery', hint: 'Số ảnh, kiểu hiển thị (băng chuyền, lưới, xếp gạch), số dòng / cột, chuyển động', toggle: 'show_gallery' },
       { key: 'testimonials', label: 'Cảm nhận khách hàng', hint: 'Lời cảm ơn, đánh giá của khách' },
       { key: 'blog', label: 'Bài viết mới (Blog)', hint: 'Bật/tắt khối bài viết ở trang chủ', toggle: 'show_blog' },
     ],
@@ -322,8 +323,14 @@ export const SETTINGS_SCHEMA = [
       { name: 'custom_image', section: 'custom', label: 'Ảnh khối thiết kế riêng', type: 'image' },
       { name: 'show_gallery', section: 'gallery', label: 'Hiện khối Gallery trên trang chủ', type: 'toggle', default: true },
       { name: 'gallery_limit', section: 'gallery', label: 'Số ảnh tối đa ở khối Gallery trang chủ', type: 'number', default: 24, help: 'Lấy từ các ảnh đang bật "Hiện ở Gallery tổng" trong Admin › Gallery.' },
-      { name: 'gallery_autoscroll', section: 'gallery', label: 'Slider Gallery tự lướt từ phải sang trái', type: 'toggle', default: true, help: 'Gallery hiện tối đa 8 ảnh (2 hàng × 4 cột). Nhiều hơn 8 ảnh thì thành slider, áp dụng cho cả trang chủ và trang Gallery. Tắt mục này thì slider không tự chạy, khách vuốt tay.' },
-      { name: 'gallery_scroll_seconds', section: 'gallery', label: 'Thời gian lướt hết một vòng (giây)', type: 'number', default: 45, help: 'Số càng lớn thì lướt càng chậm.' },
+      { name: 'gallery_layout', section: 'gallery', label: 'Kiểu hiển thị Gallery', type: 'select', default: 'auto', options: GALLERY_LAYOUTS, help: 'Áp dụng cho khối Gallery ở trang chủ; trang Gallery dùng cùng kiểu này trừ khi bạn chọn riêng ở Cài đặt › Trang Sản phẩm / Gallery / Blog. "Tự động" giữ cách cũ: tối đa số ô nhìn thấy (số dòng × số cột) thì hiện lưới, nhiều hơn thì thành băng chuyền.' },
+      { name: 'gallery_rows', section: 'gallery', label: 'Số dòng', type: 'select', default: '2', options: GALLERY_ROWS, help: 'Dùng cho băng chuyền (số dòng ảnh trượt cùng nhau) và để "Tự động" tính số ô nhìn thấy.' },
+      { name: 'gallery_cols', section: 'gallery', label: 'Số cột trên máy tính', type: 'select', default: '4', options: GALLERY_COLS },
+      { name: 'gallery_cols_mobile', section: 'gallery', label: 'Số cột trên điện thoại', type: 'select', default: '2', options: GALLERY_COLS_MOBILE },
+      { name: 'gallery_ratio', section: 'gallery', label: 'Tỷ lệ ảnh', type: 'select', default: 'square', options: GALLERY_RATIOS, help: 'Không áp dụng cho kiểu xếp gạch (giữ tỷ lệ gốc của ảnh).' },
+      { name: 'gallery_autoscroll', section: 'gallery', label: 'Băng chuyền tự chuyển động', type: 'toggle', default: true, help: 'Chỉ áp dụng cho kiểu băng chuyền. Bật: ảnh tự trượt liên tục, rê chuột hoặc chạm vào thì dừng, khách vẫn kéo / vuốt để xem tùy ý. Tắt: ảnh đứng yên, khách kéo / vuốt tay. Khách bật chế độ giảm chuyển động trên thiết bị thì luôn đứng yên.' },
+      { name: 'gallery_scroll_seconds', section: 'gallery', label: 'Thời gian chạy hết một vòng (giây)', type: 'number', default: 45, help: 'Số càng lớn thì trượt càng chậm (5–600).' },
+      { name: 'gallery_direction', section: 'gallery', label: 'Hướng chuyển động', type: 'select', default: 'rtl', options: GALLERY_DIRECTIONS },
       { name: 'show_blog', section: 'blog', label: 'Hiện khối bài viết mới trên trang chủ', type: 'toggle', default: true },
       {
         name: 'testimonials', section: 'testimonials', collapsible: true, itemTitle: 'name', label: 'Cảm nhận khách hàng', type: 'list',
@@ -541,7 +548,7 @@ export const SETTINGS_SCHEMA = [
     description: 'Nội dung hiển thị và cách hoạt động của 3 trang danh sách. Tiêu đề và mô tả ở đây hiện ngay đầu trang. Cách trang hiện trên Google / Facebook chỉnh riêng ở nhóm "SEO Google & chia sẻ".',
     sections: [
       { key: 'products', label: 'Trang Sản phẩm', hint: 'Tiêu đề, số sản phẩm mỗi trang, khoảng giá, nhãn Mới, hướng dẫn bảo quản' },
-      { key: 'gallery', label: 'Trang Gallery', hint: 'Tiêu đề và mô tả' },
+      { key: 'gallery', label: 'Trang Gallery', hint: 'Tiêu đề, mô tả và kiểu hiển thị riêng (nếu muốn khác trang chủ)' },
       { key: 'blog', label: 'Trang Blog', hint: 'Tiêu đề, phân trang, mục lục, gợi ý bài viết, banner dọc' },
       { key: 'errors', label: 'Trang lỗi 404', hint: 'Nội dung hiện khi khách vào địa chỉ không tồn tại hoặc trang bị lỗi' },
     ],
@@ -568,6 +575,14 @@ export const SETTINGS_SCHEMA = [
       { name: 'product_care', section: 'products', label: 'Hướng dẫn bảo quản (hiện ở mọi trang chi tiết sản phẩm)', type: 'richtext', default: '<ul><li>Tránh va đập mạnh, tháo vòng khi chơi thể thao hoặc làm việc nặng.</li><li>Không để vòng tiếp xúc với hóa chất, nước hoa, chất tẩy rửa.</li><li>Lau bằng khăn mềm và nước sạch, để khô tự nhiên.</li><li>Cất riêng trong túi nhung khi không đeo.</li></ul>' },
       { name: 'gallery_title', section: 'gallery', label: 'Tiêu đề trang Gallery', type: 'text', default: 'Gallery', help: 'Hiện ở đầu trang và cũng là tiêu đề trên Google, trừ khi bạn nhập tiêu đề riêng ở "SEO Google & chia sẻ".' },
       { name: 'gallery_intro', section: 'gallery', label: 'Mô tả ngắn trang Gallery', type: 'textarea', default: 'Những mẫu vòng đã đồng hành cùng khách hàng của shop.' },
+      { name: 'gallery_page_layout', section: 'gallery', label: 'Kiểu hiển thị ở trang Gallery', type: 'select', default: 'same', options: [{ value: 'same', label: 'Giống khối Gallery ở trang chủ (Cài đặt › Trang chủ › Gallery)' }, ...GALLERY_LAYOUTS], help: 'Chọn kiểu khác "Giống trang chủ" thì các mục bên dưới mới có tác dụng.' },
+      { name: 'gallery_page_rows', section: 'gallery', label: 'Số dòng (trang Gallery)', type: 'select', default: '2', options: GALLERY_ROWS },
+      { name: 'gallery_page_cols', section: 'gallery', label: 'Số cột trên máy tính (trang Gallery)', type: 'select', default: '4', options: GALLERY_COLS },
+      { name: 'gallery_page_cols_mobile', section: 'gallery', label: 'Số cột trên điện thoại (trang Gallery)', type: 'select', default: '2', options: GALLERY_COLS_MOBILE },
+      { name: 'gallery_page_ratio', section: 'gallery', label: 'Tỷ lệ ảnh (trang Gallery)', type: 'select', default: 'square', options: GALLERY_RATIOS },
+      { name: 'gallery_page_autoscroll', section: 'gallery', label: 'Băng chuyền tự chuyển động (trang Gallery)', type: 'toggle', default: true },
+      { name: 'gallery_page_scroll_seconds', section: 'gallery', label: 'Thời gian chạy hết một vòng, giây (trang Gallery)', type: 'number', default: 45 },
+      { name: 'gallery_page_direction', section: 'gallery', label: 'Hướng chuyển động (trang Gallery)', type: 'select', default: 'rtl', options: GALLERY_DIRECTIONS },
       { name: 'blog_title', section: 'blog', label: 'Tiêu đề trang Blog', type: 'text', default: 'Góc chia sẻ', help: 'Hiện ở đầu trang và cũng là tiêu đề trên Google, trừ khi bạn nhập tiêu đề riêng ở "SEO Google & chia sẻ".' },
       { name: 'blog_intro', section: 'blog', label: 'Mô tả ngắn trang Blog', type: 'textarea', default: 'Kiến thức về ngọc, cách chọn và bảo quản vòng.' },
       { name: 'blog_per_page', section: 'blog', label: 'Số bài viết mỗi trang Blog', type: 'number', default: 9 },

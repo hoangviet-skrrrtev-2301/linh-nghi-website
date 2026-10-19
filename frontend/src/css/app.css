@@ -69,23 +69,32 @@
 @layer components {
   .container-x { @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8; }
 
-  /* Gallery tự lướt phải → trái. Chưa có JS: cho cuộn ngang bằng tay */
-  /* 2 hàng; điện thoại thấy 2 cột, từ md thấy 4 cột */
-  .gallery-marquee { @apply overflow-x-auto; container-type: inline-size; --gap: 12px; --cols: 2; }
-  @media (min-width: 768px) { .gallery-marquee { --gap: 16px; --cols: 4; } }
+  /* Gallery băng chuyền: cuộn ngang bằng tay / vuốt / kéo chuột; tự chạy do JS (initCarousels trong app.js).
+     --rows số dòng, --cols-sm / --cols-md số cột nhìn thấy (điện thoại / từ md). Chưa có JS vẫn cuộn tay được. */
+  .gallery-marquee {
+    @apply overflow-x-auto; container-type: inline-size; --gap: 12px; --cols: var(--cols-sm, 2);
+    scrollbar-width: none; overscroll-behavior-x: contain; cursor: grab;
+  }
+  .gallery-marquee::-webkit-scrollbar { display: none; }
+  .gallery-marquee.is-dragging { cursor: grabbing; user-select: none; }
+  .gallery-marquee:focus-visible { outline: 2px solid var(--c-primary); outline-offset: 2px; }
+  @media (min-width: 768px) { .gallery-marquee { --gap: 16px; --cols: var(--cols-md, 4); } }
   .gallery-marquee-track { @apply flex w-max; }
   .gallery-group {
-    display: grid; grid-template-rows: repeat(2, auto); grid-auto-flow: column;
+    display: grid; grid-template-rows: repeat(var(--rows, 2), auto); grid-auto-flow: column;
     grid-auto-columns: calc((100cqw - (var(--cols) - 1) * var(--gap)) / var(--cols));
     gap: var(--gap); padding-right: var(--gap);
   }
-  .gallery-marquee.is-running { @apply overflow-hidden; }
-  .gallery-marquee.is-running .gallery-marquee-track { animation: marquee-rtl var(--marquee-time, 45s) linear infinite; }
-  .gallery-marquee.is-running:hover .gallery-marquee-track { animation-play-state: paused; }
-  @keyframes marquee-rtl { to { transform: translateX(-50%); } }
-  @media (prefers-reduced-motion: reduce) {
-    .gallery-marquee.is-running { @apply overflow-x-auto; }
-    .gallery-marquee.is-running .gallery-marquee-track { animation: none !important; }
+  .gallery-marquee img { -webkit-user-drag: none; user-select: none; }
+
+  /* Gallery lưới tĩnh và xếp gạch */
+  .gallery-grid { display: grid; gap: 12px; grid-template-columns: repeat(var(--cols-sm, 2), minmax(0, 1fr)); }
+  .gallery-masonry { column-count: var(--cols-sm, 2); column-gap: 12px; }
+  .gallery-masonry > * { break-inside: avoid; margin-bottom: 12px; }
+  @media (min-width: 768px) {
+    .gallery-grid { gap: 16px; grid-template-columns: repeat(var(--cols-md, 4), minmax(0, 1fr)); }
+    .gallery-masonry { column-count: var(--cols-md, 4); column-gap: 16px; }
+    .gallery-masonry > * { margin-bottom: 16px; }
   }
 
   .eyebrow { @apply text-[11px] font-semibold uppercase tracking-[0.22em] text-accent; }

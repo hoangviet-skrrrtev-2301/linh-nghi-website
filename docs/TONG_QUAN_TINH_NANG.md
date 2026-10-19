@@ -54,7 +54,7 @@ Quy trình xử lý một đơn:
 ## 4. Nội dung
 
 - **Blog:** viết bài bằng trình soạn thảo (bảng, ảnh, liên kết có tùy chọn mở tab mới), chuyên mục, hẹn giờ đăng, **tác giả** (Admin › Tác giả blog), SEO riêng từng bài.
-- **Gallery:** ảnh 2 hàng × 4 cột, nhiều hơn thì thành slider; chia album; ảnh gắn sản phẩm thì bấm vào mở xem nhanh.
+- **Gallery:** chọn kiểu băng chuyền (tự chạy hoặc đứng yên, khách kéo / vuốt được), lưới tĩnh hoặc xếp gạch, 1–4 dòng, 2–6 cột; chia album; ảnh gắn sản phẩm thì bấm vào mở xem nhanh.
 - **Thư viện ảnh:** nơi chứa mọi ảnh, chia thư mục; ảnh tự xoay, xóa thông tin vị trí, nén WebP. Nhớ nhập mô tả ảnh (alt).
 - **Cài đặt website** (chia 5 mục có mô tả): Thông tin chung & menu · Nội dung từng trang · Giao diện · Tối ưu SEO · Email & hệ thống. **Mọi chữ, ảnh, lựa chọn hiển thị cho khách đều sửa được ở đây**, không cần sửa code.
 

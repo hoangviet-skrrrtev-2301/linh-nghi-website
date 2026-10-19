@@ -1,24 +1,30 @@
 {% from "partials/icons.njk" import icon %}
-{# Lưới Gallery 2 hàng × 4 cột (điện thoại 2 cột). Tối đa 8 ảnh hiện cùng lúc; nhiều hơn thì thành slider
-   (tự lướt phải → trái nếu bật trong cài đặt, tắt thì vuốt tay). Dùng biến galleryItems #}
-{% macro tile(g) %}
+{# Gallery theo cấu hình galleryCfg (backend/lib/gallery-view.js): băng chuyền (kéo / vuốt được, tùy chọn tự chạy), lưới tĩnh, xếp gạch.
+   Dùng biến galleryItems + galleryCfg #}
+{% macro tile(g, cfg) %}
 {% from "partials/icons.njk" import icon %}
 {% if g.product_slug %}<a href="{{ g.product_url }}" @click.prevent="$store.quick.show('{{ g.product_slug }}')"{% else %}<a href="{{ g.image.lg }}" data-pswp-width="{{ g.image.width }}" data-pswp-height="{{ g.image.height }}" data-caption="{{ g.title }}{{ ' – ' + g.caption if g.caption }}"{% endif %}
-  class="group relative block aspect-square overflow-hidden rounded-md bg-ink/5">
-  <img src="{{ g.image.sm }}" alt="{{ g.image.alt or g.title }}" width="{{ g.image.width }}" height="{{ g.image.height }}" loading="lazy" decoding="async" class="h-full w-full object-cover transition duration-700 group-hover:scale-105">
+  class="group relative block overflow-hidden rounded-md bg-ink/5"{% if cfg.ratioCss %} style="aspect-ratio: {{ cfg.ratioCss }}"{% endif %}>
+  <img src="{{ g.image.sm }}" alt="{{ g.image.alt or g.title }}" width="{{ g.image.width }}" height="{{ g.image.height }}" loading="lazy" decoding="async" draggable="false" class="{{ 'h-full w-full object-cover' if cfg.ratioCss else 'h-auto w-full' }} transition duration-700 group-hover:scale-105">
   <span class="absolute inset-0 flex items-center justify-center bg-ink/0 text-white opacity-0 transition group-hover:bg-ink/30 group-hover:opacity-100">{{ icon('zoom', 'w-7 h-7') }}</span>
   {% if g.title %}<span class="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/60 to-transparent px-3 pb-2 pt-6 text-xs text-white opacity-0 transition group-hover:opacity-100">{{ g.title }}</span>{% endif %}
 </a>
 {% endmacro %}
 
-{% if galleryItems.length > 8 %}
-<div class="gallery-marquee" {% if s.home.gallery_autoscroll %}data-marquee{% endif %} style="--marquee-time: {{ s.home.gallery_scroll_seconds or 45 }}s">
+{% set cfg = galleryCfg %}
+{% if cfg.layout == 'carousel' %}
+<div class="gallery-marquee" data-gallery-carousel {% if cfg.auto %}data-marquee data-dir="{{ 'rtl' if cfg.rtl else 'ltr' }}"{% endif %} tabindex="0" role="region" aria-label="{{ s.pages.gallery_title }}"
+  style="--marquee-time: {{ cfg.seconds }}s; --rows: {{ cfg.rows }}; --cols-md: {{ cfg.cols }}; --cols-sm: {{ cfg.colsSm }}">
   <div class="gallery-marquee-track" data-pswp>
-    <div class="gallery-group">{% for g in galleryItems %}{{ tile(g) }}{% endfor %}</div>
+    <div class="gallery-group">{% for g in galleryItems %}{{ tile(g, cfg) }}{% endfor %}</div>
   </div>
 </div>
+{% elif cfg.layout == 'masonry' %}
+<div class="gallery-masonry" style="--cols-md: {{ cfg.cols }}; --cols-sm: {{ cfg.colsSm }}" data-pswp>
+  {% for g in galleryItems %}<div class="reveal">{{ tile(g, cfg) }}</div>{% endfor %}
+</div>
 {% else %}
-<div class="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4" data-pswp>
-  {% for g in galleryItems %}<div class="reveal">{{ tile(g) }}</div>{% endfor %}
+<div class="gallery-grid" style="--cols-md: {{ cfg.cols }}; --cols-sm: {{ cfg.colsSm }}" data-pswp>
+  {% for g in galleryItems %}<div class="reveal">{{ tile(g, cfg) }}</div>{% endfor %}
 </div>
 {% endif %}

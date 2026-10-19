@@ -7,6 +7,7 @@ import {
 import { listPosts, getPost, listGallery, galleryAlbums, listPostCategories, getPostCategory } from '../services/content.js';
 import { buildSeo, productJsonLd, breadcrumbJsonLd, articleJsonLd, collectionJsonLd, webPageJsonLd } from '../lib/seo.js';
 import { pageUrlBuilder } from '../lib/pagination.js';
+import { galleryView } from '../lib/gallery-view.js';
 import { fontLinks } from '../services/fonts.js';
 import { formToken } from '../middleware/security.js';
 import { HttpError, truncate, stripHtml } from '../lib/utils.js';
@@ -119,11 +120,12 @@ function heroConfig(h) {
 }
 router.get('/', (req, res) => {
   const s = res.locals.s;
+  const gallery = s.features.gallery && s.home.show_gallery ? listGallery({ limit: Math.min(Math.max(Number(s.home.gallery_limit) || 24, 4), 60) }) : [];
   res.view('pages/home.njk', {
     sections: homeSections(s.home_layout),
     heroCfg: heroConfig(s.home),
     featured: featuredProducts(Number(s.home.featured_limit) || 8),
-    gallery: s.features.gallery && s.home.show_gallery ? listGallery({ limit: Math.min(Math.max(Number(s.home.gallery_limit) || 24, 4), 60) }) : [],
+    gallery, galleryCfg: galleryView(s, 'home', gallery.length),
     posts: s.features.blog && s.home.show_blog ? listPosts({ perPage: 3 }).items : [],
   });
 });
@@ -245,7 +247,8 @@ router.get('/gallery', requireFeature('gallery'), (req, res) => {
     page: 'gallery', title: s.pages.gallery_title, description: s.pages.gallery_intro,
     jsonLd: pageSchema({ type: 'CollectionPage', path: '/gallery', name: s.pages.gallery_title, description: s.pages.gallery_intro }),
   });
-  res.view('pages/gallery.njk', { items: listGallery({ album: album || undefined }), albums: galleryAlbums(), album });
+  const items = listGallery({ album: album || undefined });
+  res.view('pages/gallery.njk', { items, albums: galleryAlbums(), album, galleryCfg: galleryView(s, 'page', items.length) });
 });
 
 // ---------------- Hướng dẫn size ----------------

@@ -121,7 +121,7 @@ Có 4 nhóm: **Loại ngọc, Màu sắc, Kiểu dáng, Mệnh phong thủy**. C
 
 ## 6. Gallery
 
-Trang Gallery và khối Gallery ở trang chủ hiện **tối đa 8 ảnh dạng 2 hàng × 4 cột**; nhiều hơn 8 ảnh thì thành slider tự lướt từ phải sang trái (bật/tắt tự lướt và tốc độ ở Cài đặt › Trang chủ). Ô **Hiện ở Gallery tổng** quyết định ảnh có xuất hiện ở tab "Tất cả" và trang chủ hay không; tab album luôn hiện đủ ảnh của album đó (dùng cho ảnh feedback khách hoặc ảnh chưa muốn đưa lên Gallery tổng).
+Cách hiển thị Gallery chỉnh ở **Cài đặt › Trang chủ › Gallery** (khối ở trang chủ) và **Cài đặt › Trang Sản phẩm / Gallery / Blog › Trang Gallery** (mặc định trang Gallery giống trang chủ). Có 4 kiểu: **Tự động** (ít ảnh thì lưới, nhiều hơn số ô nhìn thấy thì băng chuyền), **Băng chuyền** (ảnh trượt ngang), **Lưới tĩnh** và **Xếp gạch** (cột so le, giữ tỷ lệ ảnh gốc). Chọn được số dòng (1–4), số cột trên máy tính (2–6) và điện thoại (1–3), tỷ lệ ảnh (vuông / dọc / ngang). Băng chuyền có thể **tự chuyển động** (chọn hướng và thời gian chạy một vòng) hoặc đứng yên; dù chọn kiểu nào khách vẫn **kéo bằng chuột hoặc vuốt tay** để xem tùy ý (rê chuột / chạm vào thì tạm dừng rồi tự chạy lại). Mặc định vẫn là 2 dòng × 4 cột, nhiều hơn 8 ảnh thì băng chuyền tự chạy từ phải sang trái. Ô **Hiện ở Gallery tổng** quyết định ảnh có xuất hiện ở tab "Tất cả" và trang chủ hay không; tab album luôn hiện đủ ảnh của album đó (dùng cho ảnh feedback khách hoặc ảnh chưa muốn đưa lên Gallery tổng).
 
 Bấm **Thêm ảnh** để chọn nhiều ảnh cùng lúc. Với mỗi ảnh có thể nhập tiêu đề, mô tả, **album** (để chia nhóm, VD "Khách hàng"), gắn link tới sản phẩm, ẩn/hiện. Kéo biểu tượng ⠿ để sắp xếp thứ tự. Thay đổi được lưu ngay khi rời khỏi ô nhập.
 
