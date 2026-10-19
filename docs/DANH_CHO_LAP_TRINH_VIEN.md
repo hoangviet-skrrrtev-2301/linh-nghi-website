@@ -50,7 +50,11 @@ Tạo file mới với số thứ tự tiếp theo, ví dụ `database/migration
 ALTER TABLE products ADD COLUMN video_url TEXT NOT NULL DEFAULT '';
 ```
 
-Chạy `npm run migrate` (trên VPS, `deploy/update.sh` tự chạy). Mỗi file chỉ chạy một lần.
+Chạy `npm run migrate` (trên VPS, `deploy/update.sh` tự chạy). Mỗi file chỉ chạy một lần, trong một transaction.
+
+- **Khi nào tự chạy:** `AUTO_MIGRATE` (`config.autoMigrate`): mặc định BẬT khi dev (server tự chạy lúc khởi động), TẮT ở production. Production còn migration chưa chạy thì `server.js` từ chối khởi động và hướng dẫn `npm run backup && npm run migrate`.
+- **Bản chụp trước khi chạy:** database đã có dữ liệu được `VACUUM INTO` vào `database/data/pre-migrate/` (giữ 5 bản; thư mục này nằm trong `database/data` nên không lên git). Database mới tinh thì không chụp.
+- **Lỗi:** file lỗi hoàn tác, `migrate()` ném lỗi nêu tên file và nơi có bản chụp, server không khởi động. Khôi phục: copy bản chụp đè `app.sqlite` khi server đã dừng, hoặc `npm run restore` từ bản sao lưu đầy đủ. Kiểm thử: `tests/migrate.test.js`.
 
 ## Quy ước
 
@@ -158,6 +162,8 @@ KHÁCH TRÊN WEBSITE                       SHOP TỰ NHẬP (admin)
 
 ## SEO kỹ thuật: index, canonical, schema, tốc độ
 
+- Trang chuyên mục blog (trang 1) mặc định được index và vào sitemap: cài đặt `pages.blog_category_index` và `sitemap.sitemap_blog_categories` (`renderBlogList` trong `routes/public.js`, `sitemapEntries` trong `lib/robots-sitemap.js`); chỉ chuyên mục hiện và có bài đã đăng. Cài đặt cũ `blog_category_noindex` đã bỏ.
+
 - **Chính sách địa chỉ có tham số** (`hasRealParams`, `buildSeo` trong `backend/lib/seo.js`): trang sạch → `index, follow` + canonical tự trỏ; chỉ có tham số theo dõi (utm_*, fbclid, gclid...) → như trang sạch, canonical về địa chỉ không tham số; có bất kỳ tham số nào khác (lọc, sắp xếp, tìm kiếm, `?trang=N`, album...) → `noindex, follow` và **không in canonical** (`seo.canonical = null`, template bỏ thẻ). `seo.url` luôn là địa chỉ sạch (dùng cho og:url). Tham số mới thêm sau này tự rơi vào nhóm thứ ba, không cần sửa gì.
 - **robots.txt** (`lib/robots-sitemap.js`): index tắt → `Disallow: /`; index bật → `Disallow: /*?` (tắt được ở cài đặt `robots_block_params`) cùng các đường dẫn chặn khác và dòng Sitemap. Sitemap chỉ liệt kê địa chỉ sạch.
 - **Công tắc index** `seo.allow_indexing` (mặc định tắt): tắt → robots `Disallow: /` + mọi trang `noindex, nofollow`. Bật khi chính thức mở web. Khung "Chuẩn bị mở website chính thức" ở Tổng quan (`services/launch-check.js`) nhắc các việc còn lại; thêm kiểm tra mới bằng một dòng `add(...)`.
@@ -167,6 +173,17 @@ KHÁCH TRÊN WEBSITE                       SHOP TỰ NHẬP (admin)
 - **JavaScript nặng tải khi cần**: Swiper (`loadSwiper` trong `app.js`) chỉ khi có slider cần chạy; PhotoSwipe chỉ khi có `[data-pswp]`.
 - **Bộ kiểm thử `npm test`**: `tests/*.test.js` (node:test). `boot({ content: true })` trong `tests/helpers.js` dựng app trên thư mục tạm (biến `LN_DATA_DIR`) với gói nội dung của dự án; `session().login()` / `.api()` gọi API admin kèm CSRF. Thêm kiểm thử mới = thêm file `tests/<tên>.test.js`.
 - **Kiểm tra tự động**: `npm run check:seo [-- <địa chỉ>]` (mặc định http://localhost:3000, cần server đang chạy). Báo lỗi canonical, noindex, robots, sitemap, 301 chuẩn hóa, 404, H1, ảnh, og:image, JSON-LD, liên kết hỏng. Chạy sau khi sửa template / route / cài đặt SEO hoặc thêm loại trang / tham số.
+
+## Tổng quan admin: cách tính số liệu
+
+- `services/dashboard.js`. Mọi ngày theo giờ Việt Nam. **Đơn hàng** = đơn không hủy tính theo `created_at` (`NOT_CANCELLED_ORDER`); đơn hủy đếm riêng ở `totals.cancelled` và vẫn nằm trong `statusBreakdown`. Custom / liên hệ kết thúc không mua (trạng thái hủy) vẫn được đếm. **Doanh thu** = đơn hoàn thành theo `completed_at`.
+- `revenueByProduct`: chia `total` của đơn hoàn thành cho các dòng hàng theo tỷ lệ thành tiền (qty × giá; không có giá thì theo số lượng) → top 5 + `topOther` (gồm phần dư làm tròn), tổng luôn bằng `totals.revenue`.
+- Cột biểu đồ (`bucketer`): ≤ 45 ngày theo ngày, ≤ 150 ngày theo tuần, còn lại theo tháng; mỗi cột có `start` / `end` đã cắt theo kỳ; nhãn tháng "T10" (kỳ qua nhiều năm: "T10/26"). Trang `dashboard` (`pages.js`) bỏ qua phản hồi cũ khi đổi kỳ liên tiếp. Kiểm thử: `tests/dashboard.test.js`.
+
+## Gallery: kiểu hiển thị
+
+- Cấu hình ở nhóm `home` (`gallery_layout`, `_rows`, `_cols`, `_cols_mobile`, `_ratio`, `_autoscroll`, `_scroll_seconds`, `_direction`) và nhóm `pages` (`gallery_page_*`; `gallery_page_layout = same` thì dùng cấu hình trang chủ). `lib/gallery-view.js` (`galleryView`) kiểm tra giá trị (sai thì về mặc định) và quyết định "Tự động" ra lưới hay băng chuyền; route truyền `galleryCfg` cho `partials/gallery-grid.njk`.
+- Băng chuyền = khung cuộn ngang thật (`overflow-x`, vuốt cảm ứng sẵn có) + `initCarousels` trong `app.js`: tự chạy bằng `requestAnimationFrame` (đổi `scrollLeft`, nhân bản dãy ảnh để quay vòng, vị trí luôn ở dãy giữa), kéo bằng chuột, tạm dừng khi hover / chạm / cuộn tay / ngoài màn hình, chặn "bấm" sau khi kéo. Bản nhân bản bỏ thuộc tính Alpine / PhotoSwipe và chuyển lần bấm về ảnh gốc. Lưới / xếp gạch dùng CSS `.gallery-grid` / `.gallery-masonry` với biến `--cols-md` / `--cols-sm`. Kiểm thử: `tests/gallery.test.js`.
 
 ## Banner trang chủ
 

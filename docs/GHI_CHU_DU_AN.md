@@ -2,7 +2,7 @@
 
 Tài liệu "sổ tay" để tiếp tục phát triển: bối cảnh, các quyết định đã chốt, những gì đã xong, việc còn chờ. Cập nhật file này mỗi khi có quyết định hoặc thay đổi lớn.
 
-_Cập nhật lần cuối: 18/10/2026 (cuối ngày, sau đợt kích cỡ / kho / gợi ý tìm kiếm / phân loại khách / chọn ngày)_
+_Cập nhật lần cuối: 19/10/2026 (sau đợt sửa Tổng quan, migration an toàn, chuyên mục blog index, Gallery nhiều kiểu)_
 
 ---
 
@@ -95,12 +95,17 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 
 **Đã làm 18/10/2026 (đợt cuối ngày, xem CHANGELOG.md):** kích cỡ theo loại sản phẩm (Pháp phục chọn S/M/L + thông tin thêm), quản lý kho tùy chọn, gợi ý khi gõ tìm kiếm, phân loại khách tự tính, ô chọn ngày khi nhập lại dữ liệu cũ, sửa sắp xếp "Bán chạy" quá chậm. **Migration 013 chưa chạy trên database thật** (chạy khi `npm run dev` khởi động lại; đã sao lưu `database/backups/2026-10-18-07-23`). Kho đang TẮT, gợi ý tìm kiếm đang BẬT.
 
+**Đã làm 19/10/2026 (xem CHANGELOG.md):** (1) biểu đồ Tổng quan cắt đúng theo kỳ (tháng hiện theo ngày từ ngày 1, nhãn tháng "T10"); (2) đơn đã hủy không tính vào số đơn; "Bán chạy" thành **Doanh thu theo sản phẩm** (tổng khớp thẻ Doanh thu); khung "Mới nhận" 20 dòng cuộn được; cột phải đổi đúng theo kỳ; (3) **migration**: dev tự chạy, production không (`AUTO_MIGRATE`), tự chụp database vào `database/data/pre-migrate/` trước khi chạy, lỗi thì dừng rõ ràng; (4) **trang chuyên mục blog được index + vào sitemap** (tắt được); (5) **Gallery** nhiều kiểu hiển thị (băng chuyền kéo / vuốt được, lưới, xếp gạch, 1–4 dòng, chuyển động tùy chọn). Đã đẩy lên GitHub và deploy Vercel (bản xem thử). `npm test`: 62 kiểm tra. **Chưa kiểm tra:** Gallery và Tổng quan trên điện thoại thật (mới thử Chrome giả lập), vuốt cảm ứng.
+
 **Mở web chính thức (làm cuối cùng):** bật "Cho phép Google lập chỉ mục", điền thông tin thật (khung "Chuẩn bị mở website chính thức" ở Tổng quan liệt kê các mục còn mẫu), đặt BASE_URL đúng tên miền, chạy `npm run check:seo -- https://tenmien.vn`, rồi gửi sitemap lên Search Console.
 
-**Việc đầu tiên của phiên sau:** nhắc chủ dự án **khởi động lại `npm run dev`** (Ctrl+C rồi chạy lại). Bộ tự khởi động lại của `node --watch` trên máy này đã không nạp mã mới (server vẫn chạy bản 16:33 ngày 17/10, chưa có bảng `redirects`, trang Chuyển hướng & 404 chưa dùng được). Khi khởi động lại, migration 009 và 010 tự chạy; bản sao lưu trước migration ở `database/backups/2026-10-17-11-26`.
+**Việc đầu tiên của phiên sau:** nhắc chủ dự án **khởi động lại `npm run dev`** (Ctrl+C rồi chạy lại) để nạp code mới. Migration 013 (kích cỡ / kho) có thể vẫn chưa chạy trên database thật: lần khởi động này sẽ chạy, tự chụp bản sao vào `database/data/pre-migrate/` (và đã có sao lưu đầy đủ ở `database/backups/`). Nếu server báo lỗi migration thì dừng lại, đọc tên file trong thông báo.
 
 ## 4. Việc tiếp theo
 
+- [ ] Thử Gallery (kéo / vuốt, các kiểu hiển thị) và Tổng quan trên điện thoại thật; chọn kiểu Gallery ưng ý
+- [ ] Xem lại trang chuyên mục blog sau khi mở index: nếu thấy trùng nội dung với bài viết thì tắt "Cho Google lập chỉ mục các trang chuyên mục blog"
+- [ ] Đặt `SESSION_SECRET` / `APP_SECRET` (≥ 32 ký tự) trong `.env` của server: production từ chối chạy nếu thiếu (`setup-vps.sh` tự sinh). Máy dev dùng khóa suy ra từ đường dẫn thư mục (cố định, không ngẫu nhiên) nên mật khẩu Gmail lưu trên máy dev chỉ giải mã được khi dự án vẫn ở đúng thư mục đó; chuyển máy / đổi thư mục thì nhập lại mật khẩu email, và `APP_SECRET` trên server không được đổi sau khi đã lưu mật khẩu email
 - [ ] Thử kích cỡ Pháp phục + kho trên điện thoại thật và trên bản chạy thật (đã kiểm tra bằng Chrome trên bản sao); chọn có bật Quản lý kho không
 - [ ] Nhập lại đơn / khách đã có bên ngoài bằng ô chọn ngày; kiểm tra Tổng quan khớp doanh thu cũ
 - [ ] Nhận mẫu giao diện + tông màu từ chủ dự án → chỉnh `frontend/src/css/app.css`, các template trong `frontend/views/`, và giá trị mặc định nhóm `theme` trong `settings-schema.js` (bố cục chưa chốt)

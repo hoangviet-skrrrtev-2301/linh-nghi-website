@@ -38,7 +38,7 @@ Quy trình xử lý một đơn:
 5. Khách custom / liên hệ chốt mua: bấm **Lên đơn hàng**, chính yêu cầu đó thành đơn (không tạo bản ghi thứ hai).
 6. Khách nhắn ngoài website (Zalo, Facebook, tại cửa hàng): bấm **Thêm đơn hàng / Thêm yêu cầu** để nhập tay. Chọn được **ngày phát sinh** (mặc định hôm nay), trạng thái và ngày hoàn thành để nhập lại đơn cũ đúng ngày.
 
-**Tổng quan** hiển thị đơn mới, yêu cầu custom, liên hệ, khách mới, doanh thu, giá trị trung bình mỗi đơn theo kỳ (7 ngày, 30 ngày, tháng, quý, năm hoặc tự chọn), kèm biểu đồ; nút **So sánh** cho thấy tăng trưởng so với kỳ trước.
+**Tổng quan** hiển thị đơn mới, yêu cầu custom, liên hệ, khách mới, doanh thu, giá trị trung bình mỗi đơn theo kỳ (7 ngày, 30 ngày, tháng, quý, năm hoặc tự chọn), kèm biểu đồ (đơn đã hủy không tính vào số đơn; doanh thu chia theo sản phẩm khớp tổng); nút **So sánh** cho thấy tăng trưởng so với kỳ trước.
 
 ## 3. Sản phẩm
 

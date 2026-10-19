@@ -202,7 +202,7 @@ Quy trình mỗi lần làm việc:
 ```bash
 git pull                     # 1. Lấy code mới nhất (khi làm trên nhiều máy)
 npm install                  # 2. Chỉ cần khi package.json thay đổi
-npm run migrate              # 3. Chỉ cần khi có file mới trong database/migrations
+npm run migrate              # 3. Chỉ cần khi có file mới trong database/migrations (npm run dev cũng tự chạy; production thì không, xem AUTO_MIGRATE trong .env.example)
 npm run dev                  # 4. Sửa code và kiểm tra
 
 npm run build:css            # 5. Build CSS trước khi lưu lên GitHub

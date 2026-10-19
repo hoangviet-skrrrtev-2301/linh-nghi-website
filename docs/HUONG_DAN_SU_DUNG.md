@@ -26,7 +26,8 @@ Chọn khoảng thời gian muốn xem ở hàng nút phía trên: **7 ngày, 30
 - **Thẻ số liệu:** đơn hàng mới, yêu cầu custom, lời nhắn liên hệ, khách mới, **doanh thu** và giá trị trung bình mỗi đơn trong kỳ. Doanh thu chỉ tính các đơn **Hoàn thành**, theo **ngày hoàn thành**. Bấm **So sánh** (mặc định tắt) để xem tăng giảm so với kỳ liền trước, cùng kỳ năm trước hoặc kỳ tự chọn.
 - **Chuẩn bị mở website chính thức:** khung liệt kê việc còn thiếu (thông tin mẫu, ảnh chia sẻ, mã Search Console, index đang tắt...), tự mất khi đã xong.
 - **Biểu đồ:** số hiện sẵn trên từng cột; chuyển giữa "Số yêu cầu" và "Doanh thu"; kỳ dài tự gom theo tuần hoặc tháng. Bấm "Xem số liệu chi tiết từng cột" để xem bảng.
-- Bên phải: tình trạng đơn, **sản phẩm bán chạy** trong kỳ, khách mới theo nguồn. Phía dưới: các yêu cầu mới nhất.
+- Bên phải (đổi theo kỳ đang chọn): tình trạng đơn (đặt trong kỳ, gồm đơn hủy), **doanh thu theo sản phẩm** (đơn hoàn thành; cộng lại đúng bằng thẻ Doanh thu, phần điều chỉnh của đơn được chia theo tỷ lệ thành tiền), khách mới theo nguồn. Phía dưới: khung **Mới nhận** hiện 20 yêu cầu gần nhất, cuộn xuống để xem thêm.
+- **Cách tính:** số đơn tính theo ngày đặt và **không gồm đơn đã hủy** (thẻ hiện riêng "+ N đã hủy"); doanh thu tính theo ngày hoàn thành. Biểu đồ: kỳ đến 45 ngày (kể cả "Tháng này") theo ngày, đến 150 ngày theo tuần, dài hơn theo tháng; cột đầu / cuối luôn nằm trong kỳ đã chọn.
 - Nếu email chưa được cấu hình, trang hiện cảnh báo màu vàng.
 
 ## 2. Đơn hàng / Yêu cầu custom / Liên hệ
