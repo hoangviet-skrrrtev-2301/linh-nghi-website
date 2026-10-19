@@ -141,7 +141,7 @@ document.addEventListener('alpine:init', () => {
     // Số trên đầu cột chỉ hiện khi đủ chỗ (ít cột); nhiều cột thì xem trong bảng chi tiết hoặc rê chuột
     get showNumbers() { return this.buckets.length * (this.metric === 'revenue' ? 1 : this.series.length) <= 24; },
     // Chỉ ghi nhãn ngày ở một số cột cho khỏi chồng chữ
-    showTick(i) { const n = this.buckets.length; const step = Math.max(1, Math.ceil(n / 8)); return i % step === 0 || i === n - 1; },
+    showTick(i) { const n = this.buckets.length; const step = Math.max(1, Math.ceil(n / 8)); return i % step === 0 || (i === n - 1 && (n - 1) % step >= step / 2); },
     get chartTotal() { return this.metric === 'revenue' ? this.money(this.d?.totals.revenue) : this.series.map((s) => this.seriesTotal(s.key) + ' ' + s.label.toLowerCase()).join(' · '); },
     get statusTotal() { return Math.max(1, (this.d?.statusBreakdown || []).reduce((s, r) => s + r.n, 0)); },
   }));

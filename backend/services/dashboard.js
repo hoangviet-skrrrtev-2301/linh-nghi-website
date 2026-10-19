@@ -41,16 +41,38 @@ export function resolveRange(key = '30d', fromIn, toIn) {
   return { key, from, to, days: diffDays(from, to) + 1 };
 }
 
-// Nhóm cột biểu đồ: theo ngày (≤ 14 ngày, để mỗi cột đủ rộng hiện số), theo tuần (≤ 210 ngày), còn lại theo tháng
-function bucketer(days) {
-  if (days <= 14) {
-    return { unit: 'day', key: (d) => d, label: (k) => dm(k), title: (k) => dmy(k) };
+// Nhóm cột biểu đồ: theo ngày (≤ 45 ngày, "tháng này" luôn bắt đầu từ ngày 1), theo tuần (≤ 150 ngày), còn lại theo tháng.
+// Mỗi cột có start / end bị cắt theo kỳ đang xem, nên cột đầu và cột cuối không lấn ra ngoài kỳ
+// (tuần đầu của 1/10 – 31/10 hiện "01/10", không phải thứ Hai 28/09).
+function bucketer(days, from, to, crossYear) {
+  const clip = (s, e) => [s < from ? from : s, e > to ? to : e];
+  if (days <= 45) {
+    return {
+      unit: 'day', key: (d) => d, span: (k) => [k, k],
+      label: (k) => dm(k), title: (k) => dmy(k),
+    };
   }
-  if (days <= 210) {
+  if (days <= 150) {
     const monday = (d) => { const dt = parse(d); return addDays(d, -((dt.getUTCDay() + 6) % 7)); };
-    return { unit: 'week', key: monday, label: (k) => dm(k), title: (k) => `Tuần ${dm(k)} – ${dm(addDays(k, 6))}` };
+    const span = (k) => clip(k, addDays(k, 6));
+    return {
+      unit: 'week', key: monday, span,
+      label: (k) => dm(span(k)[0]),
+      title: (k) => { const [s, e] = span(k); return s === e ? dmy(s) : `Tuần ${dm(s)} – ${dmy(e)}`; },
+    };
   }
-  return { unit: 'month', key: (d) => d.slice(0, 7), label: (k) => `${k.slice(5)}/${k.slice(2, 4)}`, title: (k) => `Tháng ${Number(k.slice(5))}/${k.slice(0, 4)}` };
+  const monthEnd = (k) => toStr(new Date(Date.UTC(Number(k.slice(0, 4)), Number(k.slice(5, 7)), 0)));
+  const span = (k) => clip(`${k}-01`, monthEnd(k));
+  return {
+    unit: 'month', key: (d) => d.slice(0, 7), span,
+    // "T10" khi kỳ nằm trong một năm, "T10/26" khi kéo dài qua nhiều năm (tránh đọc nhầm "10/26" thành ngày 26/10)
+    label: (k) => (crossYear ? `T${Number(k.slice(5))}/${k.slice(2, 4)}` : `T${Number(k.slice(5))}`),
+    title: (k) => {
+      const [s, e] = span(k);
+      const partial = s !== `${k}-01` || e !== monthEnd(k);
+      return `Tháng ${Number(k.slice(5))}/${k.slice(0, 4)}${partial ? ` (${dm(s)} – ${dm(e)})` : ''}`;
+    },
+  };
 }
 
 const D = (col) => `date(${col}, '+7 hours')`;
@@ -99,12 +121,15 @@ export function dashboardStats({ range, from, to, compare, cfrom, cto } = {}) {
   const prev = cmp ? totalsFor(cmp.from, cmp.to) : null;
 
   // Biểu đồ: số yêu cầu theo loại và doanh thu (ngày hoàn thành) theo từng cột
-  const b = bucketer(r.days);
+  const b = bucketer(r.days, r.from, r.to, r.from.slice(0, 4) !== r.to.slice(0, 4));
   const buckets = new Map();
   const first = b.key(r.from);
   for (let d = r.from; d <= r.to; d = addDays(d, 1)) {
     const k = b.key(d);
-    if (!buckets.has(k)) buckets.set(k, { key: k, label: b.label(k), title: b.title(k), order: 0, custom: 0, contact: 0, revenue: 0 });
+    if (!buckets.has(k)) {
+      const [start, end] = b.span(k);
+      buckets.set(k, { key: k, start, end, label: b.label(k), title: b.title(k), order: 0, custom: 0, contact: 0, revenue: 0 });
+    }
   }
   for (const row of db.prepare(`SELECT ${D('created_at')} AS d, type, COUNT(*) AS n FROM inquiries WHERE ${D('created_at')} BETWEEN ? AND ? GROUP BY d, type`).all(r.from, r.to)) {
     const bk = buckets.get(b.key(row.d)); if (bk) bk[row.type] += row.n;
