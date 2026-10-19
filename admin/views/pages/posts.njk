@@ -20,7 +20,7 @@
   <div x-cloak x-show="catOpen" x-collapse class="mb-5">
     <div class="card">
       <div class="card-head">
-        <div><h2 class="card-title">Chuyên mục blog</h2><p class="mt-0.5 text-xs text-slate-500">Trang chuyên mục trên website tự được đặt “không lập chỉ mục” (noindex) để tránh trùng nội dung với bài viết; bài viết vẫn được Google lập chỉ mục bình thường.</p></div>
+        <div><h2 class="card-title">Chuyên mục blog</h2><p class="mt-0.5 text-xs text-slate-500">Trang chuyên mục được Google lập chỉ mục và có trong sitemap (chuyên mục đang hiện, có ít nhất một bài đã đăng). Muốn tắt: {% if can('settings_pages') %}<a href="{{ A }}/settings/pages" class="text-brand-600 underline">Cài đặt › Nội dung các trang</a>{% else %}Cài đặt › Nội dung các trang{% endif %}.</p></div>
         <button type="button" class="btn btn-primary btn-sm" @click="openCat(null)">{{ icon('plus', 'w-3.5 h-3.5') }} Thêm chuyên mục</button>
       </div>
       <form x-show="catForm" x-cloak @submit.prevent="saveCat()" class="grid gap-4 border-b border-slate-100 bg-slate-50/60 p-5 md:grid-cols-2">

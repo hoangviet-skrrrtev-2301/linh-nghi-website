@@ -102,6 +102,13 @@ export function sitemapEntries() {
       add({ loc: p.cat_slug ? `/blog/${p.cat_slug}/${p.slug}` : `/blog/${p.slug}`, lastmod: iso(p.updated_at), priority: '0.6', image: sm.sitemap_images ? coverUrl(p.variants) : '', title: p.title });
     }
   }
+  // Trang chuyên mục blog: chỉ chuyên mục đang hiện và có bài đã đăng; bỏ khi trang chuyên mục đang noindex
+  if (sm.sitemap_blog_categories && f.blog && getRaw('pages').blog_category_index) {
+    const rows = db.prepare(`SELECT pc.slug, MAX(p.updated_at) AS updated_at FROM post_categories pc
+      JOIN posts p ON p.category_id = pc.id AND p.status = 'published' AND p.published_at <= datetime('now')
+      WHERE pc.active = 1 GROUP BY pc.id ORDER BY pc.sort_order, pc.id`).all();
+    for (const c of rows) add({ loc: `/blog/${c.slug}`, lastmod: iso(c.updated_at), priority: '0.5', changefreq: 'weekly' });
+  }
   // URL thêm tay: chỉ nhận đường dẫn của chính website này
   for (const x of sm.sitemap_extra || []) {
     let loc = String(x.url || '').trim();

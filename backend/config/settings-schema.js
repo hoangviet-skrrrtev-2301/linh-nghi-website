@@ -572,7 +572,7 @@ export const SETTINGS_SCHEMA = [
       { name: 'blog_intro', section: 'blog', label: 'Mô tả ngắn trang Blog', type: 'textarea', default: 'Kiến thức về ngọc, cách chọn và bảo quản vòng.' },
       { name: 'blog_per_page', section: 'blog', label: 'Số bài viết mỗi trang Blog', type: 'number', default: 9 },
       { name: 'blog_categories_title', section: 'blog', label: 'Tiêu đề khối chuyên mục ở cột phải', type: 'text', default: 'Chuyên mục' },
-      { name: 'blog_category_noindex', section: 'blog', label: 'Không cho Google lập chỉ mục các trang chuyên mục (noindex)', type: 'toggle', default: true, help: 'Nên bật khi viết bài SEO nhiều chủ đề: trang chuyên mục chỉ là danh sách, Google vẫn lập chỉ mục từng bài viết bình thường. Trang chuyên mục cũng không có trong sitemap.' },
+      { name: 'blog_category_index', section: 'blog', label: 'Cho Google lập chỉ mục các trang chuyên mục blog', type: 'toggle', default: true, help: 'Bật: trang chuyên mục (trang 1) được lập chỉ mục và có trong sitemap (nếu bật mục "Đưa trang chuyên mục blog vào sitemap" ở nhóm Sitemap). Trang 2 trở đi và trang có tham số vẫn noindex. Tắt nếu viết bài SEO nhiều chủ đề và thấy chuyên mục trùng nội dung với bài viết. Chỉ có tác dụng khi website đã bật "Cho phép Google lập chỉ mục".' },
       { name: 'blog_show_toc', section: 'blog', label: 'Hiện mục lục trong bài viết', type: 'toggle', default: true, help: 'Mục lục tự tạo từ các tiêu đề H2, H3 trong bài.' },
       { name: 'blog_toc_title', section: 'blog', label: 'Tiêu đề khối mục lục', type: 'text', default: 'Mục lục' },
       { name: 'blog_related_title', section: 'blog', label: 'Tiêu đề khối gợi ý bài viết', type: 'text', default: 'Bài viết gợi ý' },
@@ -681,6 +681,7 @@ export const SETTINGS_SCHEMA = [
       { name: 'sitemap_categories', label: 'Đưa trang lọc theo loại ngọc vào sitemap', type: 'toggle', default: true },
       { name: 'sitemap_products', label: 'Đưa sản phẩm đang hiển thị vào sitemap', type: 'toggle', default: true, help: 'Sản phẩm bản nháp không bao giờ được đưa vào' },
       { name: 'sitemap_posts', label: 'Đưa bài blog đã đăng vào sitemap', type: 'toggle', default: true },
+      { name: 'sitemap_blog_categories', label: 'Đưa trang chuyên mục blog vào sitemap', type: 'toggle', default: true, help: 'Chỉ chuyên mục đang hiện và có ít nhất một bài đã đăng; tự bỏ khi tắt "Cho Google lập chỉ mục các trang chuyên mục blog" (Cài đặt › Trang & nội dung › Blog)' },
       { name: 'sitemap_images', label: 'Kèm ảnh đại diện sản phẩm / bài viết', type: 'toggle', default: true, help: 'Giúp ảnh ngọc dễ xuất hiện trên Google Hình ảnh' },
       { name: 'sitemap_exclude', label: 'Bỏ các đường dẫn khỏi sitemap', type: 'textarea', help: 'Mỗi dòng một đường dẫn, ví dụ /san-pham/vong-cu hoặc /blog/* (dấu * ở cuối: bỏ tất cả đường dẫn bắt đầu như vậy)' },
       {

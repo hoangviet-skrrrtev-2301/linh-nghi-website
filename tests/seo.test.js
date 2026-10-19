@@ -155,3 +155,26 @@ test('trang chính sách: hiện ở chân trang, có trong sitemap, đổi đư
   h = await html('/');
   assert.equal(((h.slice(h.indexOf('<footer')).match(/href="\/chinh-sach\//g)) || []).length, 0);
 });
+
+test('chuyên mục blog: mặc định được index, có canonical và có trong sitemap; tắt thì noindex và rời sitemap', async () => {
+  const slug = ctx.db.prepare('SELECT slug FROM post_categories WHERE active = 1 AND id IN (SELECT category_id FROM posts WHERE status = \'published\') LIMIT 1').pluck().get();
+  assert.ok(slug, 'gói nội dung có chuyên mục có bài');
+  const sitemap = () => html('/sitemap.xml');
+
+  let h = await html(`/blog/${slug}`);
+  assert.match(robotsOf(h), /^index, follow/);
+  assert.equal(canonicalsOf(h).length, 1);
+  assert.ok(canonicalsOf(h)[0].endsWith(`/blog/${slug}`));
+  assert.ok((await sitemap()).includes(`/blog/${slug}</loc>`), 'chuyên mục nằm trong sitemap');
+  assert.match(robotsOf(await html(`/blog/${slug}?trang=2`)) || 'noindex', /noindex/, 'trang có tham số vẫn noindex');
+
+  ctx.setSettings('sitemap', { sitemap_blog_categories: false });
+  assert.ok(!(await sitemap()).includes(`/blog/${slug}</loc>`), 'tắt mục sitemap thì rời sitemap');
+  ctx.setSettings('sitemap', { sitemap_blog_categories: true });
+
+  ctx.setSettings('pages', { blog_category_index: false });
+  h = await html(`/blog/${slug}`);
+  assert.match(robotsOf(h), /^noindex/);
+  assert.ok(!(await sitemap()).includes(`/blog/${slug}</loc>`), 'chuyên mục noindex thì không có trong sitemap');
+  ctx.setSettings('pages', { blog_category_index: true });
+});

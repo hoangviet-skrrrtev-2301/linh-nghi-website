@@ -285,8 +285,9 @@ function renderBlogList(req, res, category) {
   if (redirectBadPage(res, req.query.trang, result, pageUrl)) return;
   const name = category ? category.name : s.pages.blog_title;
   const intro = category ? category.description || s.pages.blog_intro : s.pages.blog_intro;
-  // Chuyên mục chỉ là danh sách gom bài: mặc định noindex (vẫn cho Google đi theo liên kết tới từng bài)
-  const hideCategory = !!category && !!s.pages.blog_category_noindex;
+  // Trang chuyên mục mặc định được index (trang 1); tắt ở Cài đặt thì noindex nhưng vẫn cho Google đi theo liên kết tới từng bài.
+  // Trang 2+ / có tham số luôn noindex do buildSeo.
+  const hideCategory = !!category && !s.pages.blog_category_index;
   res.locals.seo = buildSeo(req, {
     page: category ? undefined : 'blog', title: name, description: intro,
     noindex: hideCategory, followLinks: hideCategory,
