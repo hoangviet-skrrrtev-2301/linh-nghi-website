@@ -63,7 +63,7 @@ router.get('/dashboard', h((req) => ({
     customers: db.prepare('SELECT COUNT(*) FROM customers').pluck().get(),
     posts: db.prepare(`SELECT COUNT(*) FROM posts WHERE status = 'published'`).pluck().get(),
   },
-  latest: inquiries.listInquiries({ perPage: 8 }).items,
+  latest: inquiries.listInquiries({ perPage: 20 }).items,
   mailConfigured: settings.getRaw('mail').enabled,
   launch: launchChecks(),
 })));

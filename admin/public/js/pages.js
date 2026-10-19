@@ -86,10 +86,16 @@ document.addEventListener('alpine:init', () => {
     },
     async load() {
       this.loading = true;
+      // Bấm đổi kỳ liên tiếp: chỉ nhận kết quả của lần bấm cuối, không để câu trả lời chậm của kỳ cũ ghi đè
+      const seq = (this.seq = (this.seq || 0) + 1);
       const q = { range: this.range, from: this.range === 'custom' ? this.from : '', to: this.range === 'custom' ? this.to : '', compare: this.compare };
       if (this.compare === 'custom') { q.cfrom = this.cfrom; q.cto = this.cto; }
-      try { this.d = await api(`/dashboard?${qs(q)}`); } catch (e) { toast().error(e); }
-      this.loading = false;
+      try {
+        const data = await api(`/dashboard?${qs(q)}`);
+        if (seq !== this.seq) return;
+        this.d = data;
+      } catch (e) { if (seq === this.seq) toast().error(e); }
+      if (seq === this.seq) this.loading = false;
     },
     // ----- Thẻ số liệu -----
     val(key) { return this.d ? this.d.totals[key] : null; },

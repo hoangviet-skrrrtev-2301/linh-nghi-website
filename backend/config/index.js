@@ -40,6 +40,9 @@ export const config = {
   adminPath: normalizeAdminPath(env.ADMIN_PATH),
   sessionSecret: secret('SESSION_SECRET'),
   appSecret: secret('APP_SECRET'),
+  // Tự chạy migration khi server khởi động: bật mặc định khi dev, TẮT mặc định ở production (phải chạy `npm run migrate`,
+  // deploy/update.sh đã làm). Đặt AUTO_MIGRATE=1 / 0 để đổi.
+  autoMigrate: env.AUTO_MIGRATE !== undefined && env.AUTO_MIGRATE !== '' ? !['0', 'false', 'no'].includes(String(env.AUTO_MIGRATE).toLowerCase()) : !isProd,
   sessionHours: Number(env.SESSION_HOURS) || 8,
   uploadMaxMb: Number(env.UPLOAD_MAX_MB) || 10,
   paths: {

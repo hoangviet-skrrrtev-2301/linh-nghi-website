@@ -78,6 +78,7 @@
       <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
         <span class="badge" :class="deltaClass('{{ k[0] }}')" x-show="delta('{{ k[0] }}')" x-text="deltaIcon('{{ k[0] }}') + ' ' + delta('{{ k[0] }}')?.text"></span>
         {% if k[0] == 'orders' %}<span class="text-slate-500" x-show="d && (d.pending.order || d.pending.shipping)" x-text="d ? (d.pending.order ? d.pending.order + ' chờ xử lý' : '') + (d.pending.order && d.pending.shipping ? ' · ' : '') + (d.pending.shipping ? d.pending.shipping + ' đang giao' : '') : ''"></span>
+        <span class="text-slate-500" x-show="d && d.totals.cancelled" x-text="d ? '+ ' + d.totals.cancelled + ' đã hủy (không tính)' : ''"></span>
         {% elif k[0] == 'custom' %}<span class="text-slate-500" x-show="d && d.pending.custom" x-text="d ? d.pending.custom + ' chờ xử lý' : ''"></span>
         {% elif k[0] == 'contact' %}<span class="text-slate-500" x-show="d && d.pending.contact" x-text="d ? d.pending.contact + ' chờ xử lý' : ''"></span>
         {% elif k[0] == 'revenue' %}<span class="text-slate-500" x-text="d ? d.totals.completed + ' đơn hoàn thành' : ''"></span>{% endif %}
@@ -86,7 +87,7 @@
     </a>
     {% endfor %}
   </div>
-  <p class="mt-2 text-xs text-slate-500">Doanh thu tính theo <b>ngày hoàn thành</b> của đơn hàng. Bấm <b>So sánh</b> ở trên để xem tăng trưởng so với kỳ liền trước, cùng kỳ năm trước hoặc kỳ tự chọn.</p>
+  <p class="mt-2 text-xs text-slate-500">Số đơn tính theo <b>ngày đặt</b> và <b>không gồm đơn đã hủy</b>. Doanh thu tính theo <b>ngày hoàn thành</b> của đơn hàng. Bấm <b>So sánh</b> ở trên để xem tăng trưởng so với kỳ liền trước, cùng kỳ năm trước hoặc kỳ tự chọn.</p>
 
   <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-start">
     {# ---- Biểu đồ ---- #}
@@ -165,9 +166,9 @@
     </div>
 
     {# ---- Cột phải: tình trạng đơn, bán chạy, nguồn khách ---- #}
-    <div class="space-y-6">
+    <div class="space-y-6 transition-opacity" :class="loading && 'opacity-60'" :aria-busy="loading ? 'true' : 'false'">
       <div class="card">
-        <div class="card-head"><h2 class="card-title">Tình trạng đơn hàng</h2><span class="text-xs text-slate-500">đặt trong kỳ</span></div>
+        <div class="card-head"><h2 class="card-title">Tình trạng đơn hàng</h2><span class="text-xs text-slate-500">đặt trong kỳ, gồm đơn hủy</span></div>
         <div class="card-body space-y-2.5 text-sm">
           <template x-for="s in d?.statusBreakdown || []" :key="s.status">
             <div><div class="flex justify-between"><span x-text="({ new: 'Mới', contacted: 'Đã liên hệ', confirmed: 'Đã xác nhận', shipping: 'Đang giao hàng', completed: 'Hoàn thành', cancelled: 'Đã hủy' })[s.status]"></span><b x-text="s.n"></b></div>
@@ -177,13 +178,17 @@
         </div>
       </div>
       <div class="card">
-        <div class="card-head"><h2 class="card-title">Bán chạy trong kỳ</h2></div>
+        <div class="card-head"><h2 class="card-title">Doanh thu theo sản phẩm</h2><span class="text-xs text-slate-500">đơn hoàn thành</span></div>
         <div class="card-body space-y-3 text-sm">
           <template x-for="(p, i) in d?.topProducts || []" :key="p.name">
             <div class="flex items-start gap-3"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600" x-text="i + 1"></span>
-              <div class="min-w-0 flex-1"><p class="truncate font-medium" x-text="p.name"></p><p class="text-xs text-slate-500"><span x-text="p.qty"></span> sản phẩm<span x-show="p.amount"> · <span x-text="money(p.amount)"></span></span></p></div></div>
+              <div class="min-w-0 flex-1"><p class="truncate font-medium" x-text="p.name"></p><p class="text-xs text-slate-500"><b class="font-medium text-emerald-700" x-text="money(p.amount)"></b><span x-show="p.qty"> · <span x-text="p.qty"></span> sản phẩm</span></p></div></div>
           </template>
-          <p class="text-slate-500" x-show="d && !d.topProducts.length">Chưa có sản phẩm nào được đặt trong kỳ này.</p>
+          <div class="flex items-start gap-3" x-show="d?.topOther" x-cloak><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-50 text-xs text-slate-400">…</span>
+            <div class="min-w-0 flex-1"><p class="font-medium text-slate-600"><span x-text="d?.topOther?.count ? 'Sản phẩm khác (' + d.topOther.count + ')' : 'Điều chỉnh làm tròn'"></span></p><p class="text-xs text-slate-500"><b class="font-medium text-emerald-700" x-text="money(d?.topOther?.amount)"></b><span x-show="d?.topOther?.qty"> · <span x-text="d?.topOther?.qty"></span> sản phẩm</span></p></div></div>
+          <p class="flex justify-between border-t border-slate-100 pt-2 text-xs text-slate-500" x-show="d && d.totals.revenue"><span>Tổng = Doanh thu kỳ</span><b class="text-slate-700" x-text="money(d?.totals.revenue)"></b></p>
+          <p class="text-slate-500" x-show="d && !d.topProducts.length">Chưa có đơn hoàn thành trong kỳ này.</p>
+          <p class="text-[11px] leading-snug text-slate-400">Tiền của mỗi đơn (đã gồm điều chỉnh) được chia cho các sản phẩm trong đơn theo tỷ lệ thành tiền, nên tổng khớp thẻ Doanh thu.</p>
         </div>
       </div>
       <div class="card">
@@ -207,10 +212,10 @@
       </div>
     </div>
     <div class="card min-w-0 lg:col-span-2">
-      <div class="card-head"><h2 class="card-title">Mới nhận</h2><a href="{{ A }}/inquiries" class="text-sm text-brand-600 hover:underline">Xem tất cả</a></div>
-      <div class="overflow-x-auto">
+      <div class="card-head"><div><h2 class="card-title">Mới nhận</h2><p class="mt-0.5 text-xs text-slate-500">20 khách / yêu cầu gần nhất, cuộn xuống để xem thêm</p></div><a href="{{ A }}/inquiries" class="text-sm text-brand-600 hover:underline">Xem tất cả</a></div>
+      <div class="max-h-[26rem] overflow-auto">
         <table class="table table-stack">
-          <thead><tr><th>Mã</th><th>Loại</th><th class="stack-title">Khách</th><th>Điện thoại</th><th>Trạng thái</th><th>Thời gian</th></tr></thead>
+          <thead class="sticky top-0 z-10 bg-white"><tr><th>Mã</th><th>Loại</th><th class="stack-title">Khách</th><th>Điện thoại</th><th>Trạng thái</th><th>Thời gian</th></tr></thead>
           <tbody>
             <template x-for="i in d?.latest || []" :key="i.id">
               <tr class="cursor-pointer" @click="location.href = '{{ A }}/inquiries/' + i.id">

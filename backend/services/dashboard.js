@@ -77,18 +77,23 @@ function bucketer(days, from, to, crossYear) {
 
 const D = (col) => `date(${col}, '+7 hours')`;
 
+// Đơn đã hủy KHÔNG tính vào "Đơn hàng" (thẻ số liệu, biểu đồ); đếm riêng ở `cancelled`.
+// Custom / liên hệ kết thúc không mua cũng dùng trạng thái hủy nhưng vẫn là yêu cầu đã nhận nên vẫn đếm.
+const NOT_CANCELLED_ORDER = `NOT (type = 'order' AND status = 'cancelled')`;
+
 function totalsFor(from, to) {
-  const byType = Object.fromEntries(db.prepare(`SELECT type, COUNT(*) AS n FROM inquiries WHERE ${D('created_at')} BETWEEN ? AND ? GROUP BY type`).all(from, to).map((r) => [r.type, r.n]));
+  const byType = Object.fromEntries(db.prepare(`SELECT type, COUNT(*) AS n FROM inquiries WHERE ${D('created_at')} BETWEEN ? AND ? AND ${NOT_CANCELLED_ORDER} GROUP BY type`).all(from, to).map((r) => [r.type, r.n]));
+  const cancelled = db.prepare(`SELECT COUNT(*) FROM inquiries WHERE type = 'order' AND status = 'cancelled' AND ${D('created_at')} BETWEEN ? AND ?`).pluck().get(from, to);
   const done = db.prepare(`SELECT COALESCE(SUM(total), 0) AS revenue, COUNT(*) AS n FROM inquiries
     WHERE type = 'order' AND status = 'completed' AND ${D('completed_at')} BETWEEN ? AND ?`).get(from, to);
   const customers = db.prepare(`SELECT COUNT(*) FROM customers WHERE ${D('created_at')} BETWEEN ? AND ?`).pluck().get(from, to);
   // Đơn có nguồn gốc là custom / liên hệ (đã "lên đơn"), và đơn shop tự thêm từ ngoài website
-  const fromRequest = db.prepare(`SELECT COUNT(*) FROM inquiries WHERE type = 'order' AND (origin_type != '' OR parent_id IS NOT NULL)
+  const fromRequest = db.prepare(`SELECT COUNT(*) FROM inquiries WHERE type = 'order' AND status != 'cancelled' AND (origin_type != '' OR parent_id IS NOT NULL)
     AND ${D('created_at')} BETWEEN ? AND ?`).pluck().get(from, to);
-  const manual = db.prepare(`SELECT COUNT(*) FROM inquiries WHERE type = 'order' AND channel = 'admin' AND origin_type = '' AND parent_id IS NULL
+  const manual = db.prepare(`SELECT COUNT(*) FROM inquiries WHERE type = 'order' AND status != 'cancelled' AND channel = 'admin' AND origin_type = '' AND parent_id IS NULL
     AND ${D('created_at')} BETWEEN ? AND ?`).pluck().get(from, to);
   return {
-    orders: byType.order || 0, custom: byType.custom || 0, contact: byType.contact || 0, customers, fromRequest, manual,
+    orders: byType.order || 0, cancelled, custom: byType.custom || 0, contact: byType.contact || 0, customers, fromRequest, manual,
     revenue: done.revenue, completed: done.n, aov: done.n ? Math.round(done.revenue / done.n) : 0,
   };
 }
@@ -131,7 +136,7 @@ export function dashboardStats({ range, from, to, compare, cfrom, cto } = {}) {
       buckets.set(k, { key: k, start, end, label: b.label(k), title: b.title(k), order: 0, custom: 0, contact: 0, revenue: 0 });
     }
   }
-  for (const row of db.prepare(`SELECT ${D('created_at')} AS d, type, COUNT(*) AS n FROM inquiries WHERE ${D('created_at')} BETWEEN ? AND ? GROUP BY d, type`).all(r.from, r.to)) {
+  for (const row of db.prepare(`SELECT ${D('created_at')} AS d, type, COUNT(*) AS n FROM inquiries WHERE ${D('created_at')} BETWEEN ? AND ? AND ${NOT_CANCELLED_ORDER} GROUP BY d, type`).all(r.from, r.to)) {
     const bk = buckets.get(b.key(row.d)); if (bk) bk[row.type] += row.n;
   }
   for (const row of db.prepare(`SELECT ${D('completed_at')} AS d, COALESCE(SUM(total), 0) AS rev FROM inquiries
@@ -139,13 +144,11 @@ export function dashboardStats({ range, from, to, compare, cfrom, cto } = {}) {
     const bk = buckets.get(b.key(row.d)); if (bk) bk.revenue += row.rev;
   }
 
-  const statusBreakdown = db.prepare(`SELECT status, COUNT(*) AS n FROM inquiries WHERE type = 'order' AND ${D('created_at')} BETWEEN ? AND ? GROUP BY status`).all(r.from, r.to);
-  const topProducts = db.prepare(`SELECT json_extract(j.value, '$.name') AS product, SUM(COALESCE(json_extract(j.value, '$.qty'), 1)) AS qty,
-      SUM(COALESCE(json_extract(j.value, '$.price'), 0) * COALESCE(json_extract(j.value, '$.qty'), 1)) AS amount
-    FROM inquiries i, json_each(i.items) j
-    WHERE i.type = 'order' AND i.status != 'cancelled' AND ${D('i.created_at')} BETWEEN ? AND ?
-    GROUP BY product HAVING product IS NOT NULL ORDER BY qty DESC, amount DESC LIMIT 5`).all(r.from, r.to)
-    .map((row) => ({ name: row.product, qty: row.qty, amount: row.amount }));
+  // Tình trạng của các đơn ĐẶT trong kỳ (gồm cả đơn hủy), xếp theo thứ tự quy trình
+  const FLOW = ['new', 'contacted', 'confirmed', 'shipping', 'completed', 'cancelled'];
+  const statusBreakdown = db.prepare(`SELECT status, COUNT(*) AS n FROM inquiries WHERE type = 'order' AND ${D('created_at')} BETWEEN ? AND ? GROUP BY status`).all(r.from, r.to)
+    .sort((a, b) => FLOW.indexOf(a.status) - FLOW.indexOf(b.status));
+  const { topProducts, topOther } = revenueByProduct(r.from, r.to, totals.revenue);
   const sources = db.prepare(`SELECT source, COUNT(*) AS n FROM customers
     WHERE ${D('created_at')} BETWEEN ? AND ? GROUP BY source ORDER BY n DESC LIMIT 6`).all(r.from, r.to)
     .map((row) => ({ name: row.source || 'Chưa ghi nguồn', n: row.n }));
@@ -163,6 +166,42 @@ export function dashboardStats({ range, from, to, compare, cfrom, cto } = {}) {
     compare: cmp,
     totals, prev, pending,
     series: { unit: b.unit, first, buckets: [...buckets.values()] },
-    statusBreakdown, topProducts, sources,
+    statusBreakdown, topProducts, topOther, sources,
   };
+}
+
+// Doanh thu theo sản phẩm: cùng cơ sở với thẻ "Doanh thu" (đơn hoàn thành, theo ngày hoàn thành).
+// Tổng tiền đơn (đã gồm điều chỉnh / phí) được chia cho các dòng hàng theo tỷ lệ thành tiền của dòng,
+// nên cộng doanh thu mọi sản phẩm luôn đúng bằng Doanh thu của kỳ.
+function revenueByProduct(from, to, revenue) {
+  const rows = db.prepare(`SELECT total, items FROM inquiries WHERE type = 'order' AND status = 'completed' AND ${D('completed_at')} BETWEEN ? AND ?`).all(from, to);
+  const map = new Map();
+  const add = (name, qty, amount) => {
+    const cur = map.get(name) || { name, qty: 0, amount: 0 };
+    cur.qty += qty; cur.amount += amount; map.set(name, cur);
+  };
+  for (const row of rows) {
+    let items = [];
+    try { items = JSON.parse(row.items || '[]'); } catch { /* dữ liệu cũ hỏng: coi như không có dòng hàng */ }
+    const lines = (Array.isArray(items) ? items : []).map((it) => {
+      const qty = Math.max(0, Number(it?.qty ?? 1) || 0);
+      return { name: String(it?.name || '').trim() || 'Sản phẩm không rõ tên', qty, value: Math.max(0, Number(it?.price) || 0) * qty };
+    });
+    if (!lines.length) { add('Đơn không có dòng hàng', 0, row.total); continue; }
+    const valueSum = lines.reduce((s, l) => s + l.value, 0);
+    const qtySum = lines.reduce((s, l) => s + l.qty, 0);
+    for (const l of lines) {
+      const share = valueSum > 0 ? l.value / valueSum : qtySum > 0 ? l.qty / qtySum : 1 / lines.length;
+      add(l.name, l.qty, row.total * share);
+    }
+  }
+  const sorted = [...map.values()].map((p) => ({ ...p, amount: Math.round(p.amount) })).sort((a, b) => b.amount - a.amount || b.qty - a.qty);
+  const topProducts = sorted.slice(0, 5);
+  const rest = sorted.slice(5);
+  // Phần dư làm tròn dồn vào "Sản phẩm khác" để tổng khớp đúng doanh thu
+  const topSum = topProducts.reduce((s, p) => s + p.amount, 0);
+  const topOther = rest.length || revenue - topSum
+    ? { count: rest.length, qty: rest.reduce((s, p) => s + p.qty, 0), amount: revenue - topSum }
+    : null;
+  return { topProducts, topOther };
 }
