@@ -216,8 +216,11 @@ function buildFilter(f, { includeDrafts = false } = {}) {
   }
   const min = toInt(f.gia_tu);
   const max = toInt(f.gia_den);
-  if (min != null) { where.push(`${EFFECTIVE_PRICE} >= ?`); params.push(min); }
-  if (max != null) { where.push(`${EFFECTIVE_PRICE} <= ?`); params.push(max); }
+  if (f.gia_lh) where.push(`${EFFECTIVE_PRICE} IS NULL`); // giá liên hệ: bỏ qua khoảng giá (sản phẩm giá liên hệ không nằm trong khoảng nào)
+  else {
+    if (min != null) { where.push(`${EFFECTIVE_PRICE} >= ?`); params.push(min); }
+    if (max != null) { where.push(`${EFFECTIVE_PRICE} <= ?`); params.push(max); }
+  }
   const size = toInt(f.ni);
   if (size != null) {
     where.push(`EXISTS (SELECT 1 FROM json_each(p.sizes) WHERE CAST(json_each.value AS INTEGER) = ?)`);

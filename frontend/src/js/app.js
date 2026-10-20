@@ -322,6 +322,7 @@ document.addEventListener('alpine:init', () => {
       const f = this.$refs.form;
       f.gia_tu.value = min || '';
       f.gia_den.value = max || '';
+      if (f.gia_lh) f.gia_lh.checked = false;
       f.requestSubmit();
     },
     init() {
@@ -519,6 +520,13 @@ async function initSwipers() {
 async function initLightbox() {
   const targets = document.querySelectorAll('[data-pswp]');
   if (!targets.length) return;
+  // CSS của PhotoSwipe không chặn việc hiển thị trang: chỉ nạp khi có ảnh phóng to
+  if (!document.querySelector('link[href$="photoswipe.css"]')) {
+    const l = document.createElement('link');
+    l.rel = 'stylesheet';
+    l.href = '/vendor/photoswipe/photoswipe.css';
+    document.head.appendChild(l);
+  }
   const { default: PhotoSwipeLightbox } = await import('/vendor/photoswipe/photoswipe-lightbox.esm.min.js');
   targets.forEach((el) => {
     const lightbox = new PhotoSwipeLightbox({

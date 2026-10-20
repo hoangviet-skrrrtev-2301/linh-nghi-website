@@ -115,6 +115,23 @@ export function shopNotification(inq) {
   };
 }
 
+export function reviewNotification(review, productName) {
+  const t = getPublicSettings().theme;
+  const link = `${config.baseUrl}${config.adminPath}/feedback`;
+  return {
+    subject: `[Đánh giá mới] ${review.rating}★ – ${productName} – ${review.name}`,
+    html: layout('Đánh giá sản phẩm mới chờ duyệt', `${rows([
+      ['Sản phẩm', productName],
+      ['Số sao', `${review.rating}/5`],
+      ['Người đánh giá', review.name],
+      ['Điện thoại', review.phone],
+      ['Đã mua đúng sản phẩm', review.verified ? 'Có' : 'Chưa xác nhận'],
+      ['Nhận xét', review.content],
+    ])}
+      <p style="margin-top:24px"><a href="${escapeHtml(link)}" style="background:${t.color_primary};color:${t.color_primary_contrast};padding:10px 18px;border-radius:6px;text-decoration:none">Mở trang duyệt đánh giá</a></p>`),
+  };
+}
+
 export function customerConfirmation(inq) {
   const s = getPublicSettings();
   const success = { order: s.forms.order_success, custom: s.forms.custom_success, contact: s.forms.contact_success }[inq.type];

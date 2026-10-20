@@ -288,3 +288,12 @@ test('API gửi đánh giá: cần cùng nguồn + token chống spam; hợp l�
   assert.equal(r.status, 201);
   assert.match((await r.json()).message, /duyệt/);
 });
+
+test('Email báo đánh giá mới: có sản phẩm, số sao, nhận xét (escape HTML) và liên kết trang duyệt', async () => {
+  const { reviewNotification } = await import('../backend/services/mailer.js');
+  const n = reviewNotification({ rating: 4, name: 'An <b>', phone: '0911222333', content: 'Đẹp <script>', verified: 1 }, 'Vòng thử');
+  assert.match(n.subject, /4★.*Vòng thử/);
+  assert.match(n.html, /Đẹp &lt;script&gt;/);
+  assert.ok(!n.html.includes('<script>'));
+  assert.match(n.html, /\/feedback"/);
+});

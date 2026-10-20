@@ -75,6 +75,7 @@
           <button type="button" class="chip !text-xs {{ '!border-primary !bg-primary !text-on-primary' if filters.gia_tu == rmin and filters.gia_den == rmax and (rmin or rmax) }}" @click="price('{{ rmin }}', '{{ rmax }}')">{{ r.label }}</button>
           {% endfor %}
         </div>
+        <label class="mt-3 flex cursor-pointer items-center gap-3 text-sm"><input type="checkbox" name="gia_lh" value="1" {{ 'checked' if filters.gia_lh }} @change="submit()" class="h-4 w-4 accent-[var(--c-primary)]"> Chỉ hiện sản phẩm giá liên hệ</label>
         <button type="submit" class="btn btn-outline btn-sm mt-3 w-full">Áp dụng</button>
       </div>
       {% endif %}

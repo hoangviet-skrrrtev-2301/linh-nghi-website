@@ -6,6 +6,7 @@ import { getMediaMap } from './media.js';
 import { getRaw } from './settings.js';
 import { productsByIds, getProduct } from './catalog.js';
 import { normalizePhone, phoneRe } from './inquiries.js';
+import { mailReady, sendMail, reviewNotification } from './mailer.js';
 
 const MAX_IMAGES = 12;
 const dateRe = /^\d{4}-\d{2}-\d{2}$/;
@@ -143,6 +144,16 @@ function reviewIdentity(phone, productId, mode) {
   return c ? { ok: true, verified: 0, customerId: c.id, inquiryId: null, name: c.name } : { ok: false };
 }
 
+// Email nền báo shop có đánh giá chờ duyệt (cùng người nhận với thông báo đơn hàng)
+async function notifyReview(review, productName) {
+  if (!mailReady()) return;
+  const mail = getRaw('mail');
+  const to = (mail.notify_to || mail.user || '').split(',').map((s) => s.trim()).filter(Boolean);
+  if (!to.length) return;
+  const n = reviewNotification(review, productName);
+  await sendMail({ to, subject: n.subject, html: n.html });
+}
+
 export function submitReview(input = {}) {
   const f = getRaw('feedback');
   if (!f.reviews_enabled) throw new HttpError(403, 'Tính năng đánh giá sản phẩm đang tắt');
@@ -168,6 +179,10 @@ export function submitReview(input = {}) {
   const name = cleanText(input.name, 80) || who.name;
   db.prepare(`INSERT INTO product_reviews (product_id, customer_id, inquiry_id, name, phone, rating, content, status, source, verified)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'customer', ?)`).run(product.id, who.customerId, who.inquiryId, name, phone, rating, content, status, who.verified);
+  if (status === 'pending' && f.reviews_notify) {
+    notifyReview({ rating, name, phone, content, verified: who.verified }, product.name)
+      .catch((err) => console.error('[mail]', err.message));
+  }
   return { status, message: status === 'approved' ? f.reviews_success_approved : f.reviews_success_pending };
 }
 

@@ -162,7 +162,7 @@ function renderProductList(req, res, next, forced = {}) {
     q: typeof q.q === 'string' ? q.q.slice(0, 100) : '',
     loai: [].concat(q.loai || []), mau: [].concat(q.mau || []), kieu: [].concat(q.kieu || []), menh: [].concat(q.menh || []),
   };
-  for (const k of ['gia_tu', 'gia_den', 'ni', 'sap_xep', 'con_hang', 'custom', 'nhom']) {
+  for (const k of ['gia_tu', 'gia_den', 'gia_lh', 'ni', 'sap_xep', 'con_hang', 'custom', 'nhom']) {
     filters[k] = typeof q[k] === 'string' ? q[k].slice(0, 20) : '';
   }
   if (forced.loai) filters.loai = [forced.loai];

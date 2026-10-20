@@ -57,7 +57,7 @@ _Cập nhật lần cuối: 20/10/2026 (Feedback + đánh giá sản phẩm, N�
 | Khách vs. người chỉ hỏi | **Không tách bảng**: một người một hồ sơ (SĐT là khóa); phân loại tự tính Người quan tâm / Đã đặt hàng / Đã mua / Mua lại. Liên hệ / custom kết thúc không mua dùng trạng thái Đã hủy, nhãn "Không phát sinh đơn" / "Không chốt đơn" | Ngày 18/10/2026; tránh trùng hồ sơ và gộp lại khi họ mua |
 | Nhập lại dữ liệu cũ | Mọi form thêm thủ công / nhập hàng loạt có ô ngày (mặc định hôm nay, không cho tương lai); doanh thu tính theo ngày hoàn thành đã chọn | Ngày 18/10/2026; `vnDateToUtc` trong `lib/utils.js` (ngày khác hôm nay lưu 12:00 giờ Việt Nam) |
 | Gợi ý tìm kiếm | Gõ từ 2 ký tự: sản phẩm + loại ngọc / loại sản phẩm khớp, bật / tắt ở Cài đặt | Ngày 18/10/2026 |
-| Bộ lọc | Loại ngọc, giá (khoảng giá cấu hình được), ni tay, màu, kiểu dáng, mệnh | Danh mục quản lý trong admin |
+| Bộ lọc | Loại ngọc, giá (khoảng giá cấu hình được, hoặc "chỉ giá liên hệ" `gia_lh`), ni tay, màu, kiểu dáng, mệnh | Danh mục quản lý trong admin |
 | Chế độ tối | Có, khách tự chuyển; mặc định theo thiết bị; chủ shop chỉnh màu tối / tắt trong Admin › Giao diện | Biến CSS `:root[data-theme="dark"]` sinh tại `/theme.css` |
 | Đơn của shop tự tạo | Admin tạo khách / đơn / custom thủ công; đơn lên từ custom có mã DH riêng (parent_id); giá đơn sửa được sau khi liên hệ, tổng = dòng hàng + điều chỉnh | Khách tra cứu bằng mã + SĐT |
 | Tên miền | Chưa có | Hướng dẫn mua và trỏ tên miền có trong HUONG_DAN_UPLOAD.md |
@@ -109,7 +109,7 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 
 **Việc đầu tiên của phiên sau:** (1) `git status` + `git log --oneline -5`; (2) nếu `npm run dev` đang chạy từ trước thì nhờ chủ dự án khởi động lại để nạp code mới (migration tự chạy, 001 → 016 đã chạy trên database thật, bản chụp ở `database/data/pre-migrate/`, sao lưu mới nhất `database/backups/2026-10-20-04-16`); (3) đọc mục 4 "Việc tiếp theo".
 
-**Trạng thái cuối phiên 20/10/2026:** mã nguồn trên GitHub `main` (commit `186b791`) và Vercel production đã khớp nhau. `npm test`: 77 / 77. Đã quét responsive 320–1280px (75 trạng thái, kể cả khi bật nền mọi khối), không tràn ngang, không lỗi Console. **Chưa làm / chưa thử:** thử trên điện thoại thật; export lại `database/content-pack` (gói đang là bản 18/10, thiếu cài đặt Feedback, nền các khối, feedback / đánh giá, nên bản Vercel chưa có feedback mẫu); gửi email thật qua Gmail; `deploy/setup-vps.sh` trên VPS thật.
+**Trạng thái cuối phiên 20/10/2026:** mã nguồn trên GitHub `main` (commit `186b791`) và Vercel production đã khớp nhau. `npm test`: 81 / 81 (sau email báo đánh giá mới và lọc giá liên hệ). Đã quét responsive 320–1280px (75 trạng thái, kể cả khi bật nền mọi khối), không tràn ngang, không lỗi Console. **Chưa làm / chưa thử:** thử trên điện thoại thật; export lại `database/content-pack` (gói đang là bản 18/10, thiếu cài đặt Feedback, nền các khối, feedback / đánh giá, nên bản Vercel chưa có feedback mẫu); gửi email thật qua Gmail; `deploy/setup-vps.sh` trên VPS thật.
 
 **Dữ liệu thử đang có trong database thật (xóa khi không cần):** 4 feedback "Khách mẫu 1–4" (khối trang chủ đã bật để xem), 2 sản phẩm Pháp phục mẫu + các sản phẩm "(bản sao)", vài đơn / khách thử, Quản lý kho đang BẬT (cài đặt thử).
 
@@ -122,7 +122,7 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 - [ ] Thử trên điện thoại thật: khối Feedback + popup + form đánh giá, nền các khối (đặc biệt header / chân trang nền tối), trang admin Feedback
 - [ ] Chọn nền ưng ý cho từng khối ở Giao diện › Nền các khối (hiện đang dùng mặc định)
 - [ ] Nếu muốn giảm độ phức tạp: cố định đường dẫn `/feedback` (bỏ `feedback-path.js` + hook trong `settings.js`) hoặc bỏ mức điều kiện đánh giá chặt (`reviews_require`); chưa ai yêu cầu
-- [ ] Ý tưởng: email báo shop khi có đánh giá mới chờ duyệt (hiện chỉ thấy số chờ duyệt trên tab)
+- [x] Email báo shop khi có đánh giá mới chờ duyệt: đã làm 20/10/2026 (chưa thử gửi thật qua Gmail)
 - [ ] **Thay 4 feedback mẫu bằng feedback thật** (Admin › Feedback & đánh giá), chọn ảnh khung giới thiệu trang chủ (Cài đặt › Feedback & đánh giá khách hàng › Khối trên trang chủ); thử popup và form đánh giá trên điện thoại thật
 - [ ] Quyết định có bật **tự duyệt** đánh giá hay giữ "chờ duyệt" (mặc định chờ duyệt); đặt thói quen mở tab "Đánh giá sản phẩm" để duyệt
 - [ ] Thử Gallery (kéo / vuốt, các kiểu hiển thị) và Tổng quan trên điện thoại thật; chọn kiểu Gallery ưng ý
