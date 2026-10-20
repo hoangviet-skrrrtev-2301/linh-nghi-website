@@ -266,6 +266,8 @@ Xem [TONG_QUAN_TINH_NANG.md](TONG_QUAN_TINH_NANG.md): giới thiệu website kh�
 | Railway / Render / Fly.io có ổ đĩa lưu bền | Có | Vài USD mỗi tháng, tự cấu hình |
 | Chủ shop tự chạy trên máy họ (phần 4) | Có | Miễn phí, họ thấy và sửa ngay trên máy của họ |
 
+**Deploy bản xem thử (đã làm 20/10/2026):** dự án đã liên kết (`.vercel/`, không đưa lên git). Từ thư mục dự án chạy `npx vercel@latest deploy --prod --yes` (cần đã đăng nhập: `npx vercel@latest whoami`). Địa chỉ: https://linh-nghi-website.vercel.app. Deploy **không tự chạy** khi push GitHub; nội dung hiển thị lấy từ gói nội dung `database/content-pack` nên phải export lại gói trước khi deploy nếu muốn bản xem thử có nội dung mới.
+
 **Nếu vẫn muốn thử Vercel**, các câu hỏi bạn đặt ra:
 
 - *Xóa được không?* **Được.** Vercel Dashboard › chọn dự án › Settings › Delete Project. Xóa dự án là xóa luôn địa chỉ và dữ liệu trên Vercel; mã nguồn trên GitHub không bị ảnh hưởng. Nhớ cả việc **xóa biến môi trường** và ngắt kết nối GitHub trong Vercel.

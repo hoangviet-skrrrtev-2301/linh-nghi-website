@@ -2,7 +2,7 @@
 
 Tài liệu "sổ tay" để tiếp tục phát triển: bối cảnh, các quyết định đã chốt, những gì đã xong, việc còn chờ. Cập nhật file này mỗi khi có quyết định hoặc thay đổi lớn.
 
-_Cập nhật lần cuối: 20/10/2026 (thêm Feedback khách hàng, trang Feedback, đánh giá sản phẩm)_
+_Cập nhật lần cuối: 20/10/2026 (Feedback + đánh giá sản phẩm, Nền các khối gồm header / chân trang, sắp lại cài đặt; đã deploy Vercel)_
 
 ---
 
@@ -29,6 +29,9 @@ _Cập nhật lần cuối: 20/10/2026 (thêm Feedback khách hàng, trang Feedb
 | Blog | Chia theo chuyên mục; trang chuyên mục (trang 1) **được index và có trong sitemap** (chủ dự án chốt 19/10/2026; chỉ chuyên mục hiện và có bài đã đăng). Tắt được ở Cài đặt › Nội dung các trang › Blog (`blog_category_index`) và Sitemap (`sitemap_blog_categories`); trang 2+ / có tham số luôn noindex | Trước đó noindex để tránh trùng nội dung; nếu thấy chuyên mục trùng với bài viết thì tắt lại. Cài đặt cũ `blog_category_noindex` không còn dùng |
 | Gallery | Kiểu hiển thị chọn trong admin (19/10/2026): Tự động / Băng chuyền / Lưới tĩnh / Xếp gạch, 1–4 dòng, 2–6 cột (điện thoại 1–3), tỷ lệ ảnh, băng chuyền tự chạy hoặc đứng yên + hướng + tốc độ; trang Gallery giống trang chủ hoặc cấu hình riêng (`gallery_page_*`). Khách luôn kéo chuột / vuốt được. Mặc định giữ cách cũ: 2 × 4, hơn 8 ảnh thì băng chuyền tự chạy phải → trái. Tab "Tất cả" chỉ hiện ảnh bật "Hiện ở Gallery tổng", tab album hiện đủ ảnh | Chủ dự án muốn gallery tổng chọn lọc, album phụ chứa feedback / ảnh chưa chọn |
 | Feedback & đánh giá | **Feedback** do shop nhập (kèm nhiều ảnh chụp tin nhắn) hiện ở khối trang chủ (theo mẫu: khung trái + lưới thẻ phải) và **trang Feedback riêng** (`/feedback`, đổi được, có ở chân trang, popup chi tiết giống xem nhanh sản phẩm). **Đánh giá sản phẩm** do khách đã mua gửi: số điện thoại phải **có trong hệ thống khách hàng** (mặc định; chỉnh chặt hơn ở cài đặt `reviews_require`: có đơn Hoàn thành bất kỳ / chứa đúng sản phẩm), mỗi người một lần mỗi sản phẩm, **không upload ảnh**, mặc định **chờ duyệt**; nhãn "Đã mua hàng" chỉ khi có đơn Hoàn thành chứa đúng sản phẩm. **Chủ shop tự thêm đánh giá** được (nhãn "Shop thêm", tính vào sao hiển thị, không đưa vào schema Google). Số sao hiện ở sản phẩm / thẻ sản phẩm (có mới hiện) và ở **tab con** của trang Feedback (không thêm đường dẫn) | Chủ dự án chốt 20/10/2026. Quyền riêng `feedback`; nhóm cài đặt `feedback` (nằm ở mục "Nội dung từng trang"); danh sách "Cảm nhận khách hàng" cũ đã chuyển sang bảng `feedbacks` (migration 014) |
+| Nền các khối | Nhóm cài đặt riêng **Giao diện › Nền các khối** (`backgrounds`) cho **16 khối**: thanh thông báo, thanh menu (header), 10 khối trang chủ, phần đầu các trang con, đánh giá / sản phẩm liên quan ở trang sản phẩm, chân trang. Mỗi khối: mặc định / một màu / họa tiết / ảnh + lớp phủ; chữ tự đổi theo nền (chân trang nền sáng đổi sang chữ + logo tối; header dùng lớp `header-tone-*`). "Bố cục trang chủ" chỉ còn bật / tắt + thứ tự | Chủ dự án yêu cầu 20/10/2026 (nền khó thấy khi nằm lẫn trong Bố cục trang chủ). Nền cũ chuyển bằng migration 016 |
+| Thứ tự cài đặt | Nhóm "Nội dung từng trang" xếp theo menu website: Trang chủ → Sản phẩm / Gallery / Blog → Hướng dẫn size → Biểu mẫu & đặt hàng → Feedback & đánh giá → Về shop → Liên hệ → Chính sách (`SETTINGS_CATEGORIES`) | 20/10/2026. Nhóm mới phải xếp đúng vị trí theo menu, không nối cuối |
+| Triển khai xem thử | **Vercel** dự án `linh-nghi-website` (https://linh-nghi-website.vercel.app) deploy bằng `npx vercel@latest deploy --prod --yes` (đã đăng nhập sẵn trên máy chủ dự án; không tự động khi push GitHub). Chỉ để xem giao diện: dữ liệu lấy từ gói nội dung, không ghi bền được | 20/10/2026; xem `docs/BAN_GIAO.md` mục 8 |
 | Trạng thái đơn | Mỗi loại có chuỗi riêng: đơn hàng thêm **Đang giao hàng** (kèm đơn vị vận chuyển + mã vận đơn khách xem được, tùy chọn email báo khách); liên hệ kết thúc ở "Đã xử lý" | Ngày 17/10/2026 |
 | Index / robots | **Đang TẮT index** cho tới khi chính thức vận hành (bật ở Cài đặt › SEO & mã theo dõi). Khi bật: robots chặn `/*?`; chỉ trang sạch được index; trang có tham số lọc / sắp xếp / tìm kiếm / phân trang là `noindex, follow` và không có canonical; tham số theo dõi (utm...) canonical về trang sạch | Ngày 18/10/2026. Trang 2 trở đi của danh sách không index, sản phẩm vào Google qua sitemap |
 | Schema | Tự dựng từ cài đặt (nhóm Schema + Thông tin shop); đổi trả / giao hàng mặc định tắt, tác giả bài ghi là shop | Ngày 18/10/2026 |
@@ -104,10 +107,21 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 
 **Mở web chính thức (làm cuối cùng):** bật "Cho phép Google lập chỉ mục", điền thông tin thật (khung "Chuẩn bị mở website chính thức" ở Tổng quan liệt kê các mục còn mẫu), đặt BASE_URL đúng tên miền, chạy `npm run check:seo -- https://tenmien.vn`, rồi gửi sitemap lên Search Console.
 
-**Việc đầu tiên của phiên sau:** nhắc chủ dự án **khởi động lại `npm run dev`** (Ctrl+C rồi chạy lại) để nạp code mới. Migration 013 (kích cỡ / kho) có thể vẫn chưa chạy trên database thật: lần khởi động này sẽ chạy, tự chụp bản sao vào `database/data/pre-migrate/` (và đã có sao lưu đầy đủ ở `database/backups/`). Nếu server báo lỗi migration thì dừng lại, đọc tên file trong thông báo.
+**Việc đầu tiên của phiên sau:** (1) `git status` + `git log --oneline -5`; (2) nếu `npm run dev` đang chạy từ trước thì nhờ chủ dự án khởi động lại để nạp code mới (migration tự chạy, 001 → 016 đã chạy trên database thật, bản chụp ở `database/data/pre-migrate/`, sao lưu mới nhất `database/backups/2026-10-20-04-16`); (3) đọc mục 4 "Việc tiếp theo".
+
+**Trạng thái cuối phiên 20/10/2026:** mã nguồn trên GitHub `main` (commit `186b791`) và Vercel production đã khớp nhau. `npm test`: 77 / 77. Đã quét responsive 320–1280px (75 trạng thái, kể cả khi bật nền mọi khối), không tràn ngang, không lỗi Console. **Chưa làm / chưa thử:** thử trên điện thoại thật; export lại `database/content-pack` (gói đang là bản 18/10, thiếu cài đặt Feedback, nền các khối, feedback / đánh giá, nên bản Vercel chưa có feedback mẫu); gửi email thật qua Gmail; `deploy/setup-vps.sh` trên VPS thật.
+
+**Dữ liệu thử đang có trong database thật (xóa khi không cần):** 4 feedback "Khách mẫu 1–4" (khối trang chủ đã bật để xem), 2 sản phẩm Pháp phục mẫu + các sản phẩm "(bản sao)", vài đơn / khách thử, Quản lý kho đang BẬT (cài đặt thử).
+
+**Quy trình làm việc đã dùng ở phiên này (nên giữ):** `npm run backup` → sửa → kiểm thử bản sao cổng 3100 (clone vào thư mục tạm, chạy `node backend/scripts/create-admin.js` để có tài khoản thử, Chrome headless + CDP chụp màn hình và đo tràn ngang ở nhiều độ rộng, dừng máy chủ thử theo PID) → `npm test` → cập nhật CHANGELOG / tài liệu → commit (chỉ khi chủ dự án đồng ý) → push → `npx vercel@latest deploy --prod --yes`. Script sửa file ghi bằng công cụ Write rồi `node script.mjs` (heredoc trong bash làm mất dấu gạch chéo ngược và có thể sai dấu ngoặc kép lồng nhau). Nếu server báo lỗi migration khi khởi động thì dừng lại, đọc tên file trong thông báo.
 
 ## 4. Việc tiếp theo
 
+- [ ] **Export lại gói nội dung** (`npm run export-content`) ở mốc bàn giao, sau khi thay feedback mẫu bằng feedback thật và dọn sản phẩm mẫu; commit gói mới (gói cũ làm bản Vercel thiếu cài đặt mới)
+- [ ] Thử trên điện thoại thật: khối Feedback + popup + form đánh giá, nền các khối (đặc biệt header / chân trang nền tối), trang admin Feedback
+- [ ] Chọn nền ưng ý cho từng khối ở Giao diện › Nền các khối (hiện đang dùng mặc định)
+- [ ] Nếu muốn giảm độ phức tạp: cố định đường dẫn `/feedback` (bỏ `feedback-path.js` + hook trong `settings.js`) hoặc bỏ mức điều kiện đánh giá chặt (`reviews_require`); chưa ai yêu cầu
+- [ ] Ý tưởng: email báo shop khi có đánh giá mới chờ duyệt (hiện chỉ thấy số chờ duyệt trên tab)
 - [ ] **Thay 4 feedback mẫu bằng feedback thật** (Admin › Feedback & đánh giá), chọn ảnh khung giới thiệu trang chủ (Cài đặt › Feedback & đánh giá khách hàng › Khối trên trang chủ); thử popup và form đánh giá trên điện thoại thật
 - [ ] Quyết định có bật **tự duyệt** đánh giá hay giữ "chờ duyệt" (mặc định chờ duyệt); đặt thói quen mở tab "Đánh giá sản phẩm" để duyệt
 - [ ] Thử Gallery (kéo / vuốt, các kiểu hiển thị) và Tổng quan trên điện thoại thật; chọn kiểu Gallery ưng ý

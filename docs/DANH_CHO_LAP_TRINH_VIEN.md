@@ -85,6 +85,8 @@ Chạy `npm run migrate` (trên VPS, `deploy/update.sh` tự chạy). Mỗi file
 | `product_types` | Loại sản phẩm (Vòng tay ngọc, Pháp phục...): tên, thông số tự đặt `spec_fields` (JSON), `active`, `uses_jade_fields` |
 | `post_categories` | Chuyên mục blog (`posts.category_id`) |
 | `authors` | Tác giả blog (`posts.writer_id`); `links` là JSON các địa chỉ |
+| `feedbacks`, `feedback_images` | Feedback do shop nhập (tên, nghề nghiệp, số sao 0–5, nội dung, ngày, ảnh đại diện, `show_home` / `show_page`, `sort_order`) và nhiều ảnh mỗi feedback |
+| `product_reviews` | Đánh giá sản phẩm: `source` = `customer` (khách tự gửi, có `phone`) hoặc `shop` (chủ shop thêm, không số điện thoại); `status` = `pending` / `approved` / `hidden`; `verified` = có đơn Hoàn thành chứa đúng sản phẩm; chỉ mục duy nhất `(product_id, phone)` bỏ qua số trống |
 | `roles` | Vai trò phân quyền (`permissions` JSON); `users.role_id` chọn vai trò cho nhân viên (`users.role` vẫn là owner / staff) |
 | `redirects`, `not_found_log` | Chuyển hướng 301 / 302 / 410 (`auto = 1` do hệ thống tự tạo khi đổi slug) và nhật ký đường dẫn bị 404 |
 
@@ -179,6 +181,20 @@ KHÁCH TRÊN WEBSITE                       SHOP TỰ NHẬP (admin)
 - `services/dashboard.js`. Mọi ngày theo giờ Việt Nam. **Đơn hàng** = đơn không hủy tính theo `created_at` (`NOT_CANCELLED_ORDER`); đơn hủy đếm riêng ở `totals.cancelled` và vẫn nằm trong `statusBreakdown`. Custom / liên hệ kết thúc không mua (trạng thái hủy) vẫn được đếm. **Doanh thu** = đơn hoàn thành theo `completed_at`.
 - `revenueByProduct`: chia `total` của đơn hoàn thành cho các dòng hàng theo tỷ lệ thành tiền (qty × giá; không có giá thì theo số lượng) → top 5 + `topOther` (gồm phần dư làm tròn), tổng luôn bằng `totals.revenue`.
 - Cột biểu đồ (`bucketer`): ≤ 45 ngày theo ngày, ≤ 150 ngày theo tuần, còn lại theo tháng; mỗi cột có `start` / `end` đã cắt theo kỳ; nhãn tháng "T10" (kỳ qua nhiều năm: "T10/26"). Trang `dashboard` (`pages.js`) bỏ qua phản hồi cũ khi đổi kỳ liên tiếp. Kiểm thử: `tests/dashboard.test.js`.
+
+## Feedback khách hàng, trang Feedback, đánh giá sản phẩm
+
+- **Dữ liệu và logic:** `backend/services/feedback.js` (CRUD feedback, `submitReview`, `listReviewsPublic`, `createReviewByShop`, `reviewSummary`); cài đặt nhóm `feedback` (nằm ở mục "Nội dung từng trang"); migration 014 (bảng + chuyển danh sách "Cảm nhận khách hàng" cũ), 015 (nguồn / xác nhận đánh giá).
+- **Khối trang chủ + trang Feedback** dùng chung `partials/feedback-block.njk` (khung trái + lưới thẻ), cửa sổ chi tiết `feedback-modal.njk` (store Alpine `fb`, dữ liệu trong `<script id="fb-data">`, khung nội dung đứng SAU `.modal-backdrop`). Trang riêng: route động `/:slug` đặt **cuối** `routes/public.js` (đường dẫn = `feedback.page_slug`, chuẩn hóa ở `lib/feedback-path.js`, đổi thì 301 qua `addAutoRedirect` trong `settings.saveGroup`); tab "Đánh giá sản phẩm" cùng đường dẫn (Alpine, không URL mới); phân trang `?trang=` (noindex theo chính sách chung).
+- **Đánh giá:** form ở `pages/product-detail.njk` (`reviewForm`), API `POST /api/reviews` (`formLimiter` + `publicFormGuard`), `GET /api/reviews` (xem thêm, trả `next` là vị trí đọc tiếp). Điều kiện số điện thoại theo `reviews_require` (`customer` mặc định / `any_order` / `product_order`, hàm `reviewIdentity`); mặc định **chờ duyệt**; tên rút gọn khi hiển thị; số điện thoại không bao giờ ra phía khách. `catalog.hydrate` gắn `rating_avg` / `rating_count` (đánh giá đã duyệt) cho thẻ sản phẩm. Schema `aggregateRating` chỉ tính đánh giá `source = 'customer'` (không tính do shop thêm).
+- **Admin:** `admin/views/pages/feedback.njk` + `feedbackPage` trong `pages.js`; API `/feedbacks` (+ `/reorder`), `/reviews` (thêm / sửa đánh giá do shop nhập, đổi trạng thái, xóa); quyền riêng `feedback` (`permissions.js`). Đánh giá do khách gửi không sửa được.
+- **Kiểm thử:** `tests/feedback.test.js`. Lưu ý khi viết kiểm thử gửi đánh giá qua HTTP: `formLimiter` giới hạn 6 yêu cầu / 10 phút mỗi tiến trình; nhãn "Đã mua hàng" xuất hiện 1 lần trong mẫu Alpine nên đếm số lần xuất hiện.
+
+## Nền các khối
+
+- Nhóm cài đặt `backgrounds` (danh sách cố định `blocks`, mã khối ở `BG_BLOCKS` trong `settings-schema.js`; khối trang chủ dùng cùng mã với `HOME_SECTIONS`). Lõi tính nền: `backend/lib/block-bg.js` (`blockBackground` → `{ hasBg, style, bgStyle, toneStyle, pattern, tone }`); `homeSections` (`lib/home-layout.js`) và `publicLocals` (`res.locals.bg`) dùng lại.
+- **Thêm một khối có nền:** thêm vào `BG_BLOCKS`; ở template gắn `class="{{ bg.<mã>.pattern }}" style="{{ bg.<mã>.style }}"` (khối bình thường), chân trang thêm lớp `footer-on-light` khi `tone == 'dark'`, header dùng `bgStyle` cho lớp nền + lớp `header-tone-<tone>` cho hàng thanh menu (không đổi biến màu của khung sổ xuống). Nền tối: `TONES.light` đặt `--c-primary` sáng hơn để giá / nút đọc được.
+- Danh sách trong admin dùng cờ `noEnable` / `noMove` (không có công tắc hiện / ẩn, không đổi thứ tự; luôn theo thứ tự trong code). Migration 016 chuyển nền cũ từ `home_layout` sang nhóm này.
 
 ## Gallery: kiểu hiển thị
 

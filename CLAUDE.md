@@ -41,9 +41,14 @@ npm run check:seo       # kiểm tra SEO kỹ thuật của website đang chạy
 
 - **Phân quyền:** mọi API / trang admin mới phải khai báo quyền ở `backend/config/permissions.js` (`API_RULES` / `PAGE_RULES`; chưa khai báo = chỉ Chủ shop); nhóm cài đặt mới phải có trong `SETTINGS_PERMISSION` và `SETTINGS_CATEGORIES`. Mục menu / nút admin ẩn theo `can('<quyền>')`, không so sánh `currentUser.role == 'owner'` (trừ quản lý tài khoản / vai trò). Liên kết `target="_blank"` phải có `rel="noopener"`. Nút chỉ có biểu tượng phải có `aria-label`; ô nhập có `<label for>` hoặc `aria-label`.
 - **Index / robots:** `allow_indexing` đang TẮT cho tới khi shop mở chính thức (đừng tự bật). Địa chỉ có tham số lọc / sắp xếp / tìm kiếm / phân trang luôn `noindex, follow` và không có canonical (logic ở `buildSeo`, `lib/seo.js`); chỉ tham số theo dõi (utm_*, fbclid...) giữ index với canonical sạch. Trang mới / loại URL mới / tham số mới thì chạy `npm run check:seo` (server đang chạy) và sửa tới khi không còn lỗi. Schema dựng trong `lib/seo.js` theo nhóm cài đặt `schema` (không viết cứng thông tin shop, đổi trả, giao hàng). Font Google tự lưu qua `services/fonts.js`; Swiper / PhotoSwipe chỉ tải khi trang cần (`app.js`), không thêm lại thẻ script tĩnh.
+- **Feedback / đánh giá / nền:** đánh giá sản phẩm chỉ nhận qua `submitReview` (kiểm tra số điện thoại theo `reviews_require`, mặc định chờ duyệt, không upload ảnh); đánh giá do shop thêm (`source = 'shop'`) không đưa vào schema Google. Trang Feedback là route động `/:slug` đặt cuối `routes/public.js`, đường dẫn đổi được (`lib/feedback-path.js`). Nền tùy chỉnh của khối: nhóm `backgrounds` + `BG_BLOCKS` + `lib/block-bg.js`, không viết cứng màu nền vào template khối. Nhóm cài đặt mới phải xếp đúng vị trí theo menu website trong `SETTINGS_CATEGORIES` (không nối cuối).
 - **URL và SEO:** đường dẫn sản phẩm / bài viết chỉ lấy từ `p.url` / `post.url` (`backend/lib/urls.js`), không tự ghép chuỗi `/san-pham/<slug>` ở nơi khác. Đổi đường dẫn của trang phải tự tạo 301 (`addAutoRedirect` trong `services/redirects.js`). Mỗi trang khách đúng 1 H1, không nhảy cấp tiêu đề; ảnh có width / height, ảnh LCP có `fetchpriority=high`. Chữ trên trang 404 / lỗi lấy từ cài đặt, không viết cứng.
 - Lên đơn = đổi `type` của chính bản ghi (`convertToOrder`), không tạo bản ghi thứ hai.
 - `npm run dev` có thể không tự khởi động lại; tính năng mới không chạy thì nhờ chủ dự án khởi động lại (đừng tắt node của họ).
+
+## Triển khai xem thử (Vercel)
+
+Sau khi push GitHub, nếu chủ dự án muốn cập nhật bản xem thử: `npx vercel@latest deploy --prod --yes` (https://linh-nghi-website.vercel.app, deploy không tự chạy khi push). Chỉ là bản xem thử (xem `docs/BAN_GIAO.md` mục 8); nội dung lấy từ gói nội dung nên có thể thiếu so với database thật.
 
 ## Bàn giao và dữ liệu nhạy cảm
 
@@ -66,3 +71,4 @@ Trước khi bắt đầu **mỗi** thay đổi (sửa code, template, schema, m
 - Mở trang liên quan trên trình duyệt (desktop + mobile), Console không lỗi đỏ
 - Nếu đụng tới form: gửi thử đơn hàng / custom / tư vấn, kiểm tra admin nhận đúng
 - Cập nhật `CHANGELOG.md` và `docs/GHI_CHU_DU_AN.md` khi có thay đổi đáng kể
+- Quét responsive ở 320 / 360 / 390 / 768 / 1024px (không tràn ngang, Console sạch) cho mọi khối giao diện mới; quy trình ở `docs/GHI_CHU_DU_AN.md` mục 6b
