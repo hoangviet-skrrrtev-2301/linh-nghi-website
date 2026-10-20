@@ -1,6 +1,6 @@
 {% from "partials/icons.njk" import icon %}
 {% if features.announcement %}
-<div class="panel-primary text-center text-[12.5px] tracking-wide py-2 px-4">{{ features.announcement }}</div>
+<div class="panel-primary text-center text-[12.5px] tracking-wide py-2 px-4 {{ bg.announcement.pattern }}" style="{{ bg.announcement.style }}">{{ features.announcement }}</div>
 {% endif %}
 
 {# Lưu ý: không đặt backdrop-filter / transform lên chính <header>, vì khi đó khung menu và ô tìm kiếm

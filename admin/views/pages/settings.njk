@@ -80,8 +80,8 @@
                         <button type="button" class="flex min-w-0 flex-1 items-center gap-2 text-left" @click="toggleItem('{{ f.name }}', i)" :aria-expanded="itemOpen('{{ f.name }}', i)">
                           <span class="font-semibold" x-text="'#' + (i + 1)"></span>
                           <span class="truncate text-sm font-semibold text-slate-800" x-text="item.{{ f.itemTitle or 'label' }} || 'Chưa đặt tên'"></span>
-                          {% if f.fixed %}<span class="badge shrink-0" :class="item.enabled === false ? 'bg-slate-100 text-slate-500' : 'bg-emerald-50 text-emerald-700'" x-text="item.enabled === false ? 'Đang ẩn' : 'Đang hiện'"></span>
-                          <span class="badge shrink-0 bg-violet-50 text-violet-700" x-show="item.bg_mode && item.bg_mode !== 'none'">Có nền riêng</span>{% endif %}
+                          {% if f.fixed and not f.noEnable %}<span class="badge shrink-0" :class="item.enabled === false ? 'bg-slate-100 text-slate-500' : 'bg-emerald-50 text-emerald-700'" x-text="item.enabled === false ? 'Đang ẩn' : 'Đang hiện'"></span>
+                          {% endif %}{% if f.fixed %}<span class="badge shrink-0 bg-violet-50 text-violet-700" x-show="item.bg_mode && item.bg_mode !== 'none'">Có nền riêng</span>{% endif %}
                           <span class="ml-auto shrink-0 text-slate-400 transition-transform duration-200" :class="itemOpen('{{ f.name }}', i) && 'rotate-180'">{{ icon('chevron-down', 'w-4 h-4') }}</span>
                         </button>
                         {% else %}
@@ -89,8 +89,8 @@
                         {% if f.fixed %}<span class="text-sm font-semibold text-slate-800" x-text="item.label"></span>{% endif %}
                         <span class="ml-auto"></span>
                         {% endif %}
-                        <button type="button" class="btn btn-ghost btn-sm" @click="move('{{ f.name }}', i, -1)" :disabled="i === 0">↑</button>
-                        <button type="button" class="btn btn-ghost btn-sm" @click="move('{{ f.name }}', i, 1)" :disabled="i === values.{{ f.name }}.length - 1">↓</button>
+                        {% if not f.noMove %}<button type="button" class="btn btn-ghost btn-sm" @click="move('{{ f.name }}', i, -1)" :disabled="i === 0">↑</button>
+                        <button type="button" class="btn btn-ghost btn-sm" @click="move('{{ f.name }}', i, 1)" :disabled="i === values.{{ f.name }}.length - 1">↓</button>{% endif %}
                         {% if not f.fixed %}<button type="button" class="btn btn-ghost btn-sm text-red-600" @click="removeItem('{{ f.name }}', i)">{{ icon('trash', 'w-3.5 h-3.5') }}</button>{% endif %}
                       </div>
                       <div {% if f.collapsible %}x-cloak x-show="itemOpen('{{ f.name }}', i)" x-collapse{% endif %}>

@@ -24,7 +24,7 @@
 {% endmacro %}
 
 {% block content %}
-<section class="border-b border-line bg-surface">
+<section class="border-b border-line bg-surface {{ bg.page_head.pattern }}" style="{{ bg.page_head.style }}">
   <div class="container-x py-10 md:py-14">
     <nav class="mb-4 text-xs text-muted" aria-label="Breadcrumb"><a href="/" class="hover:text-primary">Trang chủ</a> <span class="mx-1.5">/</span> {% if activeGroup and not activeGroup.uses_jade_fields %}<a href="/san-pham" class="hover:text-primary">Sản phẩm</a> <span class="mx-1.5">/</span> <span class="text-ink">{{ activeGroup.name }}</span>{% elif activeType %}<a href="/san-pham" class="hover:text-primary">Sản phẩm</a> <span class="mx-1.5">/</span> <span class="text-ink">{{ activeType.name }}</span>{% else %}<span class="text-ink">Sản phẩm</span>{% endif %}</nav>
     <h1 class="text-4xl font-medium md:text-5xl">{% if filters.q %}Kết quả cho “{{ filters.q }}”{% elif activeType %}Vòng {{ activeType.name }}{% elif activeGroup %}{{ activeGroup.name }}{% else %}{{ s.pages.products_title }}{% endif %}</h1>

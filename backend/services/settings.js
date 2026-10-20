@@ -49,6 +49,8 @@ export function getForAdmin(key) {
       for (const d of f.default) if (!data[f.name].some((x) => x && x.key === d.key)) data[f.name] = [...data[f.name], structuredClone(d)];
       const labels = Object.fromEntries(f.default.filter((d) => d.label).map((d) => [d.key, d.label]));
       data[f.name] = data[f.name].map((x) => (x && labels[x.key] ? { ...x, label: labels[x.key] } : x));
+      // Danh sách không đổi thứ tự được (noMove, ví dụ "Nền các khối"): luôn theo thứ tự trong code
+      if (f.noMove) { const order = f.default.map((d) => d.key); data[f.name] = [...data[f.name]].sort((a, b) => order.indexOf(a?.key) - order.indexOf(b?.key)); }
     }
   }
   return data;

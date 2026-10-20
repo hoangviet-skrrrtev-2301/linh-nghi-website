@@ -12,6 +12,7 @@ import { fontLinks } from '../services/fonts.js';
 import { formToken } from '../middleware/security.js';
 import { HttpError, truncate, stripHtml } from '../lib/utils.js';
 import { homeSections } from '../lib/home-layout.js';
+import { blockBackgrounds } from '../lib/block-bg.js';
 import { buildToc } from '../lib/toc.js';
 import { navChildren } from '../lib/nav-menu.js';
 import { footerColumns, safeLinks } from '../lib/footer-layout.js';
@@ -70,6 +71,7 @@ export function publicLocals(req, res) {
   res.locals.policyBar = !!s.policies?.show_in_footer;   // dòng liên kết nhỏ ở thanh dưới cùng (tùy chọn)
   res.locals.footerCols = footerColumns(s.footer, { skip: res.locals.policyLinks.length ? [] : ['policies'] });
   res.locals.footerLinks = safeLinks(s.footer.extra_links);
+  res.locals.bg = blockBackgrounds(s.backgrounds);   // nền tùy chỉnh của chân trang, thanh thông báo, phần đầu trang con...
   // Lối vào trang Feedback ở chân trang (tắt được trong Cài đặt › Feedback & đánh giá khách hàng)
   res.locals.feedbackLink = s.feedback.page_enabled && s.feedback.footer_show ? { url: feedbackPath(s.feedback.page_slug), label: s.feedback.footer_label || s.feedback.page_title } : null;
   res.locals.clientConfig = {
@@ -139,7 +141,7 @@ router.get('/', (req, res) => {
   const s = res.locals.s;
   const gallery = s.features.gallery && s.home.show_gallery ? listGallery({ limit: Math.min(Math.max(Number(s.home.gallery_limit) || 24, 4), 60) }) : [];
   res.view('pages/home.njk', {
-    sections: homeSections(s.home_layout),
+    sections: homeSections(s.home_layout, s.backgrounds),
     heroCfg: heroConfig(s.home),
     featured: featuredProducts(Number(s.home.featured_limit) || 8),
     gallery, galleryCfg: galleryView(s, 'home', gallery.length),

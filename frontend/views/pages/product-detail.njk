@@ -196,7 +196,7 @@
 {% set fb = s.feedback %}
 {% from "partials/stars.njk" import stars %}
 {% from "partials/form-fields.njk" import antiSpam %}
-<section id="danh-gia" class="section scroll-mt-24 border-t border-line" x-data="reviewForm('{{ p.slug }}')">
+<section id="danh-gia" class="section scroll-mt-24 border-t border-line {{ bg.product_reviews.pattern }}" style="{{ bg.product_reviews.style }}" x-data="reviewForm('{{ p.slug }}')">
   <div class="container-x max-w-4xl">
     <div class="flex flex-wrap items-end justify-between gap-4">
       <div>
@@ -291,7 +291,7 @@
 {% endif %}
 
 {% if related.length %}
-<section class="section border-t border-line">
+<section class="section border-t border-line {{ bg.product_related.pattern }}" style="{{ bg.product_related.style }}">
   <div class="container-x">
     <div class="section-head"><span class="eyebrow">Có thể bạn thích</span><h2 class="section-title">Sản phẩm liên quan</h2></div>
     <div class="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 md:gap-x-6">

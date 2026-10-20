@@ -1,13 +1,15 @@
 {% from "partials/icons.njk" import icon %}
 {% set f = s.footer %}
-<footer class="mt-auto bg-footer text-white/80">
+<footer class="mt-auto bg-footer text-white/80 {{ bg.footer.pattern }} {{ 'footer-on-light' if bg.footer.tone == 'dark' }}" style="{{ bg.footer.style }}">
   <div class="container-x grid gap-10 py-16 md:grid-cols-2 lg:[grid-template-columns:var(--fcols)]" style="--fcols: {{ footerCols.template }}">
     {% for col in footerCols.cols %}
     {% if col.key == 'brand' %}
     <div>
       {% if f.show_logo %}
-        {% if s.site.logo_light %}
-          <img src="{{ s.site.logo_light.sm }}" alt="{{ s.site.name }}" width="{{ s.site.logo_light.width }}" height="{{ s.site.logo_light.height }}" class="h-24 w-auto" loading="lazy" decoding="async">
+        {# Nền chân trang sáng (chữ tối): dùng logo thường thay cho bản logo trắng #}
+        {% set footLogo = (s.site.logo if (bg.footer.tone == 'dark' and s.site.logo) else s.site.logo_light) %}
+        {% if footLogo %}
+          <img src="{{ footLogo.sm }}" alt="{{ s.site.name }}" width="{{ footLogo.width }}" height="{{ footLogo.height }}" class="h-24 w-auto" loading="lazy" decoding="async">
         {% else %}
           <div class="font-heading text-3xl text-white">{{ s.site.name }}</div>
         {% endif %}

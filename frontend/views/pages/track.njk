@@ -4,7 +4,7 @@
 
 {% block content %}
 {% set f = s.forms %}
-<section class="border-b border-line bg-surface">
+<section class="border-b border-line bg-surface {{ bg.page_head.pattern }}" style="{{ bg.page_head.style }}">
   <div class="container-x py-12 text-center md:py-16">
     <span class="eyebrow">Đơn hàng</span>
     <h1 class="mt-3 text-4xl font-medium md:text-5xl">{{ f.track_title }}</h1>

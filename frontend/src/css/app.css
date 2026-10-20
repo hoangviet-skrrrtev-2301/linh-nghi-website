@@ -221,6 +221,13 @@
   .modal-backdrop { @apply fixed inset-0 bg-ink/50 backdrop-blur-sm; }
   .modal-panel { @apply relative w-full overflow-hidden rounded-lg bg-surface shadow-2xl; }
 
+  /* Chân trang có nền sáng (Giao diện › Nền các khối › Chân trang, chữ tối): đổi các lớp chữ / viền trắng sang màu chữ của khối */
+  .footer-on-light { color: var(--c-text); }
+  .footer-on-light [class*="text-white"] { color: color-mix(in srgb, var(--c-text) 78%, transparent) !important; }
+  .footer-on-light h2[class*="text-white"], .footer-on-light .font-heading[class*="text-white"] { color: var(--c-text) !important; }
+  .footer-on-light [class*="border-white"] { border-color: var(--c-border) !important; }
+  .footer-on-light a:hover { color: var(--c-accent) !important; }
+
   /* Khung giới thiệu của khối Feedback: nền xanh nhạt theo màu chủ đạo + lưới đường chéo (đổi theo chế độ sáng / tối) */
   .fb-panel {
     background-color: color-mix(in srgb, var(--c-primary) 10%, var(--c-surface));

@@ -41,6 +41,39 @@ export const SECTION_PATTERNS = [
 
 const sectionBgOn = "item.bg_mode == 'color' || item.bg_mode == 'pattern'";
 
+// Các khối cho phép đổi nền (Giao diện › Nền các khối). Khối trang chủ dùng cùng mã với HOME_SECTIONS (banner có nền riêng nên không có).
+export const BG_BLOCKS = [
+  { key: 'announcement', label: 'Toàn website › Thanh thông báo đầu trang' },
+  ...HOME_SECTIONS.filter((x) => x.bg).map((x) => ({ key: x.key, label: 'Trang chủ › ' + x.label })),
+  { key: 'page_head', label: 'Các trang con › Phần đầu trang (Sản phẩm, Gallery, Blog, Hướng dẫn size, Thiết kế riêng, Liên hệ, Tra cứu đơn)' },
+  { key: 'product_reviews', label: 'Trang sản phẩm › Đánh giá của khách' },
+  { key: 'product_related', label: 'Trang sản phẩm › Sản phẩm liên quan' },
+  { key: 'footer', label: 'Toàn website › Chân trang' },
+];
+
+const BG_FIELDS = [
+  { name: 'key', label: 'Mã khối', type: 'text', hidden: true },
+  { name: 'label', label: 'Tên khối', type: 'text', hidden: true },
+  {
+    name: 'bg_mode', label: 'Nền của khối', type: 'select', default: 'none',
+    options: [
+      { value: 'none', label: 'Mặc định của giao diện' }, { value: 'color', label: 'Một màu nền' },
+      { value: 'pattern', label: 'Họa tiết trên nền màu' }, { value: 'image', label: 'Ảnh nền tải lên' },
+    ],
+  },
+  { name: 'bg_color', label: 'Màu nền', type: 'color', default: '#f1ece1', showIf: sectionBgOn },
+  { name: 'bg_pattern', label: 'Họa tiết', type: 'select', default: 'dots', options: SECTION_PATTERNS, showIf: "item.bg_mode == 'pattern'" },
+  { name: 'bg_pattern_color', label: 'Màu họa tiết', type: 'color', default: '#2e6b94', showIf: "item.bg_mode == 'pattern'" },
+  { name: 'bg_pattern_strength', label: 'Độ đậm họa tiết (5–60)', type: 'number', default: 18, showIf: "item.bg_mode == 'pattern'" },
+  { name: 'bg_image', label: 'Ảnh nền', type: 'image', showIf: "item.bg_mode == 'image'", help: 'Nên dùng ảnh ngang, rộng từ 1600px.' },
+  { name: 'bg_overlay', label: 'Độ phủ màu lên ảnh, 0–90 (để chữ dễ đọc)', type: 'number', default: 35, showIf: "item.bg_mode == 'image'" },
+  { name: 'bg_overlay_color', label: 'Màu phủ lên ảnh', type: 'color', default: '#000000', showIf: "item.bg_mode == 'image'" },
+  {
+    name: 'text_tone', label: 'Màu chữ trong khối', type: 'select', default: 'auto', showIf: "item.bg_mode != 'none'",
+    options: [{ value: 'auto', label: 'Tự chọn theo nền' }, { value: 'light', label: 'Chữ sáng (cho nền tối)' }, { value: 'dark', label: 'Chữ tối (cho nền sáng)' }],
+  },
+];
+
 // Nhãn trên sản phẩm (Best Seller, Mới, Sale...): kiểu chung + màu / họa tiết riêng từng nhãn
 const TAG_FIELDS = [
   { name: 'tag_style', label: 'Kiểu nhãn', type: 'select', default: 'solid', options: [{ value: 'solid', label: 'Nền đặc' }, { value: 'outline', label: 'Viền màu, nền sáng' }, { value: 'glass', label: 'Kính mờ (trong, làm mờ ảnh phía sau)' }] },
@@ -213,8 +246,8 @@ export const SETTINGS_SCHEMA = [
       { key: 'banner', label: 'Banner đầu trang', hint: 'Nhiều banner trong một khối (tự chuyển hoặc kéo để chuyển) hoặc xếp thành nhiều khối nối tiếp' },
       { key: 'info', label: 'Thông tin nổi bật', hint: 'Dải 4 ô bấm vào xem chi tiết, nằm dưới banner' },
       { key: 'featured', label: 'Sản phẩm nổi bật', hint: 'Tiêu đề, mô tả và số sản phẩm hiển thị' },
-      { key: 'categories', label: 'Phân loại theo dòng ngọc', hint: 'Tiêu đề khối phân loại' },
       { key: 'certs', label: 'Chứng chỉ kiểm định', hint: 'Lời cam kết và mẫu giấy kiểm định', toggle: 'show_certificates' },
+      { key: 'categories', label: 'Phân loại theo dòng ngọc', hint: 'Tiêu đề khối phân loại' },
       { key: 'fengshui', label: 'Ý nghĩa ngọc & phong thủy', hint: 'Tiêu đề, ảnh và các ý nghĩa', toggle: 'show_fengshui' },
       { key: 'size', label: 'Bảng số đo ni', hint: 'Tiêu đề và công cụ tính ni nhanh' },
       { key: 'custom', label: 'Thiết kế riêng (custom)', hint: 'Tiêu đề, mô tả và ảnh khối custom' },
@@ -336,37 +369,32 @@ export const SETTINGS_SCHEMA = [
   {
     key: 'home_layout',
     label: 'Bố cục trang chủ',
-    description: 'Bật/tắt, đổi thứ tự (↑ ↓) và đổi nền cho từng khối của trang chủ. Nội dung chữ, ảnh của mỗi khối sửa ở nhóm "Trang chủ".',
+    description: 'Bật/tắt và đổi thứ tự (↑ ↓) các khối của trang chủ. Đổi NỀN của khối: nhóm "Nền các khối" (cùng mục Giao diện). Nội dung chữ, ảnh của mỗi khối sửa ở nhóm "Trang chủ".',
     fields: [
       {
         name: 'sections', label: 'Các khối trang chủ (từ trên xuống dưới)', type: 'list', fixed: true, collapsible: true,
-        default: HOME_SECTIONS.map((x) => ({
-          key: x.key, label: x.label, enabled: true, bg_mode: 'none', bg_color: '#f1ece1', bg_pattern: 'dots', bg_pattern_color: '#2e6b94',
-          bg_pattern_strength: 18, bg_image: null, bg_overlay: 35, bg_overlay_color: '#000000', text_tone: 'auto',
-        })),
+        default: HOME_SECTIONS.map((x) => ({ key: x.key, label: x.label, enabled: true })),
         fields: [
           { name: 'key', label: 'Mã khối', type: 'text', hidden: true },
           { name: 'label', label: 'Tên khối', type: 'text', hidden: true },
           { name: 'enabled', label: 'Hiện khối này trên trang chủ', type: 'toggle', default: true },
-          {
-            name: 'bg_mode', label: 'Nền của khối', type: 'select', default: 'none', noBgFor: ['banner'],
-            options: [
-              { value: 'none', label: 'Mặc định của giao diện' }, { value: 'color', label: 'Một màu nền' },
-              { value: 'pattern', label: 'Họa tiết trên nền màu' }, { value: 'image', label: 'Ảnh nền tải lên' },
-            ],
-          },
-          { name: 'bg_color', label: 'Màu nền', type: 'color', default: '#f1ece1', showIf: sectionBgOn },
-          { name: 'bg_pattern', label: 'Họa tiết', type: 'select', default: 'dots', options: SECTION_PATTERNS, showIf: "item.bg_mode == 'pattern'" },
-          { name: 'bg_pattern_color', label: 'Màu họa tiết', type: 'color', default: '#2e6b94', showIf: "item.bg_mode == 'pattern'" },
-          { name: 'bg_pattern_strength', label: 'Độ đậm họa tiết (5–60)', type: 'number', default: 18, showIf: "item.bg_mode == 'pattern'" },
-          { name: 'bg_image', label: 'Ảnh nền', type: 'image', showIf: "item.bg_mode == 'image'", help: 'Nên dùng ảnh ngang, rộng từ 1600px.' },
-          { name: 'bg_overlay', label: 'Độ phủ màu lên ảnh, 0–90 (để chữ dễ đọc)', type: 'number', default: 35, showIf: "item.bg_mode == 'image'" },
-          { name: 'bg_overlay_color', label: 'Màu phủ lên ảnh', type: 'color', default: '#000000', showIf: "item.bg_mode == 'image'" },
-          {
-            name: 'text_tone', label: 'Màu chữ trong khối', type: 'select', default: 'auto', showIf: "item.bg_mode != 'none'",
-            options: [{ value: 'auto', label: 'Tự chọn theo nền' }, { value: 'light', label: 'Chữ sáng (cho nền tối)' }, { value: 'dark', label: 'Chữ tối (cho nền sáng)' }],
-          },
         ],
+      },
+    ],
+  },
+  {
+    key: 'backgrounds',
+    label: 'Nền các khối',
+    description: 'Đổi nền (một màu, họa tiết hoặc ảnh) cho từng khối của website: các khối trang chủ, thanh thông báo, chân trang, phần đầu các trang con, đánh giá và sản phẩm liên quan ở trang sản phẩm. Bấm vào tên khối để mở. Màu chữ tự đổi cho dễ đọc hoặc chọn tay. Khối để "Mặc định của giao diện" thì dùng màu ở nhóm "Giao diện". Bật / tắt và thứ tự các khối trang chủ chỉnh ở "Bố cục trang chủ".',
+    fields: [
+      {
+        name: 'blocks', label: 'Các khối có thể đổi nền', type: 'list', fixed: true, collapsible: true, noEnable: true, noMove: true,
+        help: 'Mỗi khối có nền riêng độc lập. Khối nào đã đặt nền sẽ có nhãn "Có nền riêng".',
+        default: BG_BLOCKS.map((x) => ({
+          key: x.key, label: x.label, bg_mode: 'none', bg_color: '#f1ece1', bg_pattern: 'dots', bg_pattern_color: '#2e6b94',
+          bg_pattern_strength: 18, bg_image: null, bg_overlay: 35, bg_overlay_color: '#000000', text_tone: 'auto',
+        })),
+        fields: BG_FIELDS,
       },
     ],
   },
@@ -880,8 +908,8 @@ sectionize('size_guide', [
 sectionize('forms', [
   { key: 'order', label: 'Đặt hàng', hint: 'Tiêu đề, ghi chú, thông báo thành công, vận chuyển', fields: ['order_title', 'order_note', 'cart_unavailable', 'order_success', 'shipping_note'] },
   { key: 'orderimage', label: 'Ảnh đơn hàng cho khách tải', hint: 'Chữ trên ảnh và nút tải ảnh', toggle: 'order_image_enabled', fields: ['order_image_enabled', 'order_image_title', 'order_image_note', 'order_image_track', 'order_image_button', 'order_image_share'] },
-  { key: 'track', label: 'Tra cứu đơn hàng', hint: 'Tiêu đề và lời nhắn theo từng trạng thái đơn', fields: ['track_title', 'track_intro', 'track_msg_new', 'track_msg_contacted', 'track_msg_confirmed', 'track_msg_shipping', 'track_msg_completed', 'track_msg_cancelled'] },
   { key: 'custom', label: 'Thiết kế riêng (custom)', hint: 'Tiêu đề, thông báo và các lựa chọn trong form custom', fields: ['custom_title', 'custom_intro', 'custom_success', 'budget_options', 'contact_via_options', 'accessory_options'] },
+  { key: 'track', label: 'Tra cứu đơn hàng', hint: 'Tiêu đề và lời nhắn theo từng trạng thái đơn', fields: ['track_title', 'track_intro', 'track_msg_new', 'track_msg_contacted', 'track_msg_confirmed', 'track_msg_shipping', 'track_msg_completed', 'track_msg_cancelled'] },
   { key: 'other', label: 'Liên hệ, tư vấn & bảo mật', hint: 'Thông báo gửi lời nhắn, yêu cầu tư vấn, ghi chú dưới form', fields: ['contact_success', 'consult_success', 'privacy_note'] },
 ]);
 
@@ -899,8 +927,8 @@ export const SCHEMA_BY_KEY = Object.fromEntries(SETTINGS_SCHEMA.map((g) => [g.ke
 // Mỗi nhóm phải thuộc đúng một mục (thiếu sẽ báo lỗi khi khởi động).
 export const SETTINGS_CATEGORIES = [
   { key: 'general', label: 'Thông tin chung & menu', description: 'Tên shop, liên hệ, logo, menu, chân trang và các công tắc bật / tắt tính năng.', groups: ['site', 'navigation', 'footer', 'features'] },
-  { key: 'pages', label: 'Nội dung từng trang', description: 'Chữ và ảnh của trang chủ, Về shop, Hướng dẫn size, Liên hệ, biểu mẫu đặt hàng, các trang Sản phẩm / Gallery / Blog, Feedback & đánh giá khách hàng và các trang chính sách.', groups: ['home', 'feedback', 'about', 'size_guide', 'contact', 'forms', 'pages', 'policies'] },
-  { key: 'design', label: 'Giao diện', description: 'Màu sắc, font chữ, nhãn sản phẩm, chế độ tối và bố cục các khối trang chủ.', groups: ['theme', 'home_layout'] },
+  { key: 'pages', label: 'Nội dung từng trang', description: 'Chữ và ảnh của từng trang, xếp theo thứ tự menu website: Trang chủ → Sản phẩm / Gallery / Blog → Hướng dẫn size → Đặt hàng, thiết kế riêng, tra cứu đơn → Feedback & đánh giá → Về shop → Liên hệ → Trang chính sách.', groups: ['home', 'pages', 'size_guide', 'forms', 'feedback', 'about', 'contact', 'policies'] },
+  { key: 'design', label: 'Giao diện', description: 'Màu sắc, font chữ, nhãn sản phẩm, chế độ tối, nền các khối (trang chủ, chân trang, thanh thông báo...) và bố cục trang chủ.', groups: ['theme', 'backgrounds', 'home_layout'] },
   { key: 'seo', label: 'Tối ưu SEO', description: 'Mã theo dõi, SEO từng trang, schema cho Google, sitemap, robots.txt và công tắc cho phép Google lập chỉ mục.', groups: ['seo', 'seo_pages', 'schema', 'sitemap'] },
   { key: 'system', label: 'Email & hệ thống', description: 'Gửi thông báo đơn hàng qua email (chỉ người được cấp quyền).', groups: ['mail'] },
 ];

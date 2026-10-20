@@ -3,7 +3,7 @@
 {% block head %}<link rel="stylesheet" href="/vendor/photoswipe/photoswipe.css">{% endblock %}
 
 {% block content %}
-<section class="border-b border-line bg-surface">
+<section class="border-b border-line bg-surface {{ bg.page_head.pattern }}" style="{{ bg.page_head.style }}">
   <div class="container-x py-12 text-center md:py-16">
     <span class="eyebrow">Gallery</span>
     <h1 class="mt-3 text-4xl font-medium md:text-5xl">{{ s.pages.gallery_title }}</h1>

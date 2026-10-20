@@ -100,6 +100,8 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 
 **Đã làm 20/10/2026 (xem CHANGELOG.md):** Feedback khách hàng + trang Feedback + đánh giá sản phẩm (mục "Các quyết định đã chốt"). **Migration 014 và 015 đã chạy trên database thật** (có bản chụp `database/data/pre-migrate/` và sao lưu `database/backups/2026-10-20-03-21`). Trong database thật đang có **4 feedback mẫu "Khách mẫu 1–4"** và khối trang chủ đã được bật để xem: xóa / thay bằng feedback thật ở Admin › Feedback & đánh giá. `npm test`: 71 kiểm tra; responsive đã quét 320–1280px. **Chưa kiểm tra:** popup / form đánh giá trên điện thoại thật (mới thử Chrome giả lập 390px), email báo shop khi có đánh giá mới (chưa có, shop xem ở tab "Đánh giá sản phẩm", số chờ duyệt hiện trên tab).
 
+**Đã làm tiếp 20/10/2026:** tách "Nền các khối" thành nhóm cài đặt riêng (15 khối, gồm chân trang, thanh thông báo, đầu trang con), sắp lại thứ tự nhóm "Nội dung từng trang" theo menu website (migration 016 đã chạy trên database thật). `npm test`: 76 kiểm tra.
+
 **Mở web chính thức (làm cuối cùng):** bật "Cho phép Google lập chỉ mục", điền thông tin thật (khung "Chuẩn bị mở website chính thức" ở Tổng quan liệt kê các mục còn mẫu), đặt BASE_URL đúng tên miền, chạy `npm run check:seo -- https://tenmien.vn`, rồi gửi sitemap lên Search Console.
 
 **Việc đầu tiên của phiên sau:** nhắc chủ dự án **khởi động lại `npm run dev`** (Ctrl+C rồi chạy lại) để nạp code mới. Migration 013 (kích cỡ / kho) có thể vẫn chưa chạy trên database thật: lần khởi động này sẽ chạy, tự chụp bản sao vào `database/data/pre-migrate/` (và đã có sao lưu đầy đủ ở `database/backups/`). Nếu server báo lỗi migration thì dừng lại, đọc tên file trong thông báo.
@@ -190,7 +192,8 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 | Nội dung email | `backend/services/mailer.js` |
 | robots.txt, sitemap.xml | `backend/lib/robots-sitemap.js` (cài đặt nhóm `sitemap` trong `settings-schema.js`) |
 | Thẻ meta SEO, JSON-LD | `backend/lib/seo.js`, `frontend/views/layouts/base.njk` |
-| Thứ tự / nền các khối trang chủ | `backend/lib/home-layout.js`, `frontend/views/partials/home/*.njk`, nhóm `home_layout` trong `settings-schema.js` |
+| Thứ tự / bật tắt các khối trang chủ | `backend/lib/home-layout.js`, `frontend/views/partials/home/*.njk`, nhóm `home_layout` trong `settings-schema.js` |
+| Nền các khối (trang chủ, chân trang, thanh thông báo, phần đầu trang con, trang sản phẩm) | nhóm `backgrounds` + `BG_BLOCKS` trong `settings-schema.js`, `backend/lib/block-bg.js` (`blockBackground`), `res.locals.bg` trong `publicLocals`; template gắn `bg.<khối>.pattern` / `.style`; CSS `.footer-on-light` (chân trang nền sáng) |
 | Chân trang, blog 2 cột | `partials/footer.njk`, `backend/lib/footer-layout.js`; `pages/post.njk`, `partials/blog-sidebar.njk`, `backend/lib/toc.js` |
 | Menu sổ dọc, phân trang, schema | `backend/lib/nav-menu.js`, `backend/lib/pagination.js`, `backend/lib/seo.js` |
 | Tổng quan admin theo kỳ (đơn hủy không tính vào số đơn; doanh thu theo sản phẩm chia từ tổng đơn hoàn thành) | `backend/services/dashboard.js` (`revenueByProduct`, `bucketer`), `admin/views/pages/dashboard.njk`, component `dashboard` trong `pages.js` |
