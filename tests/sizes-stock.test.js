@@ -57,6 +57,7 @@ test('loại ngọc vẫn cho nhập ni riêng; sản phẩm không có danh sá
 });
 
 test('quản lý kho tắt thì sản phẩm được tick theo dõi vẫn bán như thường', async () => {
+  ctx.setSettings('features', { inventory_enabled: false }); // gói nội dung có thể mang cài đặt kho đang bật của shop
   const id = await makeProduct({ product_type_id: 1, track_stock: true, stock_qty: 1 });
   const o = await order([{ id, qty: 5 }]);
   assert.ok(o.code);

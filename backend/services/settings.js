@@ -6,6 +6,8 @@ import { cleanHtml, cleanText } from '../lib/sanitize.js';
 import { bool, safeJson, HttpError } from '../lib/utils.js';
 import { ensureFonts } from './fonts.js';
 import { normalizePolicies } from './policies.js';
+import { addAutoRedirect, dropAutoRedirectFrom } from './redirects.js';
+import { cleanFeedbackSlug, feedbackPath } from '../lib/feedback-path.js';
 import { getMediaMap } from './media.js';
 
 let cache = null;
@@ -45,6 +47,8 @@ export function getForAdmin(key) {
   for (const f of group.fields) {
     if (f.type === 'list' && f.fixed && Array.isArray(f.default) && Array.isArray(data[f.name])) {
       for (const d of f.default) if (!data[f.name].some((x) => x && x.key === d.key)) data[f.name] = [...data[f.name], structuredClone(d)];
+      const labels = Object.fromEntries(f.default.filter((d) => d.label).map((d) => [d.key, d.label]));
+      data[f.name] = data[f.name].map((x) => (x && labels[x.key] ? { ...x, label: labels[x.key] } : x));
     }
   }
   return data;
@@ -91,6 +95,8 @@ export function saveGroup(key, input) {
   for (const f of group.fields) {
     next[f.name] = Object.hasOwn(input, f.name) ? coerce(f, input[f.name], prev[f.name]) : prev[f.name];
   }
+  // Trang Feedback: đường dẫn hợp lệ, không trùng trang khác
+  if (key === 'feedback') next.page_slug = cleanFeedbackSlug(next.page_slug, prev.page_slug);
   db.prepare(`INSERT INTO settings (key, value, updated_at) VALUES (?, ?, datetime('now'))
     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`).run(key, JSON.stringify(next));
   invalidateSettings();
@@ -100,6 +106,11 @@ export function saveGroup(key, input) {
     next.policy_pages = fixed;
     db.prepare("UPDATE settings SET value = ? WHERE key = 'policies'").run(JSON.stringify(next));
     invalidateSettings();
+  }
+  // Đổi đường dẫn trang Feedback: địa chỉ cũ chuyển 301 sang địa chỉ mới
+  if (key === 'feedback' && prev.page_slug && prev.page_slug !== next.page_slug) {
+    if (prev.page_enabled) addAutoRedirect(feedbackPath(prev.page_slug), feedbackPath(next.page_slug));
+    else dropAutoRedirectFrom(feedbackPath(next.page_slug)); // trang đang tắt khi đổi: không cần chuyển hướng, chỉ dọn chuyển hướng cũ ngược lại
   }
   if (key === 'theme') ensureFonts([next.font_heading, next.font_body]); // tự lưu font mới chọn về máy chủ
   return getForAdmin(key);

@@ -129,6 +129,15 @@ Bấm **Thêm ảnh** để chọn nhiều ảnh cùng lúc. Với mỗi ảnh c
 - Ảnh **có gắn sản phẩm**: khách bấm vào sẽ mở **popup xem nhanh** sản phẩm (ảnh, giá, ni, nút xem chi tiết, nút tư vấn).
 - Ảnh **không gắn sản phẩm**: khách bấm vào sẽ phóng to ảnh.
 
+## 6a. Feedback & đánh giá khách hàng
+
+Vào **Feedback & đánh giá** (menu Nội dung). Có hai tab:
+
+- **Feedback khách hàng**: bấm **Thêm feedback** để đăng lời cảm ơn hoặc **ảnh chụp tin nhắn** khách gửi qua Zalo / Facebook. Nhập tên, nghề nghiệp / nơi ở, số sao (hoặc "Không hiện sao"), nội dung (có thể để trống nếu chỉ có ảnh), ngày, ảnh đại diện và **nhiều ảnh feedback** (kéo thả để đổi thứ tự). Tick "Hiện ở trang chủ" / "Hiện ở trang Feedback". Kéo ⠿ để đổi thứ tự thẻ. Khách bấm vào thẻ sẽ mở cửa sổ xem đầy đủ và lướt các ảnh.
+- **Đánh giá sản phẩm**: khách đã mua tự gửi từ trang sản phẩm (bấm **Viết đánh giá**). Chỉ nhận khi số điện thoại **có trong hệ thống khách hàng** (cài đặt "Ai được gửi đánh giá" cho phép chặt hơn: có đơn hoàn thành, hoặc đơn chứa đúng sản phẩm); mỗi người đánh giá một lần cho mỗi sản phẩm; không tải ảnh; nhãn "Đã mua hàng" chỉ hiện khi khách có đơn hoàn thành chứa đúng sản phẩm. Bạn cũng có thể **tự thêm đánh giá** (nút **Thêm đánh giá**: chọn sản phẩm, tên, số sao, nhận xét, ngày; sửa lại được) cho khách nhắn qua Zalo: có nhãn "Shop thêm" trong admin, tính vào số sao hiển thị nhưng không đưa vào dữ liệu sao gửi Google. Chỉ nhập đánh giá thật của khách. Đánh giá mới ở trạng thái **Chờ duyệt**: bấm **Duyệt & hiện** thì mới thấy trên website và được tính số sao; **Ẩn** để gỡ tạm; **Xóa** để khách đánh giá lại. Số điện thoại chỉ hiện trong admin. Đánh giá đã duyệt hiện ở trang sản phẩm, ở sao nhỏ trên thẻ sản phẩm (chỉ sản phẩm đã có đánh giá), ở tab "Đánh giá sản phẩm" của trang Feedback và (tùy chọn) trong dữ liệu schema cho Google.
+
+**Cài đặt** (Cài đặt › Nội dung từng trang › **Feedback & đánh giá khách hàng**): tiêu đề, mô tả, ảnh khung trái, số feedback ở trang chủ, số cột, hiện sao; bật / tắt trang Feedback, **đường dẫn trang** (đổi thì địa chỉ cũ tự chuyển hướng), số feedback mỗi trang, tên các tab; liên kết ở chân trang; bật / tắt cửa sổ chi tiết; bật / tắt đánh giá sản phẩm, tự duyệt, số ký tự tối thiểu, cách hiện tên, chữ hiển thị và thông báo. Bật / tắt và đổi vị trí khối ở trang chủ: Cài đặt › Bố cục trang chủ. Cách trang Feedback hiện trên Google: Cài đặt › SEO Google & chia sẻ › Feedback khách hàng. Quyền dùng trang này là quyền riêng "Feedback & đánh giá khách hàng" trong Vai trò & phân quyền.
+
 ## 7. Blog
 
 **Tác giả:** vào **Tác giả blog** (menu Nội dung) để thêm người viết: tên, chức danh, giới thiệu, ảnh đại diện, liên kết (Facebook, website...). Chọn tác giả ở cột phải khi viết bài; thông tin hiện ở đầu bài, khung "Về tác giả" cuối bài và trong dữ liệu schema cho Google. Bài chưa chọn tác giả ghi là của shop. Không có trang tác giả riêng.

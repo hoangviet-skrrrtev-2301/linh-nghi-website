@@ -139,6 +139,7 @@ router.get('/terms', page('pages/terms.njk'));
 router.get('/gallery', page('pages/gallery.njk'));
 router.get('/posts', page('pages/posts.njk'));
 router.get('/authors', page('pages/authors.njk'));
+router.get('/feedback', page('pages/feedback.njk'));
 router.get('/posts/new', page('pages/post-edit.njk'));
 router.get('/posts/:id', page('pages/post-edit.njk'));
 router.get('/media', page('pages/media.njk'));

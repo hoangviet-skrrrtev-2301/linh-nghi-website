@@ -175,6 +175,22 @@ document.addEventListener('alpine:init', () => {
     },
   });
 
+  // ---------------- Cửa sổ chi tiết feedback (dữ liệu nằm trong <script id="fb-data"> của trang) ----------------
+  Alpine.store('fb', {
+    open: false, items: [], i: 0, img: 0,
+    stars: !!CONFIG.feedback?.stars, date: !!CONFIG.feedback?.date,
+    get cur() { return this.items[this.i] || null; },
+    load() {
+      if (this.items.length) return;
+      try { this.items = JSON.parse(document.getElementById('fb-data')?.textContent || '[]'); } catch { this.items = []; }
+    },
+    show(i) { this.load(); if (!this.items[i]) return; this.i = i; this.img = 0; this.open = true; },
+    close() { this.open = false; },
+    // Feedback trước / sau; ảnh trước / sau (quay vòng)
+    step(d) { const n = this.items.length; if (n > 1) { this.i = (this.i + d + n) % n; this.img = 0; } },
+    pick(n) { const c = this.cur?.images.length || 0; if (c) this.img = (n + c) % c; },
+  });
+
   // ---------------- Components ----------------
   Alpine.data('siteHeader', () => ({
     scrolled: window.scrollY > 10, menuOpen: false, searchOpen: false,
@@ -354,6 +370,51 @@ document.addEventListener('alpine:init', () => {
       } finally {
         this.loading = false;
       }
+    },
+  }));
+
+  // Danh sách đánh giá sản phẩm: phần đầu do máy chủ in sẵn (cho Google), nút "Xem thêm" tải tiếp qua /api/reviews.
+  // init = { loaded: số dòng đã lấy (next_offset), total, limit, product: slug hoặc rỗng }
+  Alpine.data('reviewList', (init) => ({
+    extra: [], total: init.total, loaded: init.loaded, loading: false,
+    get more() { return this.loaded < this.total; },
+    async loadMore() {
+      this.loading = true;
+      try {
+        const q = new URLSearchParams({ offset: this.loaded, limit: init.limit || 6 });
+        if (init.product) q.set('product', init.product);
+        const r = await api('/api/reviews?' + q);
+        this.extra.push(...r.items);
+        this.loaded = r.next;
+        this.total = r.total;
+        if (!r.items.length) this.total = this.loaded; // hết dữ liệu, ẩn nút
+      } catch (err) { Alpine.store('toast').show(err.message); }
+      this.loading = false;
+    },
+  }));
+
+  // Form đánh giá sản phẩm (cửa sổ ở trang sản phẩm). Máy chủ kiểm tra số điện thoại trùng đơn đã hoàn thành chứa sản phẩm.
+  Alpine.data('reviewForm', (slug) => ({
+    open: false, loading: false, success: false, message: '', errors: {}, rating: 0, hover: 0, phone: '', nick: '', content: '',
+    show() { this.open = true; this.success = false; this.message = ''; this.errors = {}; },
+    async submit(form) {
+      this.message = ''; this.errors = {};
+      if (!this.rating) { this.errors = { rating: 'Vui lòng chọn số sao' }; return; }
+      this.loading = true;
+      try {
+        const body = { product: slug, rating: this.rating, phone: this.phone, name: this.nick, content: this.content, _ft: form.querySelector('[name="_ft"]').value, website: form.querySelector('[name="website"]').value };
+        const r = await api('/api/reviews', { method: 'POST', body: JSON.stringify(body) });
+        this.success = true;
+        this.message = r.message;
+        this.phone = ''; this.nick = ''; this.content = ''; this.rating = 0;
+        window.gtag?.('event', 'submit_review');
+      } catch (err) {
+        this.errors = err.data?.errors || {};
+        this.message = err.message;
+        const first = Object.keys(this.errors)[0];
+        if (first && first !== 'rating') form.querySelector(`[name="${first}"]`)?.focus();
+      }
+      this.loading = false;
     },
   }));
 

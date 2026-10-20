@@ -49,7 +49,7 @@
          Mỗi nhóm chính thu gọn, chỉ xổ ra khi đang dùng một trang của nhóm đó hoặc khi bấm vào tên nhóm. #}
       {% set salesOn = p.startsWith('/inquiries') or p.startsWith('/customers') %}
       {% set catalogOn = p.startsWith('/products') or p.startsWith('/terms') or p.startsWith('/preview') %}
-      {% set contentOn = p.startsWith('/gallery') or p.startsWith('/posts') or p.startsWith('/authors') or p.startsWith('/media') %}
+      {% set contentOn = p.startsWith('/gallery') or p.startsWith('/posts') or p.startsWith('/authors') or p.startsWith('/feedback') or p.startsWith('/media') %}
       {% set systemOn = p.startsWith('/settings') or p.startsWith('/redirects') or p.startsWith('/users') or p.startsWith('/roles') or p.startsWith('/audit') %}
       {% macro groupHead(id, label, on) %}{% from "partials/icons.njk" import icon %}<button type="button" class="nav-section nav-section-btn" @click="toggle()" :aria-expanded="open" aria-controls="nav-{{ id }}"><span>{{ label }}</span><span class="transition" :class="open && 'rotate-180'">{{ icon('chevron-down', 'w-3.5 h-3.5') }}</span></button>{% endmacro %}
 
@@ -79,7 +79,7 @@
       </div>
       {% endif %}
 
-      {% if can('gallery') or can('posts') or can('media') or can('products') or can('terms') %}
+      {% if can('gallery') or can('posts') or can('feedback') or can('media') or can('products') or can('terms') %}
       <div x-data="navGroup({{ 'true' if contentOn else 'false' }}, 'content')">
         {{ groupHead('content', 'Nội dung') }}
         <div id="nav-content" x-show="open" {{ '' if contentOn else 'x-cloak' }} x-collapse>
@@ -88,6 +88,7 @@
           {{ link(A + '/posts', 'Blog', 'doc', p.startsWith('/posts')) }}
           {{ link(A + '/authors', 'Tác giả blog', 'user', p.startsWith('/authors')) }}
           {% endif %}
+          {% if can('feedback') %}{{ link(A + '/feedback', 'Feedback & đánh giá', 'star', p.startsWith('/feedback')) }}{% endif %}
           {{ link(A + '/media', 'Thư viện ảnh', 'folder', p.startsWith('/media')) }}
         </div>
       </div>

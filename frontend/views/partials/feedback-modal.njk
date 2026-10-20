@@ -1,0 +1,60 @@
+{% from "partials/icons.njk" import icon %}
+{% from "partials/stars.njk" import stars %}
+{# Cửa sổ xem chi tiết một feedback (nội dung đầy đủ + các ảnh). Dữ liệu lấy từ <script id="fb-data"> do feedback-block.njk in ra.
+   Khung nội dung nằm SAU lớp nền (.modal-backdrop) trong DOM. #}
+{% if s.feedback.popup_enabled %}
+<div x-data x-cloak x-show="$store.fb.open" class="fixed inset-0 z-[80] flex items-end justify-center sm:items-center sm:p-6"
+  role="dialog" aria-modal="true" aria-label="Chi tiết feedback" @keydown.escape.window="$store.fb.close()"
+  @keydown.arrow-left.window="$store.fb.open && $store.fb.step(-1)" @keydown.arrow-right.window="$store.fb.open && $store.fb.step(1)">
+  <div x-show="$store.fb.open" x-transition.opacity class="modal-backdrop" @click="$store.fb.close()"></div>
+  <div x-show="$store.fb.open" x-trap.noscroll="$store.fb.open"
+    x-transition:enter="transition duration-300 ease-out" x-transition:enter-start="translate-y-8 opacity-0 sm:scale-95"
+    x-transition:leave="transition duration-200" x-transition:leave-end="translate-y-8 opacity-0"
+    class="modal-panel max-h-[92vh] overflow-y-auto rounded-b-none sm:rounded-lg" :class="$store.fb.cur?.images.length ? 'max-w-5xl' : 'max-w-xl'">
+    <button type="button" class="icon-btn absolute right-3 top-3 z-10 bg-surface/80 backdrop-blur" @click="$store.fb.close()" aria-label="Đóng">{{ icon('close') }}</button>
+
+    <template x-if="$store.fb.cur">
+      <div x-data="{ get f() { return $store.fb.cur } }" :class="f.images.length && 'grid md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]'">
+        <div class="bg-ink/[.04] p-4 md:p-6" x-show="f.images.length">
+          <div class="relative flex max-h-[70vh] min-h-[16rem] items-center justify-center overflow-hidden rounded-md bg-surface">
+            <img :src="f.images[$store.fb.img]?.lg" :alt="'Ảnh feedback của ' + f.name" :width="f.images[$store.fb.img]?.width" :height="f.images[$store.fb.img]?.height" class="no-dim max-h-[70vh] w-auto max-w-full object-contain">
+            <button type="button" x-show="f.images.length > 1" @click="$store.fb.pick($store.fb.img - 1)" class="icon-btn absolute left-2 top-1/2 -translate-y-1/2 bg-surface/85 backdrop-blur" aria-label="Ảnh trước">{{ icon('chevron-left') }}</button>
+            <button type="button" x-show="f.images.length > 1" @click="$store.fb.pick($store.fb.img + 1)" class="icon-btn absolute right-2 top-1/2 -translate-y-1/2 bg-surface/85 backdrop-blur" aria-label="Ảnh sau">{{ icon('chevron-right') }}</button>
+          </div>
+          <div class="mt-3 flex gap-2 overflow-x-auto scrollbar-none" x-show="f.images.length > 1">
+            <template x-for="(im, i) in f.images" :key="i">
+              <button type="button" @click="$store.fb.img = i" class="h-16 w-16 shrink-0 overflow-hidden rounded-sm border-2 transition" :aria-label="'Xem ảnh ' + (i + 1)"
+                :class="$store.fb.img === i ? 'border-primary' : 'border-transparent opacity-70 hover:opacity-100'">
+                <img :src="im.sm" alt="" class="h-full w-full object-cover">
+              </button>
+            </template>
+          </div>
+        </div>
+
+        <div class="flex flex-col p-6 md:p-8">
+          <div class="flex items-center gap-3 pr-10">
+            <template x-if="f.avatar"><img :src="f.avatar.sm" alt="" width="56" height="56" class="h-14 w-14 shrink-0 rounded-full object-cover"></template>
+            <template x-if="!f.avatar"><span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary/10 font-heading text-xl font-semibold text-primary" aria-hidden="true" x-text="(f.name || '?').charAt(0).toUpperCase()"></span></template>
+            <div class="min-w-0">
+              <p class="text-lg font-semibold leading-snug" x-text="f.name"></p>
+              <p class="text-sm text-muted" x-show="f.role" x-text="f.role"></p>
+            </div>
+          </div>
+          <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1" x-show="(f.rating && $store.fb.stars) || ($store.fb.date && f.date_label)">
+            <span x-show="f.rating && $store.fb.stars" class="inline-flex items-center gap-0.5 text-accent" role="img" :aria-label="f.rating + ' trên 5 sao'">
+              <template x-for="n in 5" :key="n"><svg class="h-5 w-5" :class="n > f.rating && 'opacity-25'" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5l2.94 5.96 6.58.96-4.76 4.64 1.12 6.55L12 17.52l-5.88 3.09 1.12-6.55L2.48 9.42l6.58-.96L12 2.5z"/></svg></template>
+            </span>
+            <span class="text-xs text-muted" x-show="$store.fb.date && f.date_label" x-text="f.date_label"></span>
+          </div>
+          <p class="mt-5 whitespace-pre-line text-[15.5px] leading-relaxed text-ink/85" x-show="f.content" x-text="f.content"></p>
+          <div class="mt-auto flex items-center justify-between gap-3 pt-6" x-show="$store.fb.items.length > 1">
+            <button type="button" class="btn btn-ghost btn-sm" @click="$store.fb.step(-1)">{{ icon('chevron-left', 'w-4 h-4') }} Trước</button>
+            <span class="text-xs text-muted" x-text="($store.fb.i + 1) + ' / ' + $store.fb.items.length"></span>
+            <button type="button" class="btn btn-ghost btn-sm" @click="$store.fb.step(1)">Sau {{ icon('chevron-right', 'w-4 h-4') }}</button>
+          </div>
+        </div>
+      </div>
+    </template>
+  </div>
+</div>
+{% endif %}

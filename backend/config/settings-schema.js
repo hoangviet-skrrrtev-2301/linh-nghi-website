@@ -30,7 +30,7 @@ export const HOME_SECTIONS = [
   { key: 'size', label: 'Bảng số đo ni', bg: true },
   { key: 'custom', label: 'Thiết kế riêng', bg: true },
   { key: 'gallery', label: 'Gallery', bg: true },
-  { key: 'testimonials', label: 'Cảm nhận khách hàng', bg: true },
+  { key: 'testimonials', label: 'Feedback khách hàng', bg: true },
   { key: 'blog', label: 'Bài viết mới (Blog)', bg: true },
 ];
 
@@ -219,7 +219,6 @@ export const SETTINGS_SCHEMA = [
       { key: 'size', label: 'Bảng số đo ni', hint: 'Tiêu đề và công cụ tính ni nhanh' },
       { key: 'custom', label: 'Thiết kế riêng (custom)', hint: 'Tiêu đề, mô tả và ảnh khối custom' },
       { key: 'gallery', label: 'Gallery', hint: 'Số ảnh, kiểu hiển thị (băng chuyền, lưới, xếp gạch), số dòng / cột, chuyển động', toggle: 'show_gallery' },
-      { key: 'testimonials', label: 'Cảm nhận khách hàng', hint: 'Lời cảm ơn, đánh giá của khách' },
       { key: 'blog', label: 'Bài viết mới (Blog)', hint: 'Bật/tắt khối bài viết ở trang chủ', toggle: 'show_blog' },
     ],
     fields: [
@@ -332,15 +331,6 @@ export const SETTINGS_SCHEMA = [
       { name: 'gallery_scroll_seconds', section: 'gallery', label: 'Thời gian chạy hết một vòng (giây)', type: 'number', default: 45, help: 'Số càng lớn thì trượt càng chậm (5–600).' },
       { name: 'gallery_direction', section: 'gallery', label: 'Hướng chuyển động', type: 'select', default: 'rtl', options: GALLERY_DIRECTIONS },
       { name: 'show_blog', section: 'blog', label: 'Hiện khối bài viết mới trên trang chủ', type: 'toggle', default: true },
-      {
-        name: 'testimonials', section: 'testimonials', collapsible: true, itemTitle: 'name', label: 'Cảm nhận khách hàng', type: 'list',
-        fields: [
-          { name: 'name', label: 'Tên khách', type: 'text' },
-          { name: 'content', label: 'Nội dung', type: 'textarea' },
-          { name: 'avatar', label: 'Ảnh đại diện', type: 'image' },
-        ],
-        default: [],
-      },
     ],
   },
   {
@@ -665,6 +655,70 @@ export const SETTINGS_SCHEMA = [
     ],
   },
   {
+    key: 'feedback',
+    label: 'Feedback & đánh giá khách hàng',
+    description: 'Khối "Feedback khách hàng" ở trang chủ (bật / tắt và đổi vị trí ở nhóm "Bố cục trang chủ"), trang Feedback riêng, và đánh giá sản phẩm của khách đã mua. Thêm / sửa feedback ở Admin › Feedback & đánh giá. Cách trang Feedback hiện trên Google chỉnh ở nhóm "SEO Google & chia sẻ".',
+    sections: [
+      { key: 'home', label: 'Khối trên trang chủ', hint: 'Tiêu đề, khung giới thiệu bên trái, số feedback, số cột' },
+      { key: 'page', label: 'Trang Feedback', hint: 'Bật / tắt, đường dẫn, tiêu đề, số feedback mỗi trang, tên các tab', toggle: 'page_enabled' },
+      { key: 'footer', label: 'Liên kết ở chân trang', hint: 'Hiện lối vào trang Feedback ở chân trang', toggle: 'footer_show' },
+      { key: 'popup', label: 'Cửa sổ xem chi tiết', hint: 'Bấm vào một feedback để xem đầy đủ và các ảnh', toggle: 'popup_enabled' },
+      { key: 'reviews', label: 'Đánh giá sản phẩm: cách hoạt động', hint: 'Bật / tắt, tự duyệt, nơi hiển thị, sao trên Google', toggle: 'reviews_enabled' },
+      { key: 'reviews_text', label: 'Đánh giá sản phẩm: chữ hiển thị', hint: 'Tiêu đề, nút, thông báo cho khách' },
+    ],
+    fields: [
+      { name: 'home_title', section: 'home', label: 'Tiêu đề khối', type: 'text', default: 'Khách hàng nói gì về chúng tôi' },
+      { name: 'home_subtitle', section: 'home', label: 'Mô tả ngắn (hiện dưới tiêu đề)', type: 'textarea', default: 'Những chia sẻ thật từ khách hàng đã đồng hành cùng shop.' },
+      { name: 'home_show_panel', section: 'home', label: 'Hiện khung giới thiệu (tiêu đề + ảnh) bên trái', type: 'toggle', default: true, help: 'Tắt: tiêu đề nằm giữa phía trên, các feedback trải rộng hết bề ngang.' },
+      { name: 'home_image', section: 'home', label: 'Ảnh trong khung giới thiệu', type: 'image', help: 'Không bắt buộc. Nên dùng ảnh nền trong suốt hoặc sáng, tỷ lệ gần vuông (ví dụ ảnh vòng ngọc, logo).' },
+      { name: 'home_limit', section: 'home', label: 'Số feedback hiện ở trang chủ (1–12)', type: 'number', default: 4, help: 'Lấy các feedback đang bật "Hiện ở trang chủ", theo thứ tự đã sắp trong Admin › Feedback.' },
+      { name: 'home_cols', section: 'home', label: 'Số cột feedback (máy tính)', type: 'select', default: '2', options: [{ value: '1', label: '1 cột' }, { value: '2', label: '2 cột' }, { value: '3', label: '3 cột' }] },
+      { name: 'show_stars', section: 'home', label: 'Hiện số sao trên thẻ feedback', type: 'toggle', default: true, help: 'Áp dụng cho khối trang chủ và trang Feedback. Feedback không chọn số sao thì không hiện sao.' },
+      { name: 'home_show_button', section: 'home', label: 'Hiện nút "Xem tất cả" dẫn tới trang Feedback', type: 'toggle', default: true, help: 'Chỉ hiện khi trang Feedback đang bật.' },
+      { name: 'home_button_label', section: 'home', label: 'Chữ trên nút', type: 'text', default: 'Xem tất cả feedback' },
+
+      { name: 'page_enabled', section: 'page', label: 'Bật trang Feedback', type: 'toggle', default: true, help: 'Tắt: trang trả 404, ẩn khỏi chân trang và sitemap. Khối trang chủ không bị ảnh hưởng.' },
+      { name: 'page_slug', section: 'page', label: 'Đường dẫn trang', type: 'text', default: 'feedback', help: 'Địa chỉ trang: /<đường dẫn>. Đổi đường dẫn thì địa chỉ cũ tự chuyển hướng (301). Không dùng tên trùng trang khác (san-pham, blog, gallery...).' },
+      { name: 'page_title', section: 'page', label: 'Tiêu đề trang', type: 'text', default: 'Feedback khách hàng', help: 'Hiện đầu trang, và là tiêu đề trên Google trừ khi nhập riêng ở "SEO Google & chia sẻ".' },
+      { name: 'page_intro', section: 'page', label: 'Mô tả ngắn', type: 'textarea', default: 'Lời cảm ơn và hình ảnh thật từ những khách hàng đã tin chọn shop.' },
+      { name: 'page_image', section: 'page', label: 'Ảnh trong khung giới thiệu', type: 'image', help: 'Để trống: dùng ảnh của khối trang chủ.' },
+      { name: 'page_per_page', section: 'page', label: 'Số feedback mỗi trang (4–48)', type: 'number', default: 12 },
+      { name: 'page_cols', section: 'page', label: 'Số cột feedback (máy tính)', type: 'select', default: '2', options: [{ value: '1', label: '1 cột' }, { value: '2', label: '2 cột' }, { value: '3', label: '3 cột' }] },
+      { name: 'page_tab_feedback', section: 'page', label: 'Tên tab feedback', type: 'text', default: 'Feedback khách hàng' },
+      { name: 'page_tab_reviews', section: 'page', label: 'Tên tab đánh giá sản phẩm', type: 'text', default: 'Đánh giá sản phẩm', help: 'Tab này chỉ hiện khi tính năng đánh giá sản phẩm bật và đã có đánh giá được duyệt.' },
+      { name: 'page_empty', section: 'page', label: 'Chữ khi chưa có feedback', type: 'text', default: 'Chưa có feedback nào, mời bạn quay lại sau.' },
+      { name: 'page_reviews_limit', section: 'page', label: 'Số đánh giá hiện mỗi lần ở tab đánh giá (4–30)', type: 'number', default: 12 },
+
+      { name: 'footer_show', section: 'footer', label: 'Hiện liên kết tới trang Feedback ở chân trang', type: 'toggle', default: true, help: 'Nằm trong cột menu của chân trang (cột "Khám phá"). Cột đó đang tắt thì liên kết không hiện.' },
+      { name: 'footer_label', section: 'footer', label: 'Chữ của liên kết', type: 'text', default: 'Feedback khách hàng' },
+
+      { name: 'popup_enabled', section: 'popup', label: 'Bấm vào feedback thì mở cửa sổ chi tiết', type: 'toggle', default: true, help: 'Cửa sổ hiện đầy đủ nội dung và các ảnh feedback (kéo / bấm để chuyển ảnh). Tắt: thẻ chỉ để đọc.' },
+      { name: 'popup_show_date', section: 'popup', label: 'Hiện ngày feedback trong cửa sổ', type: 'toggle', default: true },
+
+      { name: 'reviews_enabled', section: 'reviews', label: 'Cho phép khách đánh giá sản phẩm', type: 'toggle', default: true, help: 'Tắt: ẩn khung đánh giá, số sao và nút gửi. Ai được gửi (theo số điện thoại) chọn ở mục "Ai được gửi đánh giá" bên dưới. Shop tự thêm đánh giá ở Admin › Feedback & đánh giá.' },
+      { name: 'reviews_require', section: 'reviews', label: 'Ai được gửi đánh giá', type: 'select', default: 'customer', options: [{ value: 'customer', label: 'Số điện thoại có trong hệ thống (đã từng đặt hàng / gửi yêu cầu)' }, { value: 'any_order', label: 'Có đơn hàng đã Hoàn thành (bất kỳ sản phẩm nào)' }, { value: 'product_order', label: 'Có đơn Hoàn thành chứa đúng sản phẩm này (chặt nhất)' }], help: 'Số điện thoại khách nhập phải trùng khách trong Admin › Khách hàng. Mỗi số điện thoại chỉ đánh giá một lần cho mỗi sản phẩm, không tải ảnh lên. Nhãn “Đã mua hàng” chỉ hiện ở đánh giá của khách có đơn Hoàn thành chứa đúng sản phẩm.' },
+      { name: 'reviews_auto_approve', section: 'reviews', label: 'Tự động hiện đánh giá, không cần duyệt', type: 'toggle', default: false, help: 'Mặc định tắt: đánh giá mới ở trạng thái "Chờ duyệt", shop duyệt ở Admin › Feedback & đánh giá thì mới hiện.' },
+      { name: 'reviews_show_on_product', section: 'reviews', label: 'Hiện số sao và danh sách đánh giá ở trang sản phẩm', type: 'toggle', default: true, help: 'Sản phẩm chưa có đánh giá nào được duyệt thì không hiện số sao; khung đánh giá chỉ hiện nút gửi.' },
+      { name: 'reviews_show_on_card', section: 'reviews', label: 'Hiện số sao nhỏ trên thẻ sản phẩm (danh sách, trang chủ)', type: 'toggle', default: true, help: 'Chỉ hiện ở sản phẩm đã có đánh giá được duyệt.' },
+      { name: 'reviews_per_product', section: 'reviews', label: 'Số đánh giá hiện mỗi lần ở trang sản phẩm (3–30)', type: 'number', default: 6 },
+      { name: 'reviews_min_length', section: 'reviews', label: 'Số ký tự tối thiểu của nhận xét (0–500)', type: 'number', default: 10, help: '0 = cho phép chỉ chấm sao, không viết nhận xét.' },
+      { name: 'reviews_name_display', section: 'reviews', label: 'Cách hiện tên người đánh giá', type: 'select', default: 'short', options: [{ value: 'short', label: 'Rút gọn (Nguyễn Văn Hoa → N. Hoa)' }, { value: 'full', label: 'Đầy đủ như khách nhập' }], help: 'Số điện thoại không bao giờ hiện công khai.' },
+      { name: 'reviews_schema', section: 'reviews', label: 'Khai báo số sao cho Google (aggregateRating)', type: 'toggle', default: true, help: 'Chỉ khai báo khi sản phẩm có ít nhất một đánh giá đã duyệt. Số liệu lấy đúng từ các đánh giá hiển thị trên trang.' },
+
+      { name: 'reviews_title', section: 'reviews_text', label: 'Tiêu đề khung đánh giá ở trang sản phẩm', type: 'text', default: 'Đánh giá từ khách đã mua' },
+      { name: 'reviews_button', section: 'reviews_text', label: 'Chữ nút mở form đánh giá', type: 'text', default: 'Viết đánh giá' },
+      { name: 'reviews_form_title', section: 'reviews_text', label: 'Tiêu đề form đánh giá', type: 'text', default: 'Đánh giá sản phẩm' },
+      { name: 'reviews_form_intro', section: 'reviews_text', label: 'Dòng hướng dẫn trong form', type: 'textarea', default: 'Nhập số điện thoại đã dùng khi đặt hàng để xác nhận bạn đã mua sản phẩm này.' },
+      { name: 'reviews_verified_label', section: 'reviews_text', label: 'Nhãn "đã mua hàng" cạnh tên người đánh giá', type: 'text', default: 'Đã mua hàng', help: 'Chỉ hiện ở đánh giá của khách có đơn Hoàn thành chứa đúng sản phẩm.' },
+      { name: 'reviews_empty', section: 'reviews_text', label: 'Chữ khi chưa có đánh giá', type: 'text', default: 'Chưa có đánh giá nào. Hãy là người đầu tiên chia sẻ cảm nhận của bạn.' },
+      { name: 'reviews_more_label', section: 'reviews_text', label: 'Chữ nút xem thêm đánh giá', type: 'text', default: 'Xem thêm đánh giá' },
+      { name: 'reviews_success_pending', section: 'reviews_text', label: 'Thông báo gửi thành công (cần duyệt)', type: 'text', default: 'Cảm ơn bạn đã đánh giá! Đánh giá sẽ hiện sau khi shop duyệt.' },
+      { name: 'reviews_success_approved', section: 'reviews_text', label: 'Thông báo gửi thành công (tự hiện)', type: 'text', default: 'Cảm ơn bạn đã đánh giá! Đánh giá của bạn đã được hiển thị.' },
+      { name: 'reviews_not_eligible', section: 'reviews_text', label: 'Thông báo khi số điện thoại không đủ điều kiện', type: 'text', default: 'Số điện thoại này chưa có trong hệ thống của shop nên chưa thể đánh giá. Vui lòng nhập số đã dùng khi đặt hàng.' },
+      { name: 'reviews_duplicate', section: 'reviews_text', label: 'Thông báo khi đã đánh giá rồi', type: 'text', default: 'Bạn đã đánh giá sản phẩm này rồi, cảm ơn bạn.' },
+    ],
+  },
+  {
     key: 'policies',
     label: 'Trang chính sách',
     description: 'Các trang chính sách (đổi trả, bảo mật, điều khoản mua hàng, vận chuyển và thanh toán) hiện thành đường dẫn /chinh-sach/<tên> và liên kết ở chân trang. Nội dung là BẢN MẪU: hãy đọc kỹ, sửa cho đúng với shop rồi tick "Đã xác nhận". Thêm, xóa, đổi tên, đổi thứ tự trang tùy ý. Nội dung chỉ mang tính tham khảo, không thay thế tư vấn pháp lý.',
@@ -743,7 +797,7 @@ export const SETTINGS_SCHEMA = [
 // Để trống thì dùng giá trị mặc định ở nhóm "SEO & mã theo dõi".
 export const SEO_PAGES = [
   ['home', 'Trang chủ'], ['products', 'Sản phẩm'], ['gallery', 'Gallery'], ['size_guide', 'Hướng dẫn size'],
-  ['custom', 'Thiết kế riêng'], ['blog', 'Blog'], ['about', 'Về shop'], ['contact', 'Liên hệ'],
+  ['custom', 'Thiết kế riêng'], ['blog', 'Blog'], ['about', 'Về shop'], ['contact', 'Liên hệ'], ['feedback', 'Feedback khách hàng'],
 ];
 // Ô tiêu đề SEO để trống thì trang lấy tiêu đề hiển thị ở nhóm nào (ghi để chủ shop biết)
 const SEO_FALLBACK = {
@@ -755,6 +809,7 @@ const SEO_FALLBACK = {
   custom: 'tiêu đề trang thiết kế riêng ở nhóm "Biểu mẫu & đặt hàng"',
   about: 'tiêu đề ở nhóm "Trang Về shop"',
   contact: 'tiêu đề ở nhóm "Trang Liên hệ"',
+  feedback: 'tiêu đề ở nhóm "Feedback & đánh giá khách hàng"',
 };
 SETTINGS_SCHEMA.splice(SETTINGS_SCHEMA.findIndex((g) => g.key === 'mail'), 0, {
   key: 'seo_pages',
@@ -844,7 +899,7 @@ export const SCHEMA_BY_KEY = Object.fromEntries(SETTINGS_SCHEMA.map((g) => [g.ke
 // Mỗi nhóm phải thuộc đúng một mục (thiếu sẽ báo lỗi khi khởi động).
 export const SETTINGS_CATEGORIES = [
   { key: 'general', label: 'Thông tin chung & menu', description: 'Tên shop, liên hệ, logo, menu, chân trang và các công tắc bật / tắt tính năng.', groups: ['site', 'navigation', 'footer', 'features'] },
-  { key: 'pages', label: 'Nội dung từng trang', description: 'Chữ và ảnh của trang chủ, Về shop, Hướng dẫn size, Liên hệ, biểu mẫu đặt hàng, các trang Sản phẩm / Gallery / Blog và các trang chính sách.', groups: ['home', 'about', 'size_guide', 'contact', 'forms', 'pages', 'policies'] },
+  { key: 'pages', label: 'Nội dung từng trang', description: 'Chữ và ảnh của trang chủ, Về shop, Hướng dẫn size, Liên hệ, biểu mẫu đặt hàng, các trang Sản phẩm / Gallery / Blog, Feedback & đánh giá khách hàng và các trang chính sách.', groups: ['home', 'feedback', 'about', 'size_guide', 'contact', 'forms', 'pages', 'policies'] },
   { key: 'design', label: 'Giao diện', description: 'Màu sắc, font chữ, nhãn sản phẩm, chế độ tối và bố cục các khối trang chủ.', groups: ['theme', 'home_layout'] },
   { key: 'seo', label: 'Tối ưu SEO', description: 'Mã theo dõi, SEO từng trang, schema cho Google, sitemap, robots.txt và công tắc cho phép Google lập chỉ mục.', groups: ['seo', 'seo_pages', 'schema', 'sitemap'] },
   { key: 'system', label: 'Email & hệ thống', description: 'Gửi thông báo đơn hàng qua email (chỉ người được cấp quyền).', groups: ['mail'] },

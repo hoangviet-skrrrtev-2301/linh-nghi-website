@@ -1,0 +1,5 @@
+{# Hàng 5 sao. value: số sao (làm tròn). Dùng: {% from "partials/stars.njk" import stars %}{{ stars(4.5, 'h-4 w-4') }} #}
+{% macro stars(value, cls='h-4 w-4') %}
+{% set full = value | round %}
+<span class="inline-flex items-center gap-0.5 text-accent" role="img" aria-label="{{ value }} trên 5 sao">{% for i in range(1, 6) %}<svg class="{{ cls }} {{ '' if i <= full else 'opacity-25' }}" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5l2.94 5.96 6.58.96-4.76 4.64 1.12 6.55L12 17.52l-5.88 3.09 1.12-6.55L2.48 9.42l6.58-.96L12 2.5z"/></svg>{% endfor %}</span>
+{% endmacro %}

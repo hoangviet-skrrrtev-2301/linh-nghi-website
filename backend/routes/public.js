@@ -16,8 +16,15 @@ import { buildToc } from '../lib/toc.js';
 import { navChildren } from '../lib/nav-menu.js';
 import { footerColumns, safeLinks } from '../lib/footer-layout.js';
 import { listPolicies, getPolicy, policyPath } from '../services/policies.js';
+import { listFeedbacksPublic, listReviewsPublic, reviewSummary } from '../services/feedback.js';
+import { feedbackPath } from '../lib/feedback-path.js';
 
 const router = Router();
+
+const clampInt = (v, min, max, fallback) => {
+  const n = Math.round(Number(v));
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+};
 
 // Dữ liệu có cấu trúc cho trang thường: WebPage (hoặc AboutPage, ContactPage...) + đường dẫn breadcrumb
 function pageSchema({ type, path, name, description, image }) {
@@ -63,6 +70,8 @@ export function publicLocals(req, res) {
   res.locals.policyBar = !!s.policies?.show_in_footer;   // dòng liên kết nhỏ ở thanh dưới cùng (tùy chọn)
   res.locals.footerCols = footerColumns(s.footer, { skip: res.locals.policyLinks.length ? [] : ['policies'] });
   res.locals.footerLinks = safeLinks(s.footer.extra_links);
+  // Lối vào trang Feedback ở chân trang (tắt được trong Cài đặt › Feedback & đánh giá khách hàng)
+  res.locals.feedbackLink = s.feedback.page_enabled && s.feedback.footer_show ? { url: feedbackPath(s.feedback.page_slug), label: s.feedback.footer_label || s.feedback.page_title } : null;
   res.locals.clientConfig = {
     checkout: !!s.features.checkout,
     showPrices: !!s.features.show_prices,
@@ -77,6 +86,7 @@ export function publicLocals(req, res) {
       enabled: !!s.forms.order_image_enabled, title: s.forms.order_image_title, note: s.forms.order_image_note,
       track: s.forms.order_image_track, button: s.forms.order_image_button, share: s.forms.order_image_share,
     },
+    feedback: { stars: !!s.feedback.show_stars, date: !!s.feedback.popup_show_date },
     zalo: String(s.site.zalo || '').replace(/[^\d]/g, ''),
     phone: String(s.site.phone || '').replace(/[^\d+]/g, ''),
   };
@@ -118,6 +128,13 @@ function heroConfig(h) {
     h1: slides.findIndex((sl) => sl.title),
   };
 }
+// Feedback ở trang chủ: chỉ lấy khi khối đang bật trong Bố cục trang chủ
+function homeFeedbacks(s) {
+  const on = (s.home_layout.sections || []).find((x) => x.key === 'testimonials');
+  if (on && on.enabled === false) return { items: [], total: 0 };
+  return listFeedbacksPublic({ scope: 'home', limit: clampInt(s.feedback.home_limit, 1, 12, 4) });
+}
+
 router.get('/', (req, res) => {
   const s = res.locals.s;
   const gallery = s.features.gallery && s.home.show_gallery ? listGallery({ limit: Math.min(Math.max(Number(s.home.gallery_limit) || 24, 4), 60) }) : [];
@@ -127,6 +144,7 @@ router.get('/', (req, res) => {
     featured: featuredProducts(Number(s.home.featured_limit) || 8),
     gallery, galleryCfg: galleryView(s, 'home', gallery.length),
     posts: s.features.blog && s.home.show_blog ? listPosts({ perPage: 3 }).items : [],
+    feedbacks: homeFeedbacks(s),
   });
 });
 
@@ -203,6 +221,13 @@ function renderProductList(req, res, next, forced = {}) {
 
 router.get('/san-pham', (req, res, next) => renderProductList(req, res, next));
 
+// Số sao tổng hợp cho Google: chỉ khi bật đánh giá + bật khai báo + có đánh giá đã duyệt
+function reviewsForSchema(s, product) {
+  if (!s.feedback.reviews_enabled || !s.feedback.reviews_schema) return null;
+  const sum = reviewSummary(product.id, { customerOnly: true }); // đánh giá do shop nhập không đưa vào schema cho Google
+  return sum.count ? sum : null;
+}
+
 function renderProduct(req, res, product) {
   const parent = product.jade_type || (product.product_type && !product.product_type.uses_jade_fields ? product.product_type : null);
   res.locals.seo = buildSeo(req, {
@@ -210,13 +235,17 @@ function renderProduct(req, res, product) {
     description: product.seo_description || product.summary,
     image: product.cover?.lg,
     type: 'product',
-    jsonLd: [productJsonLd(product), breadcrumbJsonLd([
+    jsonLd: [productJsonLd(product, reviewsForSchema(res.locals.s, product)), breadcrumbJsonLd([
       { name: 'Trang chủ', url: '/' }, { name: 'Sản phẩm', url: '/san-pham' },
       ...(parent ? [{ name: parent.name, url: `/san-pham/${parent.slug}` }] : []),
       { name: product.name, url: product.url },
     ])],
   });
-  res.view('pages/product-detail.njk', { product, related: relatedProducts(product), parent });
+  const fb = res.locals.s.feedback;
+  const reviews = fb.reviews_enabled
+    ? { summary: reviewSummary(product.id), ...(fb.reviews_show_on_product ? listReviewsPublic({ productId: product.id, limit: clampInt(fb.reviews_per_product, 3, 30, 6) }) : { items: [], total: 0, limit: 6 }) }
+    : null;
+  res.view('pages/product-detail.njk', { product, related: relatedProducts(product), parent, reviews });
 }
 
 // /san-pham/<a>: trang một loại ngọc, trang một loại sản phẩm, hoặc địa chỉ cũ của sản phẩm (chuyển 301 sang địa chỉ phân cấp)
@@ -417,6 +446,26 @@ router.get('/ve-shop', (req, res) => {
     jsonLd: pageSchema({ type: 'AboutPage', path: '/ve-shop', name: a.title, description: a.intro, image: a.image?.lg }),
   });
   res.view('pages/about.njk');
+});
+
+// Trang Feedback khách hàng: đường dẫn đổi được trong cài đặt, nên khớp động và đặt SAU mọi trang cố định
+router.get('/:slug', (req, res, next) => {
+  const s = res.locals.s;
+  const fb = s.feedback;
+  if (!fb.page_enabled || req.params.slug !== fb.page_slug) return next();
+  const path = feedbackPath(fb.page_slug);
+  const perPage = clampInt(fb.page_per_page, 4, 48, 12);
+  const raw = req.query.trang;
+  const result = listFeedbacksPublic({ scope: 'page', page: Number(raw) || 1, perPage });
+  const pageUrl = pageUrlBuilder(path);
+  if (redirectBadPage(res, raw, result, pageUrl)) return;
+  const reviews = fb.reviews_enabled ? listReviewsPublic({ limit: clampInt(fb.page_reviews_limit, 4, 30, 12) }) : { items: [], total: 0 };
+  res.locals.seo = buildSeo(req, {
+    page: 'feedback', title: fb.page_title, description: fb.page_intro,
+    pagination: result.pages > 1 ? { page: result.page, pages: result.pages, url: pageUrl } : undefined,
+    jsonLd: pageSchema({ type: 'CollectionPage', path, name: fb.page_title, description: fb.page_intro }),
+  });
+  res.view('pages/feedback.njk', { result, pg: result, pageUrl, reviews, feedbackCols: clampInt(fb.page_cols, 1, 3, 2) });
 });
 
 export default router;

@@ -23,6 +23,7 @@ export const PERMISSION_GROUPS = [
     items: [
       { key: 'posts', label: 'Blog và tác giả', help: 'Viết, sửa, xóa bài; quản lý chuyên mục và tác giả.' },
       { key: 'gallery', label: 'Gallery', help: 'Thêm, sửa, sắp xếp ảnh Gallery.' },
+      { key: 'feedback', label: 'Feedback & đánh giá khách hàng', help: 'Thêm, sửa, xóa feedback (kèm ảnh tin nhắn của khách) và duyệt, ẩn, xóa đánh giá sản phẩm.' },
       { key: 'media', label: 'Thư viện ảnh (xóa, đổi tên, chuyển thư mục)', help: 'Ai có quyền chỉnh sửa nội dung đều tải ảnh lên và chọn ảnh được; quyền này thêm việc xóa và sắp xếp lại thư viện.' },
     ],
   },
@@ -52,7 +53,7 @@ export const DEFAULT_ROLE_ID = 1;
 // Mỗi nhóm cài đặt thuộc một quyền
 export const SETTINGS_PERMISSION = {
   site: 'settings_site', navigation: 'settings_site', footer: 'settings_site', features: 'settings_site',
-  home: 'settings_pages', policies: 'settings_pages', about: 'settings_pages', size_guide: 'settings_pages', contact: 'settings_pages', forms: 'settings_pages', pages: 'settings_pages',
+  home: 'settings_pages', feedback: 'settings_pages', policies: 'settings_pages', about: 'settings_pages', size_guide: 'settings_pages', contact: 'settings_pages', forms: 'settings_pages', pages: 'settings_pages',
   theme: 'settings_design', home_layout: 'settings_design',
   seo: 'settings_seo', seo_pages: 'settings_seo', schema: 'settings_seo', sitemap: 'settings_seo',
   mail: 'mail',
@@ -60,7 +61,7 @@ export const SETTINGS_PERMISSION = {
 
 export const can = (user, perm) => !!user && (user.role === 'owner' || (Array.isArray(user.permissions) && user.permissions.includes(perm)));
 export const canAny = (user, perms) => perms.some((p) => can(user, p));
-const EDITORS = ['products', 'posts', 'gallery', 'media', 'terms', 'settings_site', 'settings_pages', 'settings_design', 'settings_seo'];
+const EDITORS = ['products', 'posts', 'gallery', 'feedback', 'media', 'terms', 'settings_site', 'settings_pages', 'settings_design', 'settings_seo'];
 
 // Đường dẫn API (sau /admin/api). Quy tắc đầu tiên khớp được dùng. read = một trong các quyền (GET), write = quyền để ghi.
 // null = ai đã đăng nhập cũng dùng được; 'owner' = chỉ Chủ shop.
@@ -75,6 +76,7 @@ export const API_RULES = [
   { re: /^\/product-types/, read: ['products', 'terms'], write: ['products'] },
   { re: /^\/products/, read: ['products', 'orders', 'gallery'], write: ['products'] },   // đơn hàng cần tìm sản phẩm để thêm dòng hàng
   { re: /^\/gallery/, read: ['gallery'], write: ['gallery'] },
+  { re: /^\/(feedbacks|reviews)/, read: ['feedback'], write: ['feedback'] },
   { re: /^\/(posts|post-categories|authors)/, read: ['posts'], write: ['posts'] },
   { re: /^\/inquiries\/[^/]+$/, method: 'DELETE', any: ['sensitive'] },
   { re: /^\/inquiries/, read: ['orders'], write: ['orders'] },
@@ -106,6 +108,7 @@ export const PAGE_RULES = [
   { re: /^\/(products)(\/|$)|^\/preview\//, any: ['products'] },
   { re: /^\/terms/, any: ['terms'] },
   { re: /^\/gallery/, any: ['gallery'] },
+  { re: /^\/feedback/, any: ['feedback'] },
   { re: /^\/(posts|authors)(\/|$)/, any: ['posts'] },
   { re: /^\/media/, any: EDITORS },
   { re: /^\/inquiries/, any: ['orders'] },
@@ -117,7 +120,7 @@ export const PAGE_RULES = [
 
 // Trang đầu tiên tài khoản được vào (khi không có quyền xem Tổng quan)
 export function firstAllowedPage(user) {
-  const order = [['orders', '/inquiries?type=order'], ['customers', '/customers'], ['products', '/products'], ['posts', '/posts'], ['gallery', '/gallery'], ['terms', '/terms'], ['media', '/media'],
+  const order = [['orders', '/inquiries?type=order'], ['customers', '/customers'], ['products', '/products'], ['posts', '/posts'], ['gallery', '/gallery'], ['feedback', '/feedback'], ['terms', '/terms'], ['media', '/media'],
     ['settings_site', '/settings'], ['settings_pages', '/settings'], ['settings_design', '/settings'], ['settings_seo', '/settings'], ['redirects', '/redirects'], ['audit', '/audit']];
   return order.find(([perm]) => can(user, perm))?.[1] || '/account';
 }

@@ -31,6 +31,7 @@
       {% if col.title %}<h2 class="mb-4 font-body text-xs font-semibold uppercase tracking-[0.2em] text-white">{{ col.title }}</h2>{% endif %}
       <ul class="space-y-2.5 text-sm">
         {% for item in nav %}<li><a href="{{ item.url }}" class="transition hover:text-accent">{{ item.label }}</a></li>{% endfor %}
+        {% if feedbackLink %}<li><a href="{{ feedbackLink.url }}" class="transition hover:text-accent">{{ feedbackLink.label }}</a></li>{% endif %}
         {% if f.show_track and (features.checkout or features.custom_request) %}<li><a href="/tra-cuu-don" class="transition hover:text-accent">{{ s.forms.track_title }}</a></li>{% endif %}
       </ul>
     </div>

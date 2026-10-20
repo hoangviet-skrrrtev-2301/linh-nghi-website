@@ -794,6 +794,91 @@ document.addEventListener('alpine:init', () => {
     },
   }));
 
+  // ---------------- Feedback khách hàng & đánh giá sản phẩm ----------------
+  Alpine.data('feedbackPage', () => ({
+    tab: 'feedback', loading: true, saving: false, form: null, items: [],
+    products: [], rform: null,
+    reviews: [], reviewsLoaded: false, counts: { pending: 0, approved: 0, hidden: 0 }, status: 'pending', q: '', page: 1, pages: 1, total: 0,
+    today: new Date(Date.now() + 7 * 36e5).toISOString().slice(0, 10),
+    async init() {
+      try { this.items = (await api('/feedbacks')).items; } catch (e) { toast().error(e); }
+      this.loading = false;
+      // Số đánh giá chờ duyệt hiện sẵn trên tab; có đánh giá chờ thì mở tab đó cho tiện duyệt
+      try {
+        const r = await api('/reviews?per_page=1');
+        this.counts = r.counts;
+        if (r.counts.pending && new URLSearchParams(location.search).get('tab') === 'reviews') { this.tab = 'reviews'; this.loadReviews(); }
+      } catch { /* người chỉ có quyền xem feedback */ }
+    },
+    open(f) {
+      this.form = f
+        ? { ...f, images: [...f.images], image_ids: [...f.image_ids] }
+        : { name: '', role: '', content: '', rating: 5, avatar_media_id: null, avatar: null, feedback_date: '', images: [], image_ids: [], show_home: true, show_page: true, active: true };
+    },
+    async save() {
+      this.saving = true;
+      try {
+        const f = this.form;
+        const r = await api(f.id ? `/feedbacks/${f.id}` : '/feedbacks', { method: f.id ? 'PUT' : 'POST', body: f });
+        this.items = r.items; this.form = null;
+        toast().show('Đã lưu feedback');
+      } catch (e) { toast().error(e); }
+      this.saving = false;
+    },
+    async remove(f) {
+      if (!(await confirmBox({ title: `Xóa feedback của “${f.name}”?`, message: 'Feedback và danh sách ảnh đính kèm bị gỡ khỏi website (ảnh vẫn còn trong Thư viện ảnh).' }))) return;
+      try { this.items = (await api(`/feedbacks/${f.id}`, { method: 'DELETE' })).items; toast().show('Đã xóa feedback'); } catch (e) { toast().error(e); }
+    },
+    async reorder(id, position) {
+      const from = this.items.findIndex((f) => f.id === id);
+      if (from < 0) return;
+      this.items.splice(position, 0, this.items.splice(from, 1)[0]);
+      try {
+        await api('/feedbacks/reorder', { method: 'POST', body: { ids: this.items.map((i) => i.id) } });
+        toast().show('Đã lưu thứ tự');
+      } catch (e) { toast().error(e); }
+    },
+    // Shop tự thêm / sửa đánh giá (khách nhắn qua Zalo...): chỉ sửa được đánh giá do shop thêm
+    async openReview(r) {
+      if (!this.products.length) { try { this.products = (await api('/products?sort=ten&per_page=200')).items; } catch (e) { toast().error(e); return; } }
+      this.rform = r
+        ? { id: r.id, product_id: r.product_id, name: r.name, rating: r.rating, content: r.content, status: r.status === 'pending' ? 'approved' : r.status, date: (r.created_at || '').slice(0, 10) }
+        : { product_id: '', name: '', rating: 5, content: '', status: 'approved', date: '' };
+    },
+    async saveReview() {
+      this.saving = true;
+      try {
+        const f = this.rform;
+        await api(f.id ? `/reviews/${f.id}` : '/reviews', { method: f.id ? 'PUT' : 'POST', body: f });
+        this.rform = null;
+        toast().show('Đã lưu đánh giá');
+        this.loadReviews();
+      } catch (e) { toast().error(e); }
+      this.saving = false;
+    },
+    async loadReviews() {
+      try {
+        const p = new URLSearchParams({ page: this.page });
+        if (this.status) p.set('status', this.status);
+        if (this.q) p.set('q', this.q);
+        const r = await api('/reviews?' + p);
+        this.reviews = r.items; this.counts = r.counts; this.pages = r.pages; this.total = r.total; this.page = r.page;
+      } catch (e) { toast().error(e); }
+      this.reviewsLoaded = true;
+    },
+    async setStatus(r, status) {
+      try {
+        await api(`/reviews/${r.id}/status`, { method: 'PUT', body: { status } });
+        toast().show(status === 'approved' ? 'Đã duyệt, đánh giá đang hiện trên website' : 'Đã ẩn đánh giá');
+        this.loadReviews();
+      } catch (e) { toast().error(e); }
+    },
+    async removeReview(r) {
+      if (!(await confirmBox({ title: `Xóa đánh giá của “${r.name}”?`, message: 'Khách sẽ đánh giá lại được sản phẩm này. Nếu chỉ muốn gỡ khỏi website, hãy chọn “Ẩn”.' }))) return;
+      try { await api(`/reviews/${r.id}`, { method: 'DELETE' }); toast().show('Đã xóa đánh giá'); this.loadReviews(); } catch (e) { toast().error(e); }
+    },
+  }));
+
   // ---------------- Vai trò & phân quyền ----------------
   Alpine.data('rolesPage', () => ({
     roles: [], groups: [], form: null, saving: false, loading: true,

@@ -100,7 +100,8 @@ export function buildSeo(req, { page, title, description, image, type = 'website
   };
 }
 
-export function productJsonLd(p) {
+// reviews: { count, avg } số sao tổng hợp từ các đánh giá đã duyệt (null = không khai báo)
+export function productJsonLd(p, reviews = null) {
   const s = getPublicSettings();
   const data = {
     '@context': 'https://schema.org',
@@ -116,6 +117,7 @@ export function productJsonLd(p) {
     material: p.jade_type?.name,
     color: p.color?.name,
   };
+  if (reviews?.count) data.aggregateRating = { '@type': 'AggregateRating', ratingValue: reviews.avg, bestRating: 5, worstRating: 1, reviewCount: reviews.count };
   if (p.final_price != null) {
     const sc = s.schema || {};
     const offers = {

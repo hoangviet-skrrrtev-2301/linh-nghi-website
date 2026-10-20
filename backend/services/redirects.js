@@ -143,6 +143,12 @@ export function addAutoRedirect(oldPath, newPath) {
   invalidate();
 }
 
+// Đường dẫn vừa được dùng lại làm địa chỉ thật: bỏ chuyển hướng tự tạo bắt đầu từ chính nó (tránh vòng lặp)
+export function dropAutoRedirectFrom(path) {
+  db.prepare('DELETE FROM redirects WHERE from_path = ? AND auto = 1').run(pathKey(path));
+  invalidate();
+}
+
 // ---- Nhật ký 404 ----
 // Gom trong bộ nhớ rồi ghi 30 giây một lần: bot dò đường dẫn không làm database bị ghi liên tục
 const nfBuffer = new Map();

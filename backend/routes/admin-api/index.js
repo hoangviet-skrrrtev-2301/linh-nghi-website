@@ -14,6 +14,7 @@ import { verifyPassword, verifyTotp, generateTotpSecret, totpUri } from '../../l
 import * as media from '../../services/media.js';
 import * as catalog from '../../services/catalog.js';
 import * as content from '../../services/content.js';
+import * as feedback from '../../services/feedback.js';
 import * as inquiries from '../../services/inquiries.js';
 import { stockHistory } from '../../services/stock.js';
 import * as customerImport from '../../services/customer-import.js';
@@ -264,6 +265,48 @@ router.delete('/authors/:id', h((req) => {
   content.deleteAuthor(id(req));
   audit(req, 'delete', 'author', req.params.id);
   return { items: content.listAuthors() };
+}));
+// Feedback khách hàng (shop nhập, có ảnh) và đánh giá sản phẩm của khách đã mua; quyền "Feedback & đánh giá"
+router.get('/feedbacks', h(() => ({ items: feedback.listFeedbacksAdmin() })));
+router.post('/feedbacks', h((req) => {
+  const fid = feedback.saveFeedback(null, req.body || {});
+  audit(req, 'create', 'feedback', fid, req.body?.name);
+  return { items: feedback.listFeedbacksAdmin(), id: fid };
+}));
+router.post('/feedbacks/reorder', h((req) => {
+  feedback.reorderFeedbacks([].concat(req.body?.ids || []).map((x) => toInt(x)).filter(Boolean));
+  return { ok: true };
+}));
+router.put('/feedbacks/:id', h((req) => {
+  feedback.saveFeedback(id(req), req.body || {});
+  audit(req, 'update', 'feedback', req.params.id, req.body?.name);
+  return { items: feedback.listFeedbacksAdmin() };
+}));
+router.delete('/feedbacks/:id', h((req) => {
+  feedback.deleteFeedback(id(req));
+  audit(req, 'delete', 'feedback', req.params.id);
+  return { items: feedback.listFeedbacksAdmin() };
+}));
+router.get('/reviews', h((req) => feedback.listReviewsAdmin({ status: req.query.status, q: req.query.q, page: req.query.page, perPage: Math.min(100, Math.max(1, toInt(req.query.per_page, 20))) })));
+router.post('/reviews', h((req) => {
+  const rid = feedback.createReviewByShop(req.body || {});
+  audit(req, 'create', 'review', rid, String(req.body?.name || ''));
+  return { ok: true, id: rid };
+}));
+router.put('/reviews/:id', h((req) => {
+  feedback.updateReviewByShop(id(req), req.body || {});
+  audit(req, 'update', 'review', req.params.id, String(req.body?.name || ''));
+  return { ok: true };
+}));
+router.put('/reviews/:id/status', h((req) => {
+  feedback.setReviewStatus(id(req), req.body?.status);
+  audit(req, 'update', 'review', req.params.id, String(req.body?.status || ''));
+  return { ok: true };
+}));
+router.delete('/reviews/:id', h((req) => {
+  feedback.deleteReview(id(req));
+  audit(req, 'delete', 'review', req.params.id);
+  return { ok: true };
 }));
 router.get('/post-categories', h(() => ({ items: content.listPostCategories() })));
 router.post('/post-categories', h((req) => {

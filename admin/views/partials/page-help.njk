@@ -107,6 +107,14 @@
         <li>Mỗi ảnh nhập được tiêu đề, mô tả, <b>album</b>, link tới sản phẩm, ẩn / hiện. Kéo ⠿ để sắp xếp; thay đổi lưu ngay khi rời ô nhập.</li>
         <li>Ảnh <b>gắn sản phẩm</b>: khách bấm vào mở popup xem nhanh sản phẩm. Ảnh không gắn: phóng to ảnh.</li>
       </ul>
+      {% elif helpKey == 'feedback' %}
+      <p><b>Feedback & đánh giá</b> có hai phần với hai cách hoạt động khác nhau:</p>
+      <ul class="list-disc space-y-1 pl-5">
+        <li><b>Feedback khách hàng</b> do shop tự đăng: lời cảm ơn, tin nhắn khách gửi qua Zalo / Facebook. Thêm tên, nghề nghiệp, số sao, nội dung và nhiều ảnh chụp tin nhắn. Hiện ở khối trên trang chủ (bật / tắt ở Cài đặt › Bố cục trang chủ) và ở trang Feedback riêng (có liên kết ở chân trang). Khách bấm vào một feedback để xem đầy đủ và lướt các ảnh.</li>
+        <li><b>Đánh giá sản phẩm</b> do khách tự gửi ở trang sản phẩm. Chỉ nhận khi số điện thoại <b>có trong hệ thống khách hàng</b> (chỉnh mức chặt hơn ở cài đặt), mỗi người đánh giá một lần cho mỗi sản phẩm, không tải ảnh. Shop cũng có thể <b>tự thêm đánh giá</b> (nút “Thêm đánh giá”) cho khách nhắn qua Zalo: có nhãn “Shop thêm”, không đưa vào dữ liệu sao gửi Google. Mặc định đánh giá mới ở trạng thái <b>Chờ duyệt</b>: bạn bấm “Duyệt & hiện” thì mới thấy trên website và được tính vào số sao của sản phẩm. Có thể bật tự duyệt trong cài đặt.</li>
+        <li>Đánh giá đã duyệt cũng hiện ở tab “Đánh giá sản phẩm” của trang Feedback (cùng một đường dẫn, không tạo trang mới). Số điện thoại của khách chỉ hiện trong admin.</li>
+        <li>Mọi chữ, bật / tắt, số lượng, đường dẫn trang chỉnh ở <a href="{{ A }}/settings/feedback" class="underline">Cài đặt › Feedback & đánh giá khách hàng</a>.</li>
+      </ul>
       {% elif helpKey == 'posts' %}
       <p><b>Blog</b> là các bài viết kiến thức ngọc để thu hút khách từ Google.</p>
       <ul class="list-disc space-y-1 pl-5">

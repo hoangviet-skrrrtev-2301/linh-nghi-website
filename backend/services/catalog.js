@@ -122,6 +122,11 @@ function hydrate(rows, { withImages = false } = {}) {
   const newDays = Number(getRaw('pages').new_days) || 0;
   const mediaIds = [...rows.map((r) => r.cover_media_id), ...images.map((i) => i.media_id)];
   const media = getMediaMap(mediaIds);
+  // Số sao trung bình từ đánh giá đã duyệt (chỉ tính khi bật đánh giá và hiện sao trên thẻ sản phẩm)
+  const fbCfg = getRaw('feedback');
+  const ratings = fbCfg.reviews_enabled && fbCfg.reviews_show_on_card
+    ? Object.fromEntries(db.prepare(`SELECT product_id, COUNT(*) AS c, AVG(rating) AS a FROM product_reviews WHERE status = 'approved' AND product_id IN (${marks}) GROUP BY product_id`).all(...ids).map((x) => [x.product_id, x]))
+    : {};
 
   return rows.map((r) => {
     const pick = (tid) => (terms[tid] ? { id: terms[tid].id, name: terms[tid].name, slug: terms[tid].slug, color_hex: terms[tid].color_hex } : null);
@@ -156,6 +161,8 @@ function hydrate(rows, { withImages = false } = {}) {
       style: pick(r.style_id),
       elements: elements.filter((e) => e.product_id === r.id).map((e) => pick(e.term_id)).filter(Boolean),
       cover,
+      rating_count: ratings[r.id]?.c || 0,
+      rating_avg: ratings[r.id] ? Math.round(ratings[r.id].a * 10) / 10 : 0,
       images: withImages ? [cover, ...gallery.filter((g) => g.id !== cover?.id)].filter(Boolean) : undefined,
       // Ảnh góc khác, hiện khi di chuột vào thẻ sản phẩm
       hover: gallery.find((g) => g.id !== cover?.id) || null,

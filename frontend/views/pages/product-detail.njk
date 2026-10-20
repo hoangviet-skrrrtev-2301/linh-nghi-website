@@ -49,6 +49,10 @@
     {% if p.jade_type %}<p class="eyebrow">{{ p.jade_type.name }}</p>{% endif %}
     <h1 class="mt-3 text-4xl font-medium leading-tight md:text-5xl">{{ p.name }}</h1>
     {% if p.sku %}<p class="mt-2 text-xs text-muted">Mã: {{ p.sku }}</p>{% endif %}
+    {% if reviews and s.feedback.reviews_show_on_product and reviews.summary.count %}
+    {% from "partials/stars.njk" import stars %}
+    <a href="#danh-gia" class="mt-3 inline-flex flex-wrap items-center gap-2 text-sm text-muted hover:text-primary">{{ stars(reviews.summary.avg, 'h-[18px] w-[18px]') }}<b class="text-ink">{{ reviews.summary.avg }}</b> ({{ reviews.summary.count }} đánh giá)</a>
+    {% endif %}
 
     {% if features.show_prices %}
     <div class="mt-5 flex items-baseline gap-3">
@@ -187,6 +191,104 @@
     {% endif %}
   </div>
 </section>
+
+{% if reviews %}
+{% set fb = s.feedback %}
+{% from "partials/stars.njk" import stars %}
+{% from "partials/form-fields.njk" import antiSpam %}
+<section id="danh-gia" class="section scroll-mt-24 border-t border-line" x-data="reviewForm('{{ p.slug }}')">
+  <div class="container-x max-w-4xl">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <h2 class="text-3xl font-medium">{{ fb.reviews_title }}</h2>
+        {% if fb.reviews_show_on_product and reviews.summary.count %}
+        <p class="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">{{ stars(reviews.summary.avg, 'h-5 w-5') }}<b class="text-base text-ink">{{ reviews.summary.avg }}</b>/5 · {{ reviews.summary.count }} đánh giá</p>
+        {% endif %}
+      </div>
+      <button type="button" class="btn btn-outline" @click="show()">{{ icon('star', 'w-4 h-4') }} {{ fb.reviews_button }}</button>
+    </div>
+
+    {% if fb.reviews_show_on_product %}
+    {% if reviews.items.length %}
+    <div class="mt-6" x-data="reviewList({{ { loaded: reviews.next, total: reviews.total, limit: reviews.limit, product: p.slug } | attrjson }})">
+      <ul class="divide-y divide-line">
+        {% for r in reviews.items %}
+        <li class="py-5">
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1">{{ stars(r.rating, 'h-4 w-4') }}<span class="text-sm font-semibold">{{ r.name }}</span>{% if r.verified %}<span class="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">{{ fb.reviews_verified_label }}</span>{% endif %}<span class="text-xs text-muted">{{ r.date_label }}</span></div>
+          {% if r.content %}<p class="mt-2 text-[15px] leading-relaxed text-ink/85">{{ r.content }}</p>{% endif %}
+        </li>
+        {% endfor %}
+        <template x-for="r in extra" :key="r.id">
+          <li class="py-5">
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span class="inline-flex items-center gap-0.5 text-accent" role="img" :aria-label="r.rating + ' trên 5 sao'">
+                <template x-for="n in 5" :key="n"><svg class="h-4 w-4" :class="n > r.rating && 'opacity-25'" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5l2.94 5.96 6.58.96-4.76 4.64 1.12 6.55L12 17.52l-5.88 3.09 1.12-6.55L2.48 9.42l6.58-.96L12 2.5z"/></svg></template>
+              </span>
+              <span class="text-sm font-semibold" x-text="r.name"></span><span x-show="r.verified" class="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">{{ fb.reviews_verified_label }}</span><span class="text-xs text-muted" x-text="r.date_label"></span>
+            </div>
+            <p class="mt-2 text-[15px] leading-relaxed text-ink/85" x-show="r.content" x-text="r.content"></p>
+          </li>
+        </template>
+      </ul>
+      <div class="mt-4 text-center" x-show="more" x-cloak><button type="button" class="btn btn-outline" @click="loadMore()" :disabled="loading">{{ fb.reviews_more_label }}</button></div>
+    </div>
+    {% else %}
+    <p class="mt-6 rounded-lg border border-dashed border-line p-6 text-center text-sm text-muted">{{ fb.reviews_empty }}</p>
+    {% endif %}
+    {% endif %}
+  </div>
+
+  {# Cửa sổ viết đánh giá. Khung nội dung nằm SAU lớp nền trong DOM. #}
+  <div x-cloak x-show="open" class="fixed inset-0 z-[84] flex items-end justify-center sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="rv-title" @keydown.escape.window="open = false">
+    <div x-show="open" x-transition.opacity class="modal-backdrop" @click="open = false"></div>
+    <div x-show="open" x-trap.noscroll="open" x-transition class="modal-panel max-h-[94vh] max-w-lg overflow-y-auto rounded-b-none p-6 sm:rounded-lg md:p-8">
+      <button type="button" class="icon-btn absolute right-3 top-3" @click="open = false" aria-label="Đóng">{{ icon('close') }}</button>
+      <div x-show="success" class="py-8 text-center">
+        <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary text-on-primary">{{ icon('check', 'w-7 h-7') }}</span>
+        <p class="mt-5 text-lg font-medium" x-text="message"></p>
+        <button type="button" class="btn btn-outline mt-6" @click="open = false">Đóng</button>
+      </div>
+      <form x-show="!success" @submit.prevent="submit($el)" novalidate class="relative">
+        <h2 id="rv-title" class="pr-8 text-2xl font-medium">{{ fb.reviews_form_title }}</h2>
+        <p class="mt-1 text-sm font-medium text-ink/80">{{ p.name }}</p>
+        {% if fb.reviews_form_intro %}<p class="mt-2 text-sm text-muted">{{ fb.reviews_form_intro }}</p>{% endif %}
+        <div class="mt-5">
+          <p class="label" id="rv-stars">Số sao <span class="text-red-500">*</span></p>
+          <div class="flex gap-1" role="radiogroup" aria-labelledby="rv-stars">
+            <template x-for="n in 5" :key="n">
+              <button type="button" role="radio" :aria-checked="rating === n" :aria-label="n + ' sao'" @click="rating = n; delete errors.rating" @mouseenter="hover = n" @mouseleave="hover = 0" class="p-0.5 text-accent transition hover:scale-110">
+                <svg class="h-9 w-9" :class="n > (hover || rating) && 'opacity-25'" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5l2.94 5.96 6.58.96-4.76 4.64 1.12 6.55L12 17.52l-5.88 3.09 1.12-6.55L2.48 9.42l6.58-.96L12 2.5z"/></svg>
+              </button>
+            </template>
+          </div>
+          <p class="field-error" x-show="errors.rating" x-text="errors.rating" x-cloak></p>
+        </div>
+        <div class="mt-4">
+          <label for="rv-phone" class="label">Số điện thoại đã đặt hàng <span class="text-red-500">*</span></label>
+          <input id="rv-phone" name="phone" type="tel" autocomplete="tel" class="input" placeholder="09xx xxx xxx" x-model="phone" :class="errors.phone && 'is-invalid'" @input="delete errors.phone">
+          <p class="field-error" x-show="errors.phone" x-text="errors.phone" x-cloak></p>
+        </div>
+        <div class="mt-4">
+          <label for="rv-nick" class="label">Tên hiển thị (không bắt buộc)</label>
+          <input id="rv-nick" name="nick" class="input" maxlength="80" autocomplete="name" placeholder="Để trống: dùng tên trong đơn hàng" x-model="nick">
+        </div>
+        <div class="mt-4">
+          <label for="rv-content" class="label">Nhận xét{% if fb.reviews_min_length > 0 %} <span class="text-red-500">*</span>{% endif %}</label>
+          <textarea id="rv-content" name="content" rows="4" maxlength="1500" class="input" placeholder="Chia sẻ cảm nhận của bạn về sản phẩm" x-model="content" :class="errors.content && 'is-invalid'" @input="delete errors.content"></textarea>
+          <p class="field-error" x-show="errors.content" x-text="errors.content" x-cloak></p>
+        </div>
+        {{ antiSpam(formToken) }}
+        <p class="mt-4 text-sm text-red-600" x-show="message && !success && !Object.keys(errors).length" x-text="message" x-cloak role="alert"></p>
+        <button type="submit" class="btn btn-primary mt-6 w-full" :disabled="loading">
+          <span x-show="loading" class="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" x-cloak></span>
+          Gửi đánh giá
+        </button>
+        <p class="mt-3 flex items-start gap-2 text-xs text-muted">{{ icon('shield', 'w-3.5 h-3.5 shrink-0 mt-0.5') }} {{ s.forms.privacy_note }}</p>
+      </form>
+    </div>
+  </div>
+</section>
+{% endif %}
 
 {% if related.length %}
 <section class="section border-t border-line">

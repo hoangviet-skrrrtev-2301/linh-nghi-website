@@ -5,6 +5,7 @@ import { getRaw } from '../services/settings.js';
 import { safeJson } from './utils.js';
 import { listPublicProductGroups } from '../services/catalog.js';
 import { listPolicies, policyPath } from '../services/policies.js';
+import { feedbackPath } from './feedback-path.js';
 
 const AI_BOTS = ['GPTBot', 'ChatGPT-User', 'OAI-SearchBot', 'ClaudeBot', 'anthropic-ai', 'CCBot', 'Google-Extended', 'PerplexityBot', 'Bytespider', 'Applebot-Extended'];
 const DIRECTIVE = /^(user-agent|allow|disallow|crawl-delay|sitemap|host)\s*:\s*\S*/i;
@@ -76,6 +77,8 @@ export function sitemapEntries() {
     if (f.size_guide) add({ loc: '/huong-dan-size', priority: '0.7' });
     if (f.custom_request) add({ loc: '/thiet-ke-rieng', priority: '0.7' });
     if (f.blog) add({ loc: '/blog', priority: '0.6', changefreq: 'weekly' });
+    const fb = getRaw('feedback');
+    if (fb.page_enabled) add({ loc: feedbackPath(fb.page_slug), priority: '0.5' });
     for (const pol of listPolicies()) add({ loc: policyPath(pol.slug), priority: '0.3' });
   }
   if (sm.sitemap_categories) {

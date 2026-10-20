@@ -1,0 +1,163 @@
+{% extends "layout.njk" %}
+{% from "partials/icons.njk" import icon %}
+{% from "partials/fields.njk" import imageField, imageList %}
+{% block title %}Feedback & đánh giá{% endblock %}
+{% block heading %}Feedback & đánh giá khách hàng{% endblock %}
+{% block content %}
+<div x-data="feedbackPage">
+  {% set helpKey = 'feedback' %}{% include "partials/page-help.njk" %}
+
+  <div class="mb-5 flex flex-wrap items-center gap-2 border-b border-slate-200" role="tablist">
+    <button type="button" role="tab" :aria-selected="tab === 'feedback'" class="-mb-px border-b-2 px-4 py-2.5 text-sm font-medium transition" :class="tab === 'feedback' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-700'" @click="tab = 'feedback'">Feedback khách hàng <span class="ml-1 text-xs text-slate-400" x-text="items.length"></span></button>
+    <button type="button" role="tab" :aria-selected="tab === 'reviews'" class="-mb-px border-b-2 px-4 py-2.5 text-sm font-medium transition" :class="tab === 'reviews' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-700'" @click="tab = 'reviews'; if (!reviewsLoaded) loadReviews()">Đánh giá sản phẩm <span x-show="counts.pending" x-cloak class="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700" x-text="counts.pending + ' chờ duyệt'"></span></button>
+    <a href="{{ A }}/settings/feedback" class="ml-auto inline-flex items-center gap-1.5 pb-2 text-sm text-brand-600 hover:underline">{{ icon('settings', 'w-4 h-4') }} Cài đặt giao diện & trang</a>
+  </div>
+
+  {# ================= TAB FEEDBACK ================= #}
+  <div x-show="tab === 'feedback'">
+    <div class="mb-5 flex flex-wrap items-center gap-3">
+      <p class="min-w-[16rem] flex-1 text-sm text-slate-600">Lời cảm ơn, tin nhắn khách gửi cho shop. Hiện ở khối trang chủ và trang Feedback. Kéo <span class="inline-block align-middle">{{ icon('drag', 'w-4 h-4') }}</span> để đổi thứ tự.</p>
+      <button type="button" class="btn btn-primary" @click="open(null)">{{ icon('plus', 'w-4 h-4') }} Thêm feedback</button>
+    </div>
+
+    <div x-cloak x-show="form" class="mb-6">
+      <form @submit.prevent="save()" class="card">
+        <template x-if="form">
+          <div>
+            <div class="card-head"><h2 class="card-title" x-text="form.id ? 'Sửa feedback' : 'Thêm feedback'"></h2></div>
+            <div class="grid gap-5 p-5 md:grid-cols-[200px_1fr]">
+              <div><label class="label">Ảnh đại diện khách</label>{{ imageField('form.avatar_media_id', 'form.avatar') }}<p class="help">Không bắt buộc. Ảnh vuông, rõ mặt.</p></div>
+              <div class="grid gap-4 md:grid-cols-2">
+                <div><label class="label" for="fb-name">Tên khách *</label><input id="fb-name" class="input" x-model="form.name" required maxlength="100" placeholder="VD: Minh Anh"></div>
+                <div><label class="label" for="fb-role">Nghề nghiệp / nơi ở</label><input id="fb-role" class="input" x-model="form.role" maxlength="120" placeholder="VD: Nhân viên văn phòng, TP.HCM"></div>
+                <div class="md:col-span-2"><label class="label" for="fb-content">Nội dung feedback</label><textarea id="fb-content" class="input" rows="4" x-model="form.content" maxlength="3000" placeholder="Lời khách nhận xét. Có thể để trống nếu chỉ đăng ảnh chụp tin nhắn bên dưới."></textarea></div>
+                <div><label class="label" for="fb-rating">Số sao</label>
+                  <select id="fb-rating" class="input" x-model.number="form.rating">
+                    <option value="0">Không hiện sao</option>
+                    <template x-for="n in [5, 4, 3, 2, 1]" :key="n"><option :value="n" x-text="n + ' sao'"></option></template>
+                  </select></div>
+                <div><label class="label" for="fb-date">Ngày feedback</label><input id="fb-date" type="date" class="input" x-model="form.feedback_date" :max="today"><p class="help">Để trống: lấy ngày tạo. Không chọn được ngày ở tương lai.</p></div>
+                <div class="md:col-span-2"><label class="label">Ảnh feedback (ảnh chụp tin nhắn, bình luận...)</label>{{ imageList('form.image_ids', 'form.images') }}<p class="help">Tối đa 12 ảnh. Khách bấm vào feedback sẽ thấy các ảnh này trong cửa sổ chi tiết.</p></div>
+                <div class="flex flex-wrap items-center gap-x-6 gap-y-2 md:col-span-2">
+                  <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="h-4 w-4 accent-brand-600" x-model="form.show_home"> Hiện ở trang chủ</label>
+                  <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="h-4 w-4 accent-brand-600" x-model="form.show_page"> Hiện ở trang Feedback</label>
+                  <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="h-4 w-4 accent-brand-600" x-model="form.active"> Hiển thị trên website</label>
+                </div>
+              </div>
+            </div>
+            <div class="flex justify-end gap-2 border-t border-slate-100 px-5 py-3"><button type="button" class="btn btn-secondary" @click="form = null">Hủy</button><button class="btn btn-primary" :disabled="saving">Lưu feedback</button></div>
+          </div>
+        </template>
+      </form>
+    </div>
+
+    <div class="card overflow-hidden">
+      <ul class="divide-y divide-slate-100" x-sort="reorder($item, $position)">
+        <template x-for="f in items" :key="f.id">
+          <li x-sort:item="f.id" class="flex flex-wrap items-start gap-4 bg-white px-5 py-4" :class="!f.active && 'opacity-60'">
+            <span x-sort:handle class="mt-1 flex h-8 w-8 shrink-0 cursor-move items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" aria-label="Kéo để đổi thứ tự">{{ icon('drag', 'w-4 h-4') }}</span>
+            <img :src="f.avatar?.sm" alt="" class="h-12 w-12 shrink-0 rounded-full bg-slate-100 object-cover" x-show="f.avatar">
+            <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400" x-show="!f.avatar">{{ icon('user', 'w-5 h-5') }}</span>
+            <div class="min-w-0 flex-1">
+              <p class="font-medium"><span x-text="f.name"></span> <span class="text-xs font-normal text-slate-500" x-text="f.role ? '· ' + f.role : ''"></span></p>
+              <p class="mt-0.5 text-xs text-amber-500" x-show="f.rating" x-text="'★'.repeat(f.rating) + '☆'.repeat(5 - f.rating)"></p>
+              <p class="mt-1 line-clamp-2 text-sm text-slate-600" x-text="f.content || '(chỉ có ảnh)'"></p>
+              <p class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                <span x-show="f.images.length" x-text="f.images.length + ' ảnh'"></span>
+                <span x-text="f.date_label"></span>
+                <span x-show="f.show_home" class="badge bg-brand-50 text-brand-700">Trang chủ</span>
+                <span x-show="f.show_page" class="badge bg-slate-100 text-slate-700">Trang Feedback</span>
+                <span x-show="!f.active" class="badge bg-slate-200 text-slate-600">Đang ẩn</span>
+              </p>
+              <div class="mt-2 flex gap-1.5" x-show="f.images.length">
+                <template x-for="m in f.images.slice(0, 6)" :key="m.id"><img :src="m.sm" alt="" class="h-10 w-10 rounded border border-slate-200 object-cover"></template>
+              </div>
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm" @click="open(f)" :aria-label="'Sửa feedback của ' + f.name" title="Sửa">{{ icon('edit', 'w-4 h-4') }}</button>
+            <button type="button" class="btn btn-ghost btn-sm text-red-600" @click="remove(f)" :aria-label="'Xóa feedback của ' + f.name" title="Xóa">{{ icon('trash', 'w-4 h-4') }}</button>
+          </li>
+        </template>
+        <li x-show="!loading && !items.length" class="px-5 py-10 text-center text-sm text-slate-500">Chưa có feedback. Bấm “Thêm feedback” để đăng lời cảm ơn hoặc ảnh chụp tin nhắn của khách.</li>
+      </ul>
+    </div>
+  </div>
+
+  {# ================= TAB ĐÁNH GIÁ SẢN PHẨM ================= #}
+  <div x-show="tab === 'reviews'" x-cloak>
+    <div class="mb-4 flex flex-wrap items-center gap-3">
+      <p class="min-w-[16rem] flex-1 text-sm text-slate-600">Đánh giá do khách gửi từ trang sản phẩm (số điện thoại phải có trong hệ thống khách hàng) và đánh giá <b>shop tự thêm</b>. Chỉ đánh giá <b>Đang hiện</b> mới thấy trên website và được tính số sao.</p>
+      <button type="button" class="btn btn-primary" @click="openReview(null)">{{ icon('plus', 'w-4 h-4') }} Thêm đánh giá</button>
+    </div>
+
+    <div x-cloak x-show="rform" class="mb-6">
+      <form @submit.prevent="saveReview()" class="card">
+        <template x-if="rform">
+          <div>
+            <div class="card-head"><h2 class="card-title" x-text="rform.id ? 'Sửa đánh giá do shop thêm' : 'Thêm đánh giá cho sản phẩm'"></h2></div>
+            <div class="grid gap-4 p-5 md:grid-cols-2">
+              <div class="md:col-span-2"><label class="label" for="rv-product">Sản phẩm *</label>
+                <select id="rv-product" class="input" x-model.number="rform.product_id" required>
+                  <option value="">— Chọn sản phẩm —</option>
+                  <template x-for="p in products" :key="p.id"><option :value="p.id" x-text="p.name + (p.sku ? ' (' + p.sku + ')' : '')"></option></template>
+                </select></div>
+              <div><label class="label" for="rv-name">Tên người đánh giá *</label><input id="rv-name" class="input" x-model="rform.name" required maxlength="80" placeholder="VD: Nguyễn Văn Hoa"><p class="help">Hiện trên website theo cách rút gọn tên đã chọn trong cài đặt.</p></div>
+              <div><label class="label" for="rv-rating">Số sao *</label>
+                <select id="rv-rating" class="input" x-model.number="rform.rating"><template x-for="n in [5, 4, 3, 2, 1]" :key="n"><option :value="n" x-text="n + ' sao'"></option></template></select></div>
+              <div class="md:col-span-2"><label class="label" for="rv-content">Nhận xét</label><textarea id="rv-content" class="input" rows="3" maxlength="1500" x-model="rform.content" placeholder="Có thể để trống nếu chỉ chấm sao"></textarea></div>
+              <div><label class="label" for="rv-date">Ngày đánh giá</label><input id="rv-date" type="date" class="input" x-model="rform.date" :max="today"><p class="help">Để trống: hôm nay. Dùng khi nhập lại đánh giá cũ khách đã gửi qua Zalo / Facebook.</p></div>
+              <div><label class="label" for="rv-status">Trạng thái</label>
+                <select id="rv-status" class="input" x-model="rform.status"><option value="approved">Đang hiện</option><option value="hidden">Ẩn</option></select></div>
+            </div>
+            <p class="mx-5 mb-4 rounded-lg bg-amber-50 p-3 text-xs text-amber-800">Chỉ nhập đánh giá <b>thật</b> của khách (ví dụ khách nhắn qua Zalo). Đánh giá do shop thêm có nhãn “Shop thêm” trong admin, <b>không</b> có nhãn “Đã mua hàng” và <b>không</b> đưa vào dữ liệu số sao gửi Google. Đánh giá không có thật có thể vi phạm quy định của Google và pháp luật bảo vệ người tiêu dùng.</p>
+            <div class="flex justify-end gap-2 border-t border-slate-100 px-5 py-3"><button type="button" class="btn btn-secondary" @click="rform = null">Hủy</button><button class="btn btn-primary" :disabled="saving">Lưu đánh giá</button></div>
+          </div>
+        </template>
+      </form>
+    </div>
+    <div class="mb-4 flex flex-wrap items-center gap-2">
+      <template x-for="o in [['', 'Tất cả'], ['pending', 'Chờ duyệt'], ['approved', 'Đang hiện'], ['hidden', 'Đã ẩn']]" :key="o[0]">
+        <button type="button" class="btn btn-sm" :class="status === o[0] ? 'btn-primary' : 'btn-secondary'" @click="status = o[0]; page = 1; loadReviews()">
+          <span x-text="o[1]"></span> <span class="text-[11px] opacity-70" x-text="o[0] ? counts[o[0]] : counts.pending + counts.approved + counts.hidden"></span>
+        </button>
+      </template>
+      <input type="search" class="input ml-auto !w-64" placeholder="Tìm tên, số điện thoại, sản phẩm..." aria-label="Tìm đánh giá" x-model.debounce.400ms="q" @input="page = 1; loadReviews()">
+    </div>
+
+    <div class="card overflow-hidden">
+      <ul class="divide-y divide-slate-100">
+        <template x-for="r in reviews" :key="r.id">
+          <li class="flex flex-wrap items-start gap-4 px-5 py-4">
+            <div class="min-w-0 flex-1">
+              <p class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span class="text-amber-500" x-text="'★'.repeat(r.rating) + '☆'.repeat(5 - r.rating)"></span>
+                <b x-text="r.name"></b>
+                <span class="text-xs text-slate-500" x-text="r.phone"></span>
+                <span x-show="r.source === 'shop'" class="badge bg-violet-100 text-violet-700">Shop thêm</span>
+                <span x-show="r.source === 'customer' && r.verified" class="badge bg-sky-100 text-sky-700">Đã mua đúng sản phẩm</span>
+                <span class="badge" :class="{ 'bg-amber-100 text-amber-700': r.status === 'pending', 'bg-emerald-100 text-emerald-700': r.status === 'approved', 'bg-slate-200 text-slate-600': r.status === 'hidden' }" x-text="{ pending: 'Chờ duyệt', approved: 'Đang hiện', hidden: 'Đã ẩn' }[r.status]"></span>
+              </p>
+              <p class="mt-1 text-sm text-slate-700" x-text="r.content || '(chỉ chấm sao, không có nhận xét)'"></p>
+              <p class="mt-1.5 text-xs text-slate-500">Sản phẩm: <a :href="'{{ A }}/products/' + r.product_id" class="text-brand-600 hover:underline" x-text="r.product_name"></a> · <span x-show="r.order_code">Đơn <span x-text="r.order_code"></span> · </span><span x-text="new Date(r.created_at.replace(' ', 'T') + 'Z').toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', dateStyle: 'short', timeStyle: 'short' })"></span></p>
+            </div>
+            <div class="flex shrink-0 items-center gap-1.5">
+              <button type="button" class="btn btn-primary btn-sm" x-show="r.status !== 'approved'" @click="setStatus(r, 'approved')" x-text="r.status === 'pending' ? 'Duyệt & hiện' : 'Hiện lại'"></button>
+              <button type="button" class="btn btn-secondary btn-sm" x-show="r.status !== 'hidden'" @click="setStatus(r, 'hidden')">Ẩn</button>
+              <button type="button" class="btn btn-ghost btn-sm" x-show="r.source === 'shop'" @click="openReview(r)" :aria-label="'Sửa đánh giá của ' + r.name" title="Sửa">{{ icon('edit', 'w-4 h-4') }}</button>
+              <button type="button" class="btn btn-ghost btn-sm text-red-600" @click="removeReview(r)" :aria-label="'Xóa đánh giá của ' + r.name" title="Xóa">{{ icon('trash', 'w-4 h-4') }}</button>
+            </div>
+          </li>
+        </template>
+        <li x-show="reviewsLoaded && !reviews.length" class="px-5 py-10 text-center text-sm text-slate-500">Chưa có đánh giá nào khớp bộ lọc.</li>
+      </ul>
+      <div class="flex items-center justify-between gap-3 border-t border-slate-100 px-5 py-3 text-sm text-slate-500" x-show="pages > 1">
+        <span x-text="'Tổng ' + total + ' đánh giá'"></span>
+        <div class="flex items-center gap-2">
+          <button class="btn btn-secondary btn-sm" :disabled="page <= 1" @click="page--; loadReviews()">‹ Trước</button>
+          <span x-text="page + ' / ' + pages"></span>
+          <button class="btn btn-secondary btn-sm" :disabled="page >= pages" @click="page++; loadReviews()">Sau ›</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

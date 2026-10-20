@@ -5,6 +5,7 @@
 {# tag: cấp tiêu đề của tên sản phẩm. Trang danh sách (đã có H1) dùng h2; khối có H2 riêng (trang chủ, sản phẩm liên quan) dùng h3 #}
 {% macro productCard(p, features, index=0, quick=true, tag='h3') %}
 {% from "partials/icons.njk" import icon %}
+{% from "partials/stars.njk" import stars %}
 <article class="product-card group reveal">
   <div class="media">
     <a href="{{ p.url }}" {% if quick %}@click.prevent="$store.quick.show('{{ p.slug }}')"{% endif %} aria-label="{{ ('Xem nhanh ' if quick else 'Xem chi tiết ') + p.name }}">
@@ -32,6 +33,7 @@
     <{{ tag }} class="mt-1 font-heading text-[1.15rem] font-medium leading-snug">
       <a href="{{ p.url }}" class="transition hover:text-primary">{{ p.name }}</a>
     </{{ tag }}>
+    {% if p.rating_count %}<div class="mt-1 flex items-center gap-1.5">{{ stars(p.rating_avg, 'h-3.5 w-3.5') }}<span class="text-xs text-muted">{{ p.rating_avg }} ({{ p.rating_count }})</span></div>{% endif %}
     {% if features.show_prices %}
     <div class="mt-1.5 flex flex-wrap items-baseline gap-x-2">
       {% if p.final_price != null %}

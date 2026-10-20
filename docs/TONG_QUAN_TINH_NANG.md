@@ -16,6 +16,8 @@ Hướng dẫn thao tác từng trang admin: [HUONG_DAN_SU_DUNG.md](HUONG_DAN_SU
 | **Thiết kế riêng (custom)** | Khách mô tả vòng muốn làm (loại ngọc, màu, ni, ngân sách, mục đích). Khách **không** tải ảnh lên, gửi ảnh mẫu qua Zalo |
 | **Liên hệ / tư vấn** | Form lời nhắn, yêu cầu tư vấn về một sản phẩm |
 | **Gallery, Blog, Về shop, Hướng dẫn size** | Ảnh khách và sản phẩm; bài viết kiến thức (có chuyên mục, mục lục, tác giả); giới thiệu shop; cách đo ni tay |
+| **Feedback khách hàng** | Khối ở trang chủ (khung giới thiệu + lưới thẻ có ảnh đại diện, số sao) và trang Feedback riêng ở chân trang; bấm vào để xem đầy đủ và lướt nhiều ảnh chụp tin nhắn; tab con "Đánh giá sản phẩm" |
+| **Đánh giá sản phẩm** | Khách đã mua (số điện thoại trùng đơn hoàn thành chứa sản phẩm) chấm sao và viết nhận xét, shop duyệt trước khi hiện; số sao hiện ở sản phẩm khi có |
 | **Trang chính sách** | Đổi trả, bảo mật thông tin, điều khoản mua hàng, vận chuyển và thanh toán: liên kết ở chân trang, nội dung sửa trong admin |
 | **Tiện ích** | Chế độ tối / sáng, popup chào mừng, nút Zalo và gọi nổi, dùng tốt trên điện thoại |
 
@@ -54,6 +56,7 @@ Quy trình xử lý một đơn:
 ## 4. Nội dung
 
 - **Blog:** viết bài bằng trình soạn thảo (bảng, ảnh, liên kết có tùy chọn mở tab mới), chuyên mục, hẹn giờ đăng, **tác giả** (Admin › Tác giả blog), SEO riêng từng bài.
+- **Feedback & đánh giá:** đăng feedback kèm nhiều ảnh tin nhắn, kéo thả thứ tự, ẩn / hiện ở trang chủ và trang Feedback; duyệt / ẩn / xóa đánh giá sản phẩm của khách đã mua; toàn bộ chữ và lựa chọn chỉnh ở Cài đặt.
 - **Gallery:** chọn kiểu băng chuyền (tự chạy hoặc đứng yên, khách kéo / vuốt được), lưới tĩnh hoặc xếp gạch, 1–4 dòng, 2–6 cột; chia album; ảnh gắn sản phẩm thì bấm vào mở xem nhanh.
 - **Thư viện ảnh:** nơi chứa mọi ảnh, chia thư mục; ảnh tự xoay, xóa thông tin vị trí, nén WebP. Nhớ nhập mô tả ảnh (alt).
 - **Cài đặt website** (chia 5 mục có mô tả): Thông tin chung & menu · Nội dung từng trang · Giao diện · Tối ưu SEO · Email & hệ thống. **Mọi chữ, ảnh, lựa chọn hiển thị cho khách đều sửa được ở đây**, không cần sửa code.

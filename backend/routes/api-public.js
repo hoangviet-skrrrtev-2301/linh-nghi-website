@@ -5,6 +5,7 @@ import { createInquiry, lookupInquiry } from '../services/inquiries.js';
 import { getPublicSettings } from '../services/settings.js';
 import { publicFormGuard, formLimiter, trackLimiter, apiLimiter } from '../middleware/security.js';
 import { HttpError } from '../lib/utils.js';
+import { submitReview, listReviewsPublic } from '../services/feedback.js';
 
 const router = Router();
 router.use(apiLimiter);
@@ -71,6 +72,28 @@ router.get('/search-suggest', (req, res) => {
       final_price: showPrice ? p.final_price : null, cover: p.cover ? { sm: p.cover.sm, width: p.cover.width, height: p.cover.height } : null,
     })),
   });
+});
+
+// Đánh giá sản phẩm đã duyệt (xem thêm ở trang sản phẩm / tab đánh giá của trang Feedback). product: slug, bỏ trống = mọi sản phẩm
+router.get('/reviews', (req, res, next) => {
+  try {
+    const f = getPublicSettings().feedback;
+    if (!f.reviews_enabled) return res.json({ items: [], total: 0 });
+    let productId;
+    if (req.query.product) {
+      const p = getProduct(String(req.query.product));
+      if (!p) return res.json({ items: [], total: 0 });
+      productId = p.id;
+    }
+    res.json(listReviewsPublic({ productId, limit: Number(req.query.limit) || 6, offset: Number(req.query.offset) || 0 }));
+  } catch (err) { next(err); }
+});
+
+// Gửi đánh giá: số điện thoại phải trùng khách có đơn Hoàn thành chứa sản phẩm (kiểm tra ở submitReview)
+router.post('/reviews', formLimiter, publicFormGuard, (req, res, next) => {
+  try {
+    res.status(201).json({ ok: true, ...submitReview(req.body) });
+  } catch (err) { next(err); }
 });
 
 // Làm mới thông tin giỏ hàng (giá, tình trạng) theo dữ liệu mới nhất

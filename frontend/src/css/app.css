@@ -220,6 +220,16 @@
   /* Không đặt z-index: khung popup (đứng sau trong DOM) sẽ luôn nằm trên lớp nền */
   .modal-backdrop { @apply fixed inset-0 bg-ink/50 backdrop-blur-sm; }
   .modal-panel { @apply relative w-full overflow-hidden rounded-lg bg-surface shadow-2xl; }
+
+  /* Khung giới thiệu của khối Feedback: nền xanh nhạt theo màu chủ đạo + lưới đường chéo (đổi theo chế độ sáng / tối) */
+  .fb-panel {
+    background-color: color-mix(in srgb, var(--c-primary) 10%, var(--c-surface));
+    background-image:
+      linear-gradient(30deg, color-mix(in srgb, var(--c-primary) 11%, transparent) 1px, transparent 1px),
+      linear-gradient(150deg, color-mix(in srgb, var(--c-primary) 11%, transparent) 1px, transparent 1px),
+      linear-gradient(165deg, color-mix(in srgb, var(--c-primary) 4%, var(--c-surface)), color-mix(in srgb, var(--c-primary) 16%, var(--c-surface)));
+    background-size: 42px 24px, 42px 24px, auto;
+  }
 }
 
 @layer utilities {
