@@ -221,6 +221,17 @@
   .modal-backdrop { @apply fixed inset-0 bg-ink/50 backdrop-blur-sm; }
   .modal-panel { @apply relative w-full overflow-hidden rounded-lg bg-surface shadow-2xl; }
 
+  /* Thanh menu có nền tùy chỉnh (Giao diện › Nền các khối › Thanh menu): chỉ đổi chữ của hàng thanh menu, không đụng các khung sổ xuống */
+  .header-tone-light, .header-tone-light .icon-btn { color: #fff; }
+  .header-tone-light nav > ul > li > a { color: rgba(255,255,255,.9) !important; }
+  .header-tone-light nav > ul > li > a.font-medium { color: #fff !important; }
+  .header-tone-dark, .header-tone-dark .icon-btn { color: #1d2b36; }
+  .header-tone-dark nav > ul > li > a { color: rgba(29,43,54,.82) !important; }
+  .header-tone-dark nav > ul > li > a.font-medium { color: #1d2b36 !important; }
+  .header-tone-light nav > ul > li > a:hover, .header-tone-dark nav > ul > li > a:hover { color: var(--c-accent) !important; }
+  .header-tone-light .icon-btn:hover, .header-tone-dark .icon-btn:hover { background: color-mix(in srgb, currentColor 12%, transparent); }
+  .header-tone-light .font-heading, .header-tone-dark .font-heading { color: inherit !important; }
+
   /* Chân trang có nền sáng (Giao diện › Nền các khối › Chân trang, chữ tối): đổi các lớp chữ / viền trắng sang màu chữ của khối */
   .footer-on-light { color: var(--c-text); }
   .footer-on-light [class*="text-white"] { color: color-mix(in srgb, var(--c-text) 78%, transparent) !important; }

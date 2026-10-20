@@ -20,13 +20,14 @@ const hex = (v, fallback) => (/^#[0-9a-f]{3,8}$/i.test(String(v)) ? v : fallback
 
 // Biến màu chữ đặt trên khối để mọi thành phần bên trong (text-ink, text-muted, border-line...) đổi theo nền
 const TONES = {
-  light: '--c-text:#fff;--c-muted:rgba(255,255,255,.74);--c-border:rgba(255,255,255,.24);--c-surface:rgba(255,255,255,.1);color:#fff;',
+  // Nền tối: màu chủ đạo dùng bản sáng hơn để giá, liên kết, nút vẫn đọc được
+  light: '--c-text:#fff;--c-muted:rgba(255,255,255,.74);--c-border:rgba(255,255,255,.24);--c-surface:rgba(255,255,255,.1);--c-primary:#8fc0e6;--c-on-primary:#0e1a24;color:#fff;',
   dark: '--c-text:#1d2b36;--c-muted:#52636e;--c-border:rgba(29,43,54,.14);--c-surface:rgba(255,255,255,.72);color:#1d2b36;',
 };
 
 // item: một mục cài đặt nền. Trả về { hasBg, style, pattern, tone } (hasBg = false: dùng giao diện mặc định)
 export function blockBackground(item) {
-  const out = { hasBg: false, style: '', pattern: '', tone: '' };
+  const out = { hasBg: false, style: '', bgStyle: '', toneStyle: '', pattern: '', tone: '' };
   const mode = item?.bg_mode;
   if (!(mode === 'color' || mode === 'pattern' || (mode === 'image' && item.bg_image?.lg))) return out;
   const bg = hex(item.bg_color, '#f1ece1');
@@ -49,6 +50,8 @@ export function blockBackground(item) {
   if (item.text_tone === 'light' || item.text_tone === 'dark') tone = item.text_tone;
   out.hasBg = true;
   out.tone = tone;
+  out.bgStyle = style;            // chỉ phần nền (dùng khi chữ đổi bằng lớp riêng, ví dụ thanh menu)
+  out.toneStyle = TONES[tone];
   out.style = style + TONES[tone];
   return out;
 }

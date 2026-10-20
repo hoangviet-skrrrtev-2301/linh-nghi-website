@@ -8,13 +8,18 @@
 <header x-data="siteHeader" @scroll.window.passive="onScroll"
   :class="scrolled && 'shadow-[0_1px_0_var(--c-border)]'"
   class="sticky top-0 z-50">
-  <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10 transition-colors duration-300"
-    :class="scrolled ? 'bg-surface/90 backdrop-blur-md' : 'bg-bg'"></div>
-  <div class="container-x flex h-[var(--header-h)] items-center gap-4">
+  {# Nền tùy chỉnh (Giao diện › Nền các khối › Thanh menu): giữ nguyên khi cuộn; chữ đổi bằng lớp header-tone-* chỉ áp lên hàng thanh menu, các khung sổ xuống / tìm kiếm / menu điện thoại giữ màu giao diện #}
+  {% set hb = bg.header %}
+  <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10 transition-colors duration-300 {{ hb.pattern if hb.hasBg }}" {% if hb.hasBg %}style="{{ hb.bgStyle }}"{% else %}:class="scrolled ? 'bg-surface/90 backdrop-blur-md' : 'bg-bg'"{% endif %}></div>
+  <div class="container-x flex h-[var(--header-h)] items-center gap-4 {{ ('header-tone-' + hb.tone) if hb.hasBg }}">
     <button class="icon-btn -ml-2 lg:hidden" @click="menuOpen = true" aria-label="Mở menu">{{ icon('menu', 'w-6 h-6') }}</button>
 
     <a href="/" class="flex shrink-0 items-center gap-3" aria-label="{{ s.site.name }} - Trang chủ">
-      {% if s.site.logo %}
+      {% if hb.hasBg and s.site.logo %}
+        {# Nền tùy chỉnh: chữ sáng dùng logo trắng, chữ tối dùng logo thường (không theo chế độ sáng / tối của giao diện) #}
+        {% set hLogo = s.site.logo_light if (hb.tone == 'light' and s.site.logo_light) else s.site.logo %}
+        <img src="{{ hLogo.sm }}" alt="{{ s.site.name }}" class="h-[68px] w-auto" width="{{ hLogo.width }}" height="{{ hLogo.height }}">
+      {% elif s.site.logo %}
         <img src="{{ s.site.logo.sm }}" alt="{{ s.site.name }}" class="h-[68px] w-auto {{ 'logo-light-only' if s.site.logo_light }}" width="{{ s.site.logo.width }}" height="{{ s.site.logo.height }}">
         {% if s.site.logo_light %}<img src="{{ s.site.logo_light.sm }}" alt="" aria-hidden="true" class="logo-dark-only h-[68px] w-auto" width="{{ s.site.logo_light.width }}" height="{{ s.site.logo_light.height }}">{% endif %}
       {% else %}

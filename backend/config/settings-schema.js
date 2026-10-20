@@ -44,6 +44,7 @@ const sectionBgOn = "item.bg_mode == 'color' || item.bg_mode == 'pattern'";
 // Các khối cho phép đổi nền (Giao diện › Nền các khối). Khối trang chủ dùng cùng mã với HOME_SECTIONS (banner có nền riêng nên không có).
 export const BG_BLOCKS = [
   { key: 'announcement', label: 'Toàn website › Thanh thông báo đầu trang' },
+  { key: 'header', label: 'Toàn website › Thanh menu (đầu trang, dính khi cuộn)' },
   ...HOME_SECTIONS.filter((x) => x.bg).map((x) => ({ key: x.key, label: 'Trang chủ › ' + x.label })),
   { key: 'page_head', label: 'Các trang con › Phần đầu trang (Sản phẩm, Gallery, Blog, Hướng dẫn size, Thiết kế riêng, Liên hệ, Tra cứu đơn)' },
   { key: 'product_reviews', label: 'Trang sản phẩm › Đánh giá của khách' },
@@ -385,7 +386,7 @@ export const SETTINGS_SCHEMA = [
   {
     key: 'backgrounds',
     label: 'Nền các khối',
-    description: 'Đổi nền (một màu, họa tiết hoặc ảnh) cho từng khối của website: các khối trang chủ, thanh thông báo, chân trang, phần đầu các trang con, đánh giá và sản phẩm liên quan ở trang sản phẩm. Bấm vào tên khối để mở. Màu chữ tự đổi cho dễ đọc hoặc chọn tay. Khối để "Mặc định của giao diện" thì dùng màu ở nhóm "Giao diện". Bật / tắt và thứ tự các khối trang chủ chỉnh ở "Bố cục trang chủ".',
+    description: 'Đổi nền (một màu, họa tiết hoặc ảnh) cho từng khối của website: các khối trang chủ, thanh thông báo, thanh menu, chân trang, phần đầu các trang con, đánh giá và sản phẩm liên quan ở trang sản phẩm. Bấm vào tên khối để mở. Màu chữ tự đổi cho dễ đọc hoặc chọn tay. Khối để "Mặc định của giao diện" thì dùng màu ở nhóm "Giao diện". Bật / tắt và thứ tự các khối trang chủ chỉnh ở "Bố cục trang chủ".',
     fields: [
       {
         name: 'blocks', label: 'Các khối có thể đổi nền', type: 'list', fixed: true, collapsible: true, noEnable: true, noMove: true,

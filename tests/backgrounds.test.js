@@ -112,6 +112,29 @@ test('chân trang, thanh thông báo, phần đầu trang con, trang sản phẩ
   assert.ok(bad.includes('background-color:#f1ece1') && !bad.includes('script'), bad);
 });
 
+test('thanh menu (header): nền tùy chỉnh giữ khi cuộn, chữ + logo đổi theo nền, khung sổ xuống không bị ảnh hưởng', async () => {
+  const header = (html) => html.slice(html.indexOf('<header'), html.indexOf('</header>'));
+  // Mặc định: lớp nền theo cuộn của Alpine, không có lớp chữ riêng
+  setBg({});
+  let h = header(await text('/'));
+  assert.ok(h.includes("scrolled ? 'bg-surface/90 backdrop-blur-md' : 'bg-bg'") && !h.includes('header-tone-'));
+
+  // Nền tối → chữ sáng + logo trắng (nếu có)
+  setBg({ header: { bg_mode: 'color', bg_color: '#1e3a4f' } });
+  h = header(await text('/'));
+  const layer = openTag(h, /<div aria-hidden="true" class="pointer-events-none absolute[^>]*>/);
+  assert.ok(layer.includes('background-color:#1e3a4f') && !layer.includes('--c-surface'), layer);
+  assert.ok(!layer.includes(':class'), 'có nền riêng thì không đổi nền theo cuộn');
+  assert.ok(h.includes('header-tone-light'), 'nền tối → chữ sáng');
+  assert.ok(!/<header[^>]*--c-surface/.test(h) && !/<aside[^>]*style=/.test(h), 'không đổi biến màu của khung sổ xuống / menu điện thoại');
+
+  // Nền sáng → chữ tối; họa tiết thêm lớp họa tiết lên lớp nền
+  setBg({ header: { bg_mode: 'pattern', bg_color: '#f3efe6', bg_pattern: 'grid' } });
+  h = header(await text('/'));
+  assert.ok(h.includes('header-tone-dark') && /<div aria-hidden="true" class="[^"]*pat-grid/.test(h));
+  setBg({});
+});
+
 test('khối trang chủ tắt vẫn không hiện; bật lại nền còn nguyên; đổi nền không làm mất cài đặt Bố cục trang chủ', async () => {
   setBg({ info: { bg_mode: 'color', bg_color: '#223344' } });
   const layout = ctx.settings.getForAdmin('home_layout');
