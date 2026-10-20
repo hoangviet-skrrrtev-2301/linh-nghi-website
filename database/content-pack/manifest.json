@@ -1,8 +1,8 @@
 {
-  "createdAt": "2026-10-18T05:44:36.504Z",
-  "lastMigration": "012_roles.sql",
+  "createdAt": "2026-10-20T02:11:00.603Z",
+  "lastMigration": "013_sizes_stock.sql",
   "counts": {
-    "products": 23,
+    "products": 22,
     "product_types": 2,
     "terms": 19,
     "posts": 2,
@@ -11,7 +11,7 @@
     "media": 86,
     "redirects": 3,
     "roles": 1,
-    "settings": 12
+    "settings": 14
   },
   "imageFiles": 258
 }
