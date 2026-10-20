@@ -12,6 +12,8 @@ npm run seed            # dữ liệu mẫu
 npm run create-admin    # tạo / đặt lại tài khoản admin (có thể truyền tham số: email "Tên" matkhau owner)
 npm run dev             # http://localhost:3000, admin: /admin
 npm run build:css       # bắt buộc sau khi sửa class Tailwind trong template hoặc file CSS
+npm run build:js        # bắt buộc sau khi sửa JS ở frontend/src/js hoặc admin/src/js (minify ra public/js, kết quả nằm trong git); npm run build = CSS + JS
+npm run lint            # ESLint: biến / import thừa, biến chưa khai báo (phải sạch trước khi commit)
 npm run migrate | backup | restore -- <thư-mục>
 npm run bootstrap        # máy mới: .env + database + nạp gói nội dung + tạo admin (mật khẩu ngẫu nhiên hiện một lần)
 npm run export-content  # tạo gói nội dung sạch database/content-pack/ (commit khi bàn giao); import-content -- --force để nạp
@@ -21,6 +23,8 @@ npm run check:seo       # kiểm tra SEO kỹ thuật của website đang chạy
 ```
 
 ## Nguyên tắc bắt buộc
+
+- **JS nguồn nằm ở `frontend/src/js` và `admin/src/js`**; `frontend/public/js` và `admin/public/js` là bản minify tự sinh (có dòng đầu "Tệp được tạo tự động"), **không sửa tay**. Tailwind quét class từ thư mục src. Thêm file JS mới phải khai báo trong `ENTRIES` của `backend/scripts/build-js.js`.
 
 - **Không fix cứng nội dung.** Mọi chữ, ảnh, lựa chọn hiển thị cho khách phải lấy từ cài đặt. Trường mới khai báo trong `backend/config/settings-schema.js`, admin tự sinh form.
 - **Form custom không có upload file** (yêu cầu của chủ dự án).
@@ -67,7 +71,7 @@ Trước khi bắt đầu **mỗi** thay đổi (sửa code, template, schema, m
 
 ## Kiểm tra sau khi sửa
 
-- `node --check` các file JS đã sửa; `npm run build:css` không lỗi
+- `npm run lint` sạch; `npm run build` (CSS + JS) không lỗi và đã chạy sau khi sửa JS / CSS (tests/code-hygiene.test.js báo lỗi nếu quên build JS hoặc để hàm xuất ra mà không ai dùng)
 - Mở trang liên quan trên trình duyệt (desktop + mobile), Console không lỗi đỏ
 - Nếu đụng tới form: gửi thử đơn hàng / custom / tư vấn, kiểm tra admin nhận đúng
 - Cập nhật `CHANGELOG.md` và `docs/GHI_CHU_DU_AN.md` khi có thay đổi đáng kể

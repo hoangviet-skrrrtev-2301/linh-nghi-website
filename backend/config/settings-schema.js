@@ -845,7 +845,7 @@ SETTINGS_SCHEMA.splice(SETTINGS_SCHEMA.findIndex((g) => g.key === 'mail'), 0, {
   label: 'SEO Google & chia sẻ',
   description: 'Chỉ dùng khi muốn trang hiện KHÁC trên Google và khi chia sẻ Facebook/Zalo so với nội dung hiển thị trên website. Ô nào để trống thì tự lấy tiêu đề và mô tả của chính trang đó (ghi ở từng phần bên dưới). Sản phẩm và bài viết có SEO riêng trong trang sửa của chúng.',
   sections: SEO_PAGES.map(([k, label]) => ({ key: k, label, hint: `Để trống: dùng ${SEO_FALLBACK[k]}` })),
-  fields: SEO_PAGES.flatMap(([k, label]) => [
+  fields: SEO_PAGES.flatMap(([k]) => [
     { name: `${k}_title`, section: k, label: 'Tiêu đề trên Google (meta title)', type: 'text', help: `Để trống: dùng ${SEO_FALLBACK[k]}. Nên dưới 60 ký tự.` },
     { name: `${k}_description`, section: k, label: 'Mô tả trên Google (meta description)', type: 'textarea', help: 'Để trống: dùng mô tả ngắn của trang. Nên dưới 160 ký tự.' },
     { name: `${k}_og_image`, section: k, label: 'Ảnh khi chia sẻ Facebook/Zalo (1200×630)', type: 'image', help: 'Để trống: dùng ảnh chia sẻ mặc định ở nhóm "SEO & mã theo dõi".' },

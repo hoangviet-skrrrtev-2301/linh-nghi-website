@@ -75,7 +75,7 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 **Đã hoàn thành và đã kiểm tra trên trình duyệt thật (Chrome headless, desktop + mobile 390px):**
 
 - **Trang khách:** trang chủ (các khối bật/tắt, đổi thứ tự, nền riêng từng khối), sản phẩm (tìm kiếm không dấu, bộ lọc cho ngọc, phân trang bằng liên kết thật, canonical + prev/next), trang theo loại sản phẩm, chi tiết sản phẩm, gallery 2×4 + slider, hướng dẫn size, blog 2 cột (mục lục, gợi ý bài, banner dọc, chuyên mục), giỏ hàng, thiết kế riêng, liên hệ, về shop, tra cứu đơn (5 bước theo loại, vận đơn), 404. Menu sổ dọc, chân trang tùy chỉnh, chế độ tối.
-- **Đặt hàng:** sau khi gửi đơn khách tải được ảnh PNG "Thông tin đơn hàng" (vẽ trên trình duyệt, `frontend/public/js/order-image.js`).
+- **Đặt hàng:** sau khi gửi đơn khách tải được ảnh PNG "Thông tin đơn hàng" (vẽ trên trình duyệt, `frontend/src/js/order-image.js`).
 - **Admin:** Tổng quan theo kỳ (so sánh kỳ trước, biểu đồ có số), đơn hàng / custom / liên hệ (chuỗi trạng thái theo loại, vận chuyển, email báo khách tùy chọn), khách hàng (bộ lọc thu gọn, nhập hàng loạt, thêm thủ công, xuất CSV), sản phẩm (ẩn / hiện / xóa hàng loạt, loại sản phẩm + thông số tự đặt, xem thử như khách), danh mục, gallery, blog (chuyên mục), thư viện ảnh theo thư mục, cài đặt (các nhóm dài chia phần thu gọn), tài khoản, 2FA, nhật ký. Admin dùng được trên điện thoại (bảng thành thẻ).
 - **SEO:** meta, Open Graph, canonical riêng từng trang phân trang, JSON-LD (Organization, WebSite, CollectionPage / Blog + ItemList, Product, BlogPosting, BreadcrumbList, AboutPage / ContactPage), sitemap, robots, SEO riêng từng trang / sản phẩm / bài viết.
 - **Email:** thông báo cho shop, xác nhận cho khách, báo trạng thái đơn. **Mới kiểm tra nội dung email, chưa gửi thật bằng Gmail.**
@@ -117,6 +117,7 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 
 ## 4. Việc tiếp theo
 
+- [ ] Để sau (đã đánh giá, chưa làm): Brotli ở Nginx; tách `admin/src/js/pages.js` (≈1.250 dòng) theo trang; cache bảng danh mục trong `catalog.hydrate`
 - [ ] **Export lại gói nội dung** (`npm run export-content`) ở mốc bàn giao, sau khi thay feedback mẫu bằng feedback thật và dọn sản phẩm mẫu; commit gói mới (gói cũ làm bản Vercel thiếu cài đặt mới)
 - [ ] Thử trên điện thoại thật: khối Feedback + popup + form đánh giá, nền các khối (đặc biệt header / chân trang nền tối), trang admin Feedback
 - [ ] Chọn nền ưng ý cho từng khối ở Giao diện › Nền các khối (hiện đang dùng mặc định)
@@ -199,7 +200,7 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 | Bố cục trang khách | `frontend/views/pages/*.njk`, header/footer/popup ở `frontend/views/partials/` |
 | Thẻ sản phẩm | `frontend/views/partials/product-card.njk` |
 | Kiểu nút, ô nhập, thẻ... | `frontend/src/css/app.css` (phần `@layer components`) |
-| Tương tác: giỏ hàng, popup, form, bộ lọc | `frontend/public/js/app.js` |
+| Tương tác: giỏ hàng, popup, form, bộ lọc | `frontend/src/js/app.js` |
 | Đường dẫn trang khách | `backend/routes/public.js` |
 | Logic sản phẩm, bộ lọc, sắp xếp | `backend/services/catalog.js` |
 | Đơn hàng, khách hàng, kiểm tra dữ liệu form | `backend/services/inquiries.js` |
@@ -219,23 +220,24 @@ Khác biệt có chủ đích so với bản kế hoạch ban đầu (do chủ d
 | Gợi ý tìm kiếm | `suggestProducts` (`catalog.js`), `/api/search-suggest` (`api-public.js`), `searchSuggest` trong `app.js`, `partials/header.njk` |
 | Phân loại khách, ngày nhập lại | `CUSTOMER_SEGMENTS` / `customerQuery` (`inquiries.js`), `vnDateToUtc` / `vnDayOf` (`lib/utils.js`), cột ngày trong `customer-import.js` |
 | Địa chỉ phân cấp, chuyển hướng, trang 404 | `backend/lib/urls.js` (đường dẫn chuẩn), `backend/middleware/urls.js` (chuẩn hóa + áp dụng chuyển hướng), `backend/services/redirects.js`, `admin/views/pages/redirects.njk`; trang lỗi `frontend/views/pages/error.njk` + nhóm `pages` (phần errors) trong `settings-schema.js` |
-| Gallery (kiểu hiển thị, băng chuyền) | `backend/lib/gallery-view.js` (`galleryView`), `frontend/views/partials/gallery-grid.njk`, `initCarousels` trong `frontend/public/js/app.js`, CSS `.gallery-*` trong `frontend/src/css/app.css`, trường `gallery_*` (nhóm `home`) và `gallery_page_*` (nhóm `pages`) |
+| Gallery (kiểu hiển thị, băng chuyền) | `backend/lib/gallery-view.js` (`galleryView`), `frontend/views/partials/gallery-grid.njk`, `initCarousels` trong `frontend/src/js/app.js`, CSS `.gallery-*` trong `frontend/src/css/app.css`, trường `gallery_*` (nhóm `home`) và `gallery_page_*` (nhóm `pages`) |
 | Feedback, trang Feedback, đánh giá sản phẩm | `services/feedback.js` (CRUD, `submitReview`, `listReviewsPublic`), `lib/feedback-path.js` (đường dẫn trang), route `/:slug` cuối `routes/public.js`, `/api/reviews` (`api-public.js`), `partials/feedback-block.njk` + `feedback-modal.njk` + `stars.njk`, `pages/feedback.njk`, khối trang chủ `partials/home/testimonials.njk`, khung đánh giá trong `pages/product-detail.njk`, store `fb` / `reviewList` / `reviewForm` trong `app.js`, admin `admin/views/pages/feedback.njk` + `feedbackPage` trong `pages.js`, API `/feedbacks` `/reviews` (`admin-api/index.js`), cài đặt nhóm `feedback`, bảng `feedbacks` / `feedback_images` / `product_reviews` (migration 014, 015) |
 | Chuyên mục blog | `services/content.js` (`listPostCategories`...), `routes/public.js` (`renderBlogList`) |
-| Ảnh đơn hàng khách tải về | `frontend/public/js/order-image.js`, `buildReceipt` trong `app.js` |
+| Build JS (minify), lint | `backend/scripts/build-js.js` (danh sách `ENTRIES`), `eslint.config.js`, `tests/code-hygiene.test.js` |
+| Ảnh đơn hàng khách tải về | `frontend/src/js/order-image.js`, `buildReceipt` trong `app.js` |
 | Tìm kiếm không dấu | `foldVn`, `likeVn`, hàm SQL `vn()` trong `backend/lib/db.js` |
 | Chia phần thu gọn trong Cài đặt | `sectionize()` cuối `settings-schema.js`, `settingsPage` trong `pages.js`, `admin/views/pages/settings.njk` |
-| Trang admin | `admin/views/pages/*.njk` + component tương ứng trong `admin/public/js/pages.js` |
+| Trang admin | `admin/views/pages/*.njk` + component tương ứng trong `admin/src/js/pages.js` |
 | API admin | `backend/routes/admin-api/index.js` |
 | Phân quyền, vai trò | `backend/config/permissions.js` (nhóm quyền, `API_RULES`, `PAGE_RULES`, `SETTINGS_PERMISSION`), `backend/services/roles.js`, `users.js` (`withPermissions`), trang `admin/views/pages/roles.njk` + `rolesPage` trong `pages.js` |
 | Tác giả blog | `services/content.js` (`listAuthors`, `saveAuthor`), `admin/views/pages/authors.njk`, khung cuối bài trong `frontend/views/pages/post.njk`, schema ở `articleJsonLd` (`lib/seo.js`) |
-| Liên kết trong bài (tab mới, noopener) | `SmartLink` + hộp liên kết trong `admin/public/js/core.js`, `cleanHtml` trong `backend/lib/sanitize.js` |
+| Liên kết trong bài (tab mới, noopener) | `SmartLink` + hộp liên kết trong `admin/src/js/core.js`, `cleanHtml` trong `backend/lib/sanitize.js` |
 | SEO: canonical, noindex, tham số, schema, og:image | `buildSeo` và các hàm JSON-LD trong `backend/lib/seo.js`; robots.txt / sitemap trong `lib/robots-sitemap.js`; nhóm cài đặt `schema`, `seo`, `sitemap` |
 | Kiểm tra SEO tự động | `backend/scripts/check-seo.js` (`npm run check:seo`) |
 | Chuẩn bị mở web | `backend/services/launch-check.js` (khung ở Tổng quan) |
 | Font tự lưu | `backend/services/fonts.js`, `base.njk` (`fonts.local` / `fonts.google`) |
 | Nhãn sản phẩm | `backend/lib/tags.js` (CSS sinh vào `/theme.css`), lớp `.tag .tag-<tên>`, nhóm cài đặt theme › Nhãn |
-| Menu admin / menu Cài đặt thu gọn | `navGroup` trong `admin/public/js/core.js`, `admin/views/layout.njk`; `SETTINGS_CATEGORIES` trong `settings-schema.js`, `admin/views/pages/settings.njk` |
+| Menu admin / menu Cài đặt thu gọn | `navGroup` trong `admin/src/js/core.js`, `admin/views/layout.njk`; `SETTINGS_CATEGORIES` trong `settings-schema.js`, `admin/views/pages/settings.njk` |
 | Mô tả cách hoạt động từng trang admin | `admin/views/partials/page-help.njk` (thêm nhánh `helpKey`) |
 | Bàn giao, cài máy mới | `backend/lib/content-pack.js`, `backend/scripts/bootstrap.js` / `export-content.js` / `import-content.js`, `chay-thu.bat` / `chay-thu.sh`, tài liệu `docs/BAN_GIAO.md` |
 | Trang chính sách | `services/policies.js`, `lib/policy-defaults.js` (nội dung mẫu), nhóm cài đặt `policies`, `pages/policy.njk`, chân trang trong `partials/footer.njk` |

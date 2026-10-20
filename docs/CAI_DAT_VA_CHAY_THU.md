@@ -205,7 +205,7 @@ npm install                  # 2. Chỉ cần khi package.json thay đổi
 npm run migrate              # 3. Chỉ cần khi có file mới trong database/migrations (npm run dev cũng tự chạy; production thì không, xem AUTO_MIGRATE trong .env.example)
 npm run dev                  # 4. Sửa code và kiểm tra
 
-npm run build:css            # 5. Build CSS trước khi lưu lên GitHub
+npm run build                # 5. Build CSS + JS (minify) trước khi lưu lên GitHub
 git add .
 git commit -m "Mô tả ngắn thay đổi"
 git push                     # 6. Đưa lên GitHub

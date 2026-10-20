@@ -27,7 +27,7 @@ export const IMPORT_TEMPLATE_HEADER = ['Họ tên', 'Số điện thoại', 'Ema
 
 // Đọc CSV / TSV: tự nhận dấu phân cách, hỗ trợ ô có dấu ngoặc kép (chứa dấu phẩy, xuống dòng, "" là dấu ")
 export function parseDelimited(input) {
-  const text = String(input || '').replace(/^﻿/, '').replace(/\r\n?/g, '\n');
+  const text = String(input || '').replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
   const firstLine = text.split('\n').find((l) => l.trim()) || '';
   const count = (ch) => firstLine.split(ch).length - 1;
   const delim = count('\t') ? '\t' : count(';') > count(',') ? ';' : ',';

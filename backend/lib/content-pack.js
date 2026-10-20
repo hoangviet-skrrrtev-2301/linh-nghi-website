@@ -113,7 +113,7 @@ export async function importPack({ force = false } = {}) {
       fs.mkdirSync(dir, { recursive: true });
       await rw.backup(path.join(dir, 'app.sqlite'));
       rw.close();
-      var safety = dir; // eslint-disable-line no-var
+      var safety = dir;
     } else cur.close();
   }
   fs.mkdirSync(path.dirname(dbFile), { recursive: true });

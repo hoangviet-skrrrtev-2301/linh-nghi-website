@@ -1,7 +1,6 @@
 // robots.txt, sitemap.xml, theme.css (biến màu/font sinh từ cài đặt Giao diện).
 import { Router } from 'express';
 import crypto from 'node:crypto';
-import { config } from '../config/index.js';
 import { getPublicSettings, getRaw } from '../services/settings.js';
 import { buildRobots, buildSitemap } from '../lib/robots-sitemap.js';
 import { tagCss } from '../lib/tags.js';

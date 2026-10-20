@@ -165,7 +165,6 @@ export function updateMediaInfo(id, { name, alt } = {}) {
   db.prepare('UPDATE media SET original_name = ?, alt = ? WHERE id = ?').run(nextName, nextAlt, id);
   return getMedia(id);
 }
-export const updateMediaAlt = (id, alt) => updateMediaInfo(id, { alt });
 
 export function deleteMedia(id) {
   const row = db.prepare('SELECT * FROM media WHERE id = ?').get(id);

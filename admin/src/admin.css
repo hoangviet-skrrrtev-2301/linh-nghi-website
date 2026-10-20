@@ -2,7 +2,7 @@
 @import "tailwindcss";
 
 @source "../views";
-@source "../public/js";
+@source "./js";
 
 @theme {
   --color-brand-50: #eef7f3;

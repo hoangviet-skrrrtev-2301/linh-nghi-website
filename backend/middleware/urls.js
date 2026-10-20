@@ -9,7 +9,7 @@ const isAdmin = (p) => p === config.adminPath || p.startsWith(`${config.adminPat
 // Tránh Google coi /san-pham/ và /san-pham là hai trang trùng nội dung.
 export function canonicalUrl(req, res, next) {
   if ((req.method !== 'GET' && req.method !== 'HEAD') || isAdmin(req.path) || req.path.startsWith('/api/')) return next();
-  let p = req.path;
+  const p = req.path;
   let clean = p.replace(/\/{2,}/g, '/').replace(/(.)\/+$/, '$1');
   if (!clean.includes('%')) clean = clean.toLowerCase(); // đường dẫn mã hóa %xx giữ nguyên chữ hoa của mã
   if (clean === p) return next();

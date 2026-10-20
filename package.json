@@ -10,10 +10,12 @@
   "scripts": {
     "start": "node backend/server.js",
     "dev": "node --watch-path=backend backend/server.js",
-    "build": "npm run build:css",
+    "build": "npm run build:css && npm run build:js",
     "check:seo": "node backend/scripts/check-seo.js",
     "build:css": "tailwindcss -i frontend/src/css/app.css -o frontend/public/css/app.css --minify && tailwindcss -i admin/src/admin.css -o admin/public/css/admin.css --minify",
+    "build:js": "node backend/scripts/build-js.js",
     "watch:css": "tailwindcss -i frontend/src/css/app.css -o frontend/public/css/app.css --watch",
+    "watch:js": "node --watch-path=frontend/src/js --watch-path=admin/src/js backend/scripts/build-js.js",
     "migrate": "node backend/scripts/migrate.js",
     "seed": "node backend/scripts/seed.js",
     "create-admin": "node backend/scripts/create-admin.js",
@@ -25,7 +27,8 @@
     "import-content": "node backend/scripts/import-content.js",
     "pull-backup": "node backend/scripts/pull-backup.js",
     "test": "node --test --test-concurrency=2 \"tests/**/*.test.js\"",
-    "build:vercel": "node backend/scripts/build-vercel.js"
+    "build:vercel": "node backend/scripts/build-vercel.js",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@alpinejs/collapse": "^3.17.4",
@@ -37,7 +40,6 @@
     "express": "^5.3.0",
     "express-rate-limit": "^8.7.1",
     "express-session": "^1.19.0",
-    "gsap": "^3.15.0",
     "helmet": "^8.3.0",
     "multer": "^2.4.0",
     "nodemailer": "^10.1.1",
@@ -51,7 +53,11 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@tailwindcss/cli": "^4.3.3",
+    "esbuild": "^0.25.12",
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0",
     "tailwindcss": "^4.3.3"
   }
 }

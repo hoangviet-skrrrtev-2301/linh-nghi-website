@@ -119,10 +119,6 @@ export function listAuthors({ activeOnly = false, ids } = {}) {
   return rows.map((r) => presentAuthor(r, media));
 }
 
-export function getAuthor(id) {
-  return listAuthors({ ids: [Number(id)] })[0] || null;
-}
-
 // Mỗi dòng một địa chỉ (website, Facebook, LinkedIn...): chỉ nhận http(s), tối đa 8 địa chỉ
 function cleanLinks(v) {
   const list = Array.isArray(v) ? v : String(v || '').split(/\r?\n/);

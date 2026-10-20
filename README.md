@@ -22,11 +22,12 @@ website-linh-nghi/
 ├── frontend/     Giao diện khách hàng
 │   ├── views/        Template HTML (Nunjucks): layouts, partials, pages
 │   ├── src/css/      CSS gốc (Tailwind) – build ra public/css
-│   └── public/       File tĩnh: js/app.js, css, images
+│   ├── src/js/       JS gốc (app.js, order-image.js) – minify ra public/js bằng npm run build:js
+│   └── public/       File tĩnh đã build: js, css, images
 ├── admin/        Giao diện trang quản trị
 │   ├── views/        Template các trang admin
-│   ├── src/          CSS gốc admin
-│   └── public/js/    core.js (dùng chung), pages.js (từng trang)
+│   ├── src/          CSS gốc admin; src/js/ core.js (dùng chung), pages.js (từng trang) – minify ra public/js
+│   └── public/       CSS, JS đã build
 ├── backend/      Máy chủ Node.js (Express)
 │   ├── config/       Cấu hình .env + schema các trường cài đặt
 │   ├── lib/          Database, bảo mật, SEO, template

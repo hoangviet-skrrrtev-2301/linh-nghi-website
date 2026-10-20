@@ -51,7 +51,6 @@ export function createApp() {
     'alpine-collapse': nm('@alpinejs/collapse/dist'),
     'alpine-focus': nm('@alpinejs/focus/dist'),
     swiper: nm('swiper'),
-    gsap: nm('gsap/dist'),
     photoswipe: nm('photoswipe/dist'),
     quill: nm('quill/dist'),
     'alpine-sort': nm('@alpinejs/sort/dist'),

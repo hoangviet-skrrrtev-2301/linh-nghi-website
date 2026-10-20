@@ -14,7 +14,7 @@ Trình duyệt ──https──► Nginx (SSL, /uploads tĩnh) ──► Node.j
 ```
 
 - **Trang khách** render HTML tại server để tốt cho SEO. Alpine.js chỉ lo phần tương tác (popup, giỏ hàng, bộ lọc, form).
-- **Trang admin** là các trang Nunjucks khung, dữ liệu lấy qua JSON API bằng component Alpine trong `admin/public/js/pages.js`.
+- **Trang admin** là các trang Nunjucks khung, dữ liệu lấy qua JSON API bằng component Alpine trong `admin/src/js/pages.js`.
 - **Phân quyền** theo vai trò: xem mục "Phân quyền, tác giả, truy cập". **SEO kỹ thuật**: xem mục "SEO kỹ thuật" (chính sách tham số, schema, robots, font, `npm run check:seo`).
 - **Cài đặt website** được mô tả trong `backend/config/settings-schema.js`. Admin tự sinh form từ schema, dữ liệu lưu dạng JSON trong bảng `settings`.
 
@@ -27,7 +27,7 @@ Trình duyệt ──https──► Nginx (SSL, /uploads tĩnh) ──► Node.j
    - `partials/`: header, footer, thẻ sản phẩm, popup, form
    - `pages/`: từng trang
 4. **Component CSS** (nút, ô nhập, thẻ...) trong `frontend/src/css/app.css`, phần `@layer components`.
-5. Sau khi sửa template/CSS: `npm run build:css` (hoặc `npm run watch:css` khi đang làm).
+5. Sau khi sửa template/CSS: `npm run build:css` (hoặc `npm run watch:css` khi đang làm). Sau khi sửa JS (`frontend/src/js`, `admin/src/js`): `npm run build:js` (hoặc `npm run watch:js`); bản minify nằm trong `public/js` và được commit. `npm run lint` (ESLint) phải sạch.
 
 > Tailwind chỉ sinh các lớp xuất hiện nguyên văn trong file. Đừng ghép tên lớp kiểu `grid-cols-{{ n }}`; nếu bắt buộc, khai báo trong `@source inline(...)` ở đầu `app.css`.
 
@@ -214,7 +214,7 @@ KHÁCH TRÊN WEBSITE                       SHOP TỰ NHẬP (admin)
 
 ## Kiểm tra trước khi bàn giao bản sửa
 
-- [ ] `npm run build:css` không lỗi
+- [ ] `npm run lint` sạch; `npm run build` (CSS + JS) không lỗi và đã commit file build
 - [ ] `node --check` các file JS đã sửa
 - [ ] Xem trang trên điện thoại (DevTools › chế độ thiết bị) và máy tính
 - [ ] Mở DevTools › Console: không có lỗi đỏ

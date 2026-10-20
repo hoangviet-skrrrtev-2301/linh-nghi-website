@@ -449,15 +449,6 @@ export function deleteInquiry(id) {
   db.prepare('DELETE FROM inquiries WHERE id = ?').run(id);
 }
 
-export function inquiryStats() {
-  const byType = db.prepare(`SELECT type, COUNT(*) AS total, SUM(status = 'new') AS new_count FROM inquiries GROUP BY type`).all();
-  const last30 = db.prepare(`SELECT date(created_at, '+7 hours') AS d, COUNT(*) AS c FROM inquiries
-    WHERE created_at >= datetime('now', '-30 days') GROUP BY d ORDER BY d`).all();
-  const revenue = db.prepare(`SELECT COALESCE(SUM(total), 0) FROM inquiries WHERE type = 'order' AND status = 'completed'
-    AND created_at >= datetime('now', 'start of month')`).pluck().get();
-  return { byType, last30, revenue };
-}
-
 // ---------------- Khách hàng ----------------
 // Tháng tính theo giờ Việt Nam (UTC+7). months: "2026-09,2026-10" hoặc mảng.
 // by = created: khách được tạo trong các tháng đó | active: khách có phát sinh đơn/yêu cầu trong các tháng đó

@@ -16,10 +16,6 @@ export function productPath(p) {
   return parent ? `/san-pham/${parent}/${p.slug}` : `/san-pham/${p.slug}`;
 }
 
-export const productCategoryPath = (slug) => `/san-pham/${slug}`;
-
 export function postPath(post) {
   return post.category?.active ? `/blog/${post.category.slug}/${post.slug}` : `/blog/${post.slug}`;
 }
-
-export const postCategoryPath = (slug) => `/blog/${slug}`;

@@ -6,7 +6,7 @@
 @import "tailwindcss";
 
 @source "../../views";
-@source "../../public/js";
+@source "../js";
 /* Lớp sinh động trong template (số cột theo dữ liệu) */
 @source inline("{md:,lg:}grid-cols-{1,2,3,4}");
 
