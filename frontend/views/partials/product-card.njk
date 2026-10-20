@@ -15,7 +15,7 @@
       {% endif %}
       {% if p.hover %}
       {# Ảnh góc khác, hiện khi di chuột #}
-      <img src="{{ p.hover.md }}" alt="{{ p.hover.alt or p.name }}" width="{{ p.hover.width }}" height="{{ p.hover.height }}" loading="lazy" decoding="async" class="hover-img absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
+      <img src="{{ p.hover.sm }}" alt="{{ p.hover.alt or p.name }}" width="{{ p.hover.width }}" height="{{ p.hover.height }}" loading="lazy" decoding="async" class="hover-img absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
       {% endif %}
     </a>
     <div class="pointer-events-none absolute left-3 top-3 flex flex-col items-start gap-1.5">

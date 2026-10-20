@@ -160,6 +160,8 @@
   .product-card .media img { @apply h-full w-full object-cover transition duration-700 ease-out; }
   .product-card:hover .media img { transform: scale(1.06); }
   .product-card .media .hover-img { transition: opacity .5s ease, transform .7s ease-out; }
+  /* Cảm ứng không có rê chuột: bỏ hẳn ảnh hover để trình duyệt không tải ảnh vô ích */
+  @media (hover: none) { .product-card .media .hover-img { display: none; } }
   /* Nút Xem nhanh luôn hiện nhưng hơi trong (nền màu chủ đạo ~70% + làm mờ nền) để không đè lên sản phẩm; di chuột thì đặc hơn */
   .product-card .quick { @apply absolute bottom-3 left-1/2 z-10 inline-flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full bg-primary/70 px-4 py-2 text-[13px] font-semibold text-on-primary shadow-md shadow-black/20 ring-1 ring-white/50 backdrop-blur-sm transition duration-300; }
   /* Điện thoại: nút nhỏ gọn hơn để không che sản phẩm trong thẻ hẹp 2 cột */

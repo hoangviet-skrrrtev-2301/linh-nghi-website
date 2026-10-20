@@ -50,7 +50,10 @@
   {% else %}
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="{{ fonts.google }}">
+  {# Font Google chỉ là phương án dự phòng (display=swap): nạp không chặn hiển thị, bật lại khi tải xong #}
+  <link rel="stylesheet" href="{{ fonts.google }}" media="print" id="gfonts">
+  <script nonce="{{ nonce }}">(function(l){l.addEventListener('load',function(){l.media='all'});if(l.sheet)l.media='all'})(document.getElementById('gfonts'));</script>
+  <noscript><link rel="stylesheet" href="{{ fonts.google }}"></noscript>
   {% endif %}
   <link rel="stylesheet" href="/assets/css/app.css?v={{ assetVersion }}">
   <link rel="stylesheet" href="/theme.css?v={{ assetVersion }}">
