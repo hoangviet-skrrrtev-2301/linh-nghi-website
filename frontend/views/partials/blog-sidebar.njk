@@ -43,7 +43,7 @@
   {% if s.pages.blog_banner_show and s.pages.blog_banner %}
   <aside aria-label="Banner">
     {% if s.pages.blog_banner_url %}<a href="{{ s.pages.blog_banner_url }}" target="_blank" rel="noopener sponsored" class="block">{% endif %}
-    <img src="{{ s.pages.blog_banner.md }}" alt="{{ s.pages.blog_banner_alt }}" width="{{ s.pages.blog_banner.width }}" height="{{ s.pages.blog_banner.height }}" loading="lazy" class="w-full rounded-lg border border-line object-cover">
+    <img src="{{ s.pages.blog_banner.md }}" srcset="{{ s.pages.blog_banner | srcset }}" sizes="(min-width:1024px) 320px, 100vw" alt="{{ s.pages.blog_banner_alt }}" width="{{ s.pages.blog_banner.width }}" height="{{ s.pages.blog_banner.height }}" loading="lazy" class="w-full rounded-lg border border-line object-cover">
     {% if s.pages.blog_banner_url %}</a>{% endif %}
   </aside>
   {% endif %}

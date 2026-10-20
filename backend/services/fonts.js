@@ -59,6 +59,11 @@ async function download(family) {
   fs.writeFileSync(manifestPath(family), JSON.stringify({ family, css: cssName, faces: faces.map(({ subset, style, weight, file }) => ({ subset, style, weight, file })), version }));
 }
 
+// Tải ngay và chờ xong (dùng ở bước build Vercel, scripts/vercel-fonts.js)
+export async function downloadFonts(families) {
+  for (const family of new Set(families.filter(Boolean))) if (!readManifest(family)) await download(family);
+}
+
 // Tải (nếu chưa có) font của các họ chữ đang dùng; chạy nền, gọi lại nhiều lần vẫn an toàn.
 export function ensureFonts(families) {
   if (process.env.LN_NO_FONTS) return; // kiểm thử: không tải font từ internet

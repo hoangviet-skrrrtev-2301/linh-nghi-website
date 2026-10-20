@@ -12,7 +12,7 @@
         <a href="/thiet-ke-rieng" class="btn btn-accent mt-8">{{ icon('sparkle', 'w-4 h-4') }} Gửi yêu cầu thiết kế</a>
       </div>
       {% if s.home.custom_image %}
-        <img src="{{ s.home.custom_image.md }}" alt="{{ s.home.custom_title }}" width="{{ s.home.custom_image.width }}" height="{{ s.home.custom_image.height }}" loading="lazy" decoding="async" class="h-full max-h-[420px] w-full object-cover lg:max-h-none">
+        <img src="{{ s.home.custom_image.md }}" srcset="{{ s.home.custom_image | srcset }}" sizes="(min-width:1024px) 50vw, 100vw" alt="{{ s.home.custom_title }}" width="{{ s.home.custom_image.width }}" height="{{ s.home.custom_image.height }}" loading="lazy" decoding="async" class="h-full max-h-[420px] w-full object-cover lg:max-h-none">
       {% else %}
         <div class="relative hidden lg:block"><div class="absolute -right-16 top-1/2 h-[420px] w-[420px] -translate-y-1/2 rounded-full border-[56px] border-white/15"></div><div class="absolute right-40 top-10 h-40 w-40 rounded-full border-[22px] border-accent/40"></div></div>
       {% endif %}

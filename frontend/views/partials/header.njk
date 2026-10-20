@@ -18,10 +18,10 @@
       {% if hb.hasBg and s.site.logo %}
         {# Nền tùy chỉnh: chữ sáng dùng logo trắng, chữ tối dùng logo thường (không theo chế độ sáng / tối của giao diện) #}
         {% set hLogo = s.site.logo_light if (hb.tone == 'light' and s.site.logo_light) else s.site.logo %}
-        <img src="{{ hLogo.sm }}" alt="{{ s.site.name }}" class="h-[68px] w-auto" width="{{ hLogo.width }}" height="{{ hLogo.height }}">
+        <img src="{{ hLogo.xs or hLogo.sm }}" alt="{{ s.site.name }}" class="h-[68px] w-auto" width="{{ hLogo.width }}" height="{{ hLogo.height }}">
       {% elif s.site.logo %}
-        <img src="{{ s.site.logo.sm }}" alt="{{ s.site.name }}" class="h-[68px] w-auto {{ 'logo-light-only' if s.site.logo_light }}" width="{{ s.site.logo.width }}" height="{{ s.site.logo.height }}">
-        {% if s.site.logo_light %}<img src="{{ s.site.logo_light.sm }}" alt="" aria-hidden="true" loading="lazy" class="logo-dark-only h-[68px] w-auto" width="{{ s.site.logo_light.width }}" height="{{ s.site.logo_light.height }}">{% endif %}
+        <img src="{{ s.site.logo.xs or s.site.logo.sm }}" alt="{{ s.site.name }}" class="h-[68px] w-auto {{ 'logo-light-only' if s.site.logo_light }}" width="{{ s.site.logo.width }}" height="{{ s.site.logo.height }}">
+        {% if s.site.logo_light %}<img src="{{ s.site.logo_light.xs or s.site.logo_light.sm }}" alt="" aria-hidden="true" loading="lazy" class="logo-dark-only h-[68px] w-auto" width="{{ s.site.logo_light.width }}" height="{{ s.site.logo_light.height }}">{% endif %}
       {% else %}
         <span class="font-heading text-2xl font-semibold tracking-tight text-primary">{{ s.site.name }}</span>
       {% endif %}

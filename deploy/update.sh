@@ -18,6 +18,7 @@ npm run build
 
 echo "==> Cập nhật cấu trúc database"
 npm run migrate
+npm run media:variants
 
 echo "==> Khởi động lại website"
 pm2 reload linh-nghi || pm2 start deploy/ecosystem.config.cjs

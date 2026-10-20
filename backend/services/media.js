@@ -8,7 +8,9 @@ import { config } from '../config/index.js';
 import { HttpError, safeJson } from '../lib/utils.js';
 import { cleanText } from '../lib/sanitize.js';
 
-const SIZES = { sm: 480, md: 960, lg: 1800 };
+// Cạnh dài tối đa của từng bản. xs / ms được thêm sau (ảnh cũ bổ sung bằng npm run media:variants) nên có thể thiếu
+export const SIZES = { xs: 320, sm: 480, ms: 720, md: 960, lg: 1800 };
+const QUALITY = { xs: 76, sm: 78, ms: 82, md: 84, lg: 88 };
 const MAX_PIXELS = 50_000_000;
 
 sharp.cache(false);
@@ -45,11 +47,12 @@ export async function saveImage(buffer, { originalName = '', folder = DEFAULT_FO
   if (meta.orientation >= 5) [width, height] = [height, width];
 
   for (const [key, size] of Object.entries(SIZES)) {
+    if ((key === 'xs' || key === 'ms') && Math.max(width, height) <= size) continue; // ảnh gốc nhỏ hơn cỡ này: không tạo bản trùng
     const file = `${id}-${key}.webp`;
     await base.clone()
       .resize({ width: size, height: size, fit: 'inside', withoutEnlargement: true })
       // Chất lượng theo cỡ: nhỏ 78, vừa 84, lớn 88 (ảnh xem chi tiết / phóng to cần nét cho ngọc)
-      .webp({ quality: { sm: 78, md: 84, lg: 88 }[key], effort: 4 })
+      .webp({ quality: QUALITY[key], effort: 4 })
       .toFile(path.join(dir, file));
     variants[key] = `${rel}/${file}`;
   }
@@ -75,10 +78,14 @@ export function present(row) {
     folder: row.folder,
     original_name: row.original_name,
     created_at: row.created_at,
+    xs: url('xs'),
     sm: url('sm'),
+    ms: url('ms'),
     md: url('md'),
     lg: url('lg'),
     url: url('lg'),
+    // Chiều rộng thật của từng bản (cho srcset): ảnh đứng / ngang đều bị giới hạn theo cạnh dài
+    ws: Object.fromEntries(Object.entries(SIZES).filter(([k]) => v[k]).map(([k, s]) => [k, Math.round(row.width * Math.min(1, s / Math.max(row.width, row.height)))])),
   };
 }
 

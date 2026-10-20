@@ -10,7 +10,7 @@
       <h1 class="mt-3 text-4xl font-medium md:text-5xl">{{ g.title }}</h1>
       <p class="mt-4 max-w-lg text-muted">{{ g.intro }}</p>
     </div>
-    {% if g.image %}<img src="{{ g.image.md }}" alt="{{ g.title }}" width="{{ g.image.width }}" height="{{ g.image.height }}" decoding="async" class="w-full rounded-lg object-cover">{% endif %}
+    {% if g.image %}<img src="{{ g.image.md }}" srcset="{{ g.image | srcset }}" sizes="(min-width:1024px) 50vw, 100vw" alt="{{ g.title }}" width="{{ g.image.width }}" height="{{ g.image.height }}" decoding="async" class="w-full rounded-lg object-cover">{% endif %}
   </div>
 </section>
 

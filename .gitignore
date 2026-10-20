@@ -31,3 +31,4 @@ id_rsa*
 
 # Sinh ra lúc build trên Vercel
 api/app.bundle.mjs
+vercel-fonts/

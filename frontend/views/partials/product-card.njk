@@ -10,7 +10,7 @@
   <div class="media">
     <a href="{{ p.url }}" {% if quick %}@click.prevent="$store.quick.show('{{ p.slug }}')"{% endif %} aria-label="{{ ('Xem nhanh ' if quick else 'Xem chi tiết ') + p.name }}">
       {% if p.cover %}
-      <img src="{{ p.cover.md }}" srcset="{{ p.cover | srcset }}" sizes="(min-width:1024px) 25vw, (min-width:640px) 33vw, 50vw"
+      <img src="{{ p.cover.md }}" srcset="{{ p.cover | srcset }}" sizes="(min-width:1024px) 25vw, (min-width:640px) 33vw, calc(50vw - 24px)"
         alt="{{ p.cover.alt or p.name }}" width="{{ p.cover.width }}" height="{{ p.cover.height }}" loading="{{ 'eager' if index < 4 else 'lazy' }}" {{ 'fetchpriority=high' if index < 2 }} decoding="async">
       {% endif %}
       {% if p.hover %}

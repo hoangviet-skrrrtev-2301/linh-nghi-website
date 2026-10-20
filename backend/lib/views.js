@@ -22,7 +22,8 @@ function makeEnv(dir) {
   // JSON đặt trong thẻ <script>: escape "<" để không thể đóng thẻ script
   env.addFilter('jsonScript', (v) => new nunjucks.runtime.SafeString(JSON.stringify(v ?? null).replace(/</g, '\\u003c')));
   env.addFilter('img', (media, size = 'md') => media?.[size] || media?.lg || '');
-  env.addFilter('srcset', (m) => (m ? [m.sm && `${m.sm} 480w`, m.md && `${m.md} 960w`, m.lg && `${m.lg} 1800w`].filter(Boolean).join(', ') : ''));
+  // srcset theo chiều rộng thật của từng bản (ảnh đứng hẹp hơn 480 / 960 / 1800), chỉ liệt kê bản đang có
+  env.addFilter('srcset', (m) => (m?.ws ? ['xs', 'sm', 'ms', 'md', 'lg'].filter((k) => m[k] && m.ws[k]).map((k) => `${m[k]} ${m.ws[k]}w`).join(', ') : ''));
   // Nội dung soạn thảo: thêm width/height cho ảnh (chống CLS); headings: không nhảy cấp (start = cấp tiêu đề ngay trước nội dung)
   env.addFilter('imgdims', (html) => addImageDims(String(html || '')));
   env.addFilter('headings', (html, start = 1) => fixHeadingLevels(String(html || ''), start));

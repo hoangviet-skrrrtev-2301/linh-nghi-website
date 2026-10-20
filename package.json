@@ -20,6 +20,7 @@
     "seed": "node backend/scripts/seed.js",
     "create-admin": "node backend/scripts/create-admin.js",
     "backup": "node backend/scripts/backup.js",
+    "media:variants": "node backend/scripts/media-variants.js",
     "restore": "node backend/scripts/restore.js",
     "setup": "npm run build && npm run migrate",
     "bootstrap": "node backend/scripts/bootstrap.js",

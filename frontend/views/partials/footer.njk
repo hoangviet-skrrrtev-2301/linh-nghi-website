@@ -9,7 +9,7 @@
         {# Nền chân trang sáng (chữ tối): dùng logo thường thay cho bản logo trắng #}
         {% set footLogo = (s.site.logo if (bg.footer.tone == 'dark' and s.site.logo) else s.site.logo_light) %}
         {% if footLogo %}
-          <img src="{{ footLogo.sm }}" alt="{{ s.site.name }}" width="{{ footLogo.width }}" height="{{ footLogo.height }}" class="h-24 w-auto" loading="lazy" decoding="async">
+          <img src="{{ footLogo.xs or footLogo.sm }}" alt="{{ s.site.name }}" width="{{ footLogo.width }}" height="{{ footLogo.height }}" class="h-24 w-auto" loading="lazy" decoding="async">
         {% else %}
           <div class="font-heading text-3xl text-white">{{ s.site.name }}</div>
         {% endif %}
